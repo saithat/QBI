@@ -1,0 +1,47 @@
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "hiveblot"
+version = "0.1.0"
+description = "Local western blot extraction and search"
+readme = "README.md"
+requires-python = ">=3.12,<3.14"
+dependencies = [
+  "fastapi>=0.116,<1",
+  "httpx>=0.28,<1",
+  "numpy>=2,<3",
+  "opencv-python-headless>=4.11,<5",
+  "Pillow>=11,<13",
+  "psycopg[binary]>=3.2,<4",
+  "pydantic>=2.11,<3",
+  "PyMuPDF>=1.26,<2",
+  "python-dotenv>=1.1,<2",
+  "requests>=2.32,<3",
+  "uvicorn[standard]>=0.35,<1",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.4,<10",
+  "pytest-asyncio>=1.1,<2",
+  "ruff>=0.12,<1",
+]
+
+[project.scripts]
+hiveblot-ingest = "hiveblot.pipeline:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["hiveblot"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]

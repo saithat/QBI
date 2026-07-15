@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>HiveBlot Local</title>
+  <style>
+    :root { color-scheme: dark; --bg:#0b0f0e; --panel:#121816; --line:#26332f;
+      --text:#e7f0ed; --muted:#91a39d; --accent:#4fd7b1; --error:#ff8c8c; }
+    * { box-sizing: border-box; }
+    body { margin:0; background:var(--bg); color:var(--text); font:15px/1.5 system-ui,sans-serif; }
+    main { width:min(1200px, calc(100% - 32px)); margin:0 auto; padding:48px 0 72px; }
+    header { display:flex; align-items:flex-start; justify-content:space-between; gap:24px; margin-bottom:32px; }
+    h1 { margin:0; font-size:clamp(28px,5vw,46px); letter-spacing:-1.5px; }
+    .subtitle { color:var(--muted); margin:8px 0 0; }
+    .status { border:1px solid var(--line); border-radius:999px; padding:7px 12px;
+      color:var(--muted); white-space:nowrap; font:12px ui-monospace,monospace; }
+    .status.ready { color:var(--accent); border-color:#2b735f; }
+    .status.error { color:var(--error); border-color:#743c3c; }
+    form { display:flex; gap:10px; margin-bottom:14px; }
+    input { width:100%; border:1px solid var(--line); border-radius:9px; background:var(--panel);
+      color:var(--text); padding:14px 16px; font:inherit; outline:none; }
+    input:focus { border-color:var(--accent); }
+    button { border:0; border-radius:9px; background:var(--accent); color:#07110e;
+      padding:0 22px; font-weight:700; cursor:pointer; }
+    button:disabled { opacity:.5; cursor:wait; }
+    .meta { min-height:32px; display:flex; gap:8px; flex-wrap:wrap; align-items:center;
+      color:var(--muted); margin-bottom:16px; }
+    .tag { padding:3px 8px; border:1px solid var(--line); border-radius:999px; font-size:12px; }
+    .message { padding:28px; border:1px solid var(--line); border-radius:10px;
+      background:var(--panel); color:var(--muted); text-align:center; }
+    .message.error { color:var(--error); }
+    .table-wrap { overflow:auto; border:1px solid var(--line); border-radius:10px; }
+    table { border-collapse:collapse; width:100%; min-width:980px; background:var(--panel); }
+    th,td { padding:12px 14px; border-bottom:1px solid var(--line); text-align:left; vertical-align:top; }
+    th { position:sticky; top:0; background:#17201d; color:var(--muted); font-size:11px;
+      text-transform:uppercase; letter-spacing:.7px; }
+    tr:last-child td { border-bottom:0; }
+    td.target { color:var(--accent); font-weight:700; }
+    .state { font:12px ui-monospace,monospace; text-transform:uppercase; }
+    .state.present { color:var(--accent); }
+    .state.absent { color:var(--error); }
+    .state.uncertain { color:#f5c878; }
+    footer { margin-top:20px; color:var(--muted); font-size:12px; }
+    code { color:#c7d7d2; }
+    @media (max-width:640px) { header { flex-direction:column; } form { flex-direction:column; }
+      button { padding:13px; } main { padding-top:28px; } }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <div>
+        <h1>HiveBlot Local</h1>
+        <p class="subtitle">Search western blot evidence extracted on this machine.</p>
+      </div>
+      <div id="status" class="status">CHECKING SERVICES</div>
+    </header>
+    <form id="search-form">
+      <input id="query" name="query" maxlength="1000" autocomplete="off"
+        placeholder="e.g. p53 in A549 cells treated with Nutlin-3">
+      <button id="search-button" type="submit">Search</button>
+    </form>
+    <div id="meta" class="meta"></div>
+    <section id="content" aria-live="polite">
+      <div class="message">Loading local records…</div>
+    </section>
+    <footer>Ingest a paper with <code>make ingest PDF=paper.pdf</code>.</footer>
+  </main>
+  <script>
+    const statusEl = document.querySelector('#status');
+    const form = document.querySelector('#search-form');
+    const input = document.querySelector('#query');
+    const button = document.querySelector('#search-button');
+    const meta = document.querySelector('#meta');
+    const content = document.querySelector('#content');
+    const columns = [
+      ['paper_id', 'Paper'], ['page', 'Page'], ['target', 'Target'],
+      ['sample', 'Sample'], ['organism', 'Organism'], ['condition', 'Condition'],
+      ['band_state', 'Band'], ['confidence', 'Confidence'],
+    ];
+    function cell(value, key) {
+      const td = document.createElement('td');
+      if (key === 'target') td.className = 'target';
+      if (key === 'band_state') td.className = `state ${value || 'uncertain'}`;
+      if (key === 'confidence' && typeof value === 'number') value = `${Math.round(value * 100)}%`;
+      td.textContent = value === null || value === undefined || value === '' ? '—' : String(value);
+      return td;
+    }
+    function render(data) {
+      meta.replaceChildren();
+      const count = document.createElement('span');
+      count.textContent = `${data.count} record${data.count === 1 ? '' : 's'}`;
+      meta.append(count);
+      Object.entries(data.filters || {}).forEach(([key, value]) => {
+        if (!value) return;
+        const tag = document.createElement('span');
+        tag.className = 'tag';
+        tag.textContent = `${key}: ${value}`;
+        meta.append(tag);
+      });
+      if (!data.results || data.results.length === 0) {
+        const empty = document.createElement('div');
+        empty.className = 'message';
+        empty.textContent = 'No records yet. Ingest a PDF, or try a broader search.';
+        content.replaceChildren(empty);
+        return;
+      }
+      const wrap = document.createElement('div'); wrap.className = 'table-wrap';
+      const table = document.createElement('table');
+      const head = document.createElement('thead'); const headerRow = document.createElement('tr');
+      columns.forEach(([, label]) => {
+        const th = document.createElement('th'); th.textContent = label; headerRow.append(th);
+      });
+      head.append(headerRow); table.append(head);
+      const body = document.createElement('tbody');
+      data.results.forEach(record => {
+        const row = document.createElement('tr');
+        columns.forEach(([key]) => row.append(cell(record[key], key)));
+        body.append(row);
+      });
+      table.append(body); wrap.append(table); content.replaceChildren(wrap);
+    }
+    function showError(message) {
+      const error = document.createElement('div'); error.className = 'message error';
+      error.textContent = message; content.replaceChildren(error);
+    }
+    async function request(url, options) {
+      const response = await fetch(url, options); const data = await response.json();
+      if (!response.ok) throw new Error(data.detail || `Request failed (${response.status})`);
+      return data;
+    }
+    async function checkHealth() {
+      try {
+        const response = await fetch('/health'); const health = await response.json();
+        statusEl.className = `status ${response.ok ? 'ready' : 'error'}`;
+        statusEl.textContent = response.ok ? 'LOCAL STACK READY' :
+          `DB ${health.database} · MODEL ${health.model}`.toUpperCase();
+      } catch (_) {
+        statusEl.className = 'status error'; statusEl.textContent = 'APP UNAVAILABLE';
+      }
+    }
+    form.addEventListener('submit', async event => {
+      event.preventDefault(); const query = input.value.trim(); if (!query) return;
+      button.disabled = true; button.textContent = 'Searching…';
+      try {
+        render(await request('/api/search', {
+          method: 'POST', headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({query, limit: 100}),
+        }));
+      } catch (error) { showError(error.message); }
+      finally { button.disabled = false; button.textContent = 'Search'; }
+    });
+    checkHealth();
+    request('/api/records?limit=100').then(render).catch(error => showError(error.message));
+  </script>
+</body>
+</html>

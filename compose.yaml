@@ -1,0 +1,90 @@
+services:
+  postgres:
+    image: postgres:16-alpine@sha256:20edbde7749f822887a1a022ad526fde0a47d6b2be9a8364433605cf65099416
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-hiveblot}
+      POSTGRES_USER: ${POSTGRES_USER:-hiveblot}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-hiveblot}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    restart: unless-stopped
+
+  vllm:
+    image: vllm/vllm-openai@sha256:4801151759655c57606c844662e5213403c032a62d149c7ce61d615759a821ef
+    command:
+      - Qwen/Qwen3-VL-8B-Instruct
+      - --served-model-name
+      - Qwen/Qwen3-VL-8B-Instruct
+      - --max-model-len
+      - "8192"
+      - --gpu-memory-utilization
+      - "0.90"
+      - --max-num-seqs
+      - "1"
+      - --limit-mm-per-prompt
+      - '{"image":1}'
+      - --generation-config
+      - vllm
+    devices:
+      - nvidia.com/gpu=all
+    ipc: host
+    environment:
+      HF_HUB_OFFLINE: "1"
+      TRANSFORMERS_OFFLINE: "1"
+    volumes:
+      - ${HF_CACHE_DIR:-/home/saithat/.cache/huggingface}:/root/.cache/huggingface:ro
+    ports:
+      - "127.0.0.1:8000:8000"
+    healthcheck:
+      test:
+        - CMD
+        - /usr/bin/python3
+        - -c
+        - import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=5)
+      interval: 10s
+      timeout: 8s
+      retries: 24
+      start_period: 90s
+    restart: unless-stopped
+
+  app:
+    build: .
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-hiveblot}:${POSTGRES_PASSWORD:-hiveblot}@postgres:5432/${POSTGRES_DB:-hiveblot}
+      VLLM_BASE_URL: http://vllm:8000/v1
+      VLLM_MODEL: Qwen/Qwen3-VL-8B-Instruct
+      VLLM_API_KEY: local
+      VLLM_TIMEOUT_SECONDS: ${VLLM_TIMEOUT_SECONDS:-300}
+      VLLM_MAX_TOKENS: ${VLLM_MAX_TOKENS:-2048}
+      VLLM_IMAGE_MAX_SIDE: ${VLLM_IMAGE_MAX_SIDE:-1800}
+      HIVEBLOT_DATA_DIR: /data
+      PDF_DPI: ${PDF_DPI:-350}
+      MIN_CANDIDATE_SCORE: ${MIN_CANDIDATE_SCORE:-0.35}
+      MIN_VLM_SCORE: ${MIN_VLM_SCORE:-0.65}
+    volumes:
+      - ./data:/data
+    ports:
+      - "127.0.0.1:8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      vllm:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - import urllib.request; urllib.request.urlopen('http://localhost:8080/health', timeout=5)
+      interval: 10s
+      timeout: 8s
+      retries: 12
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
