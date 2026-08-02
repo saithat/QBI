@@ -50,6 +50,13 @@ from .jobs import (
     ResourceRequirements,
     SucceededJobResult,
 )
+from .review_queue import (
+    RegressionStatus,
+    ReviewQueueCaseSummary,
+    ReviewQueueFilters,
+    ReviewQueuePage,
+    SavedReviewView,
+)
 
 __all__ = [
     "SCHEMA_VERSION",
@@ -91,10 +98,15 @@ __all__ = [
     "PredictionDocument",
     "PredictionEvidence",
     "ResourceRequirements",
+    "RegressionStatus",
+    "ReviewQueueCaseSummary",
+    "ReviewQueueFilters",
+    "ReviewQueuePage",
     "ReviewerAssignment",
     "ReviewerAssignmentStatus",
     "ReviewStatus",
     "SchemaVersion",
+    "SavedReviewView",
     "SourceDocumentKind",
     "SourceDocumentRecord",
     "SpatialAnnotation",

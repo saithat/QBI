@@ -9,6 +9,7 @@ from typing import Annotated, Any
 
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.responses import FileResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 import hiveblot
 from hiveblot import db
@@ -19,6 +20,7 @@ from hiveblot.settings import get_settings
 
 from .artifacts import router as artifact_router
 from .evaluation import router as evaluation_router
+from .review_queue import router as review_queue_router
 from .schemas import (
     HealthResponse,
     RecordDetailResponse,
@@ -41,12 +43,20 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
 app = FastAPI(title="HiveBlot", version="0.1.0", lifespan=lifespan)
 app.include_router(artifact_router)
 app.include_router(evaluation_router)
+app.include_router(review_queue_router)
 INDEX = Path(hiveblot.__file__).with_name("static") / "index.html"
+REVIEW_WEB = Path(__file__).resolve().parents[1] / "web"
+app.mount("/review/assets", StaticFiles(directory=REVIEW_WEB / "assets"), name="review-assets")
 
 
 @app.get("/", include_in_schema=False)
 def index() -> FileResponse:
     return FileResponse(INDEX)
+
+
+@app.get("/review", include_in_schema=False)
+def review_browser() -> FileResponse:
+    return FileResponse(REVIEW_WEB / "index.html")
 
 
 @app.get("/health", response_model=HealthResponse)

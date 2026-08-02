@@ -21,6 +21,12 @@ from .artifacts import ArtifactRecord, ArtifactReference, BoundingRegion, Source
 from .evaluation import EvaluationCaseReference, ValidationIssue
 from .identifiers import ModelIdentifier, PipelineIdentifier, ToolIdentifier
 from .jobs import JobResult, JobSpecification
+from .review_queue import (
+    ReviewQueueCaseSummary,
+    ReviewQueueFilters,
+    ReviewQueuePage,
+    SavedReviewView,
+)
 
 JSON_SCHEMA_DIALECT = "https://json-schema.org/draft/2020-12/schema"
 SCHEMA_ID_PREFIX = "urn:hiveblot:schema:v1:"
@@ -41,6 +47,10 @@ CONTRACT_REGISTRY: Mapping[str, Any] = {
     "pipeline-identifier": PipelineIdentifier,
     "prediction-document": PredictionDocument,
     "reviewer-assignment": ReviewerAssignment,
+    "review-queue-case-summary": ReviewQueueCaseSummary,
+    "review-queue-filters": ReviewQueueFilters,
+    "review-queue-page": ReviewQueuePage,
+    "saved-review-view": SavedReviewView,
     "source-document-record": SourceDocumentRecord,
     "tool-identifier": ToolIdentifier,
     "validation-issue": ValidationIssue,

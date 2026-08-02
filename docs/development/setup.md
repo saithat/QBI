@@ -52,9 +52,12 @@ docker compose up --build -d postgres minio
 HIVEBLOT_RUN_LIVE_STORAGE=1 uv run pytest tests/integration/test_artifact_storage_live.py
 HIVEBLOT_RUN_LIVE_EVALUATION=1 \
   uv run pytest tests/integration/test_evaluation_storage_live.py
+HIVEBLOT_RUN_LIVE_REVIEW_QUEUE=1 \
+  uv run pytest tests/integration/test_review_queue_live.py
 ```
 
-See `docs/development/artifact-storage.md` for the multipart API flow.
+See `docs/development/artifact-storage.md` for the multipart API flow and
+`docs/development/review-queue.md` for browser verification.
 
 ## Baseline verification
 

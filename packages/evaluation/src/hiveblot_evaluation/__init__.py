@@ -9,6 +9,8 @@ from .errors import (
 )
 from .postgres import PostgresEvaluationRepository
 from .repository import EvaluationRepository
+from .review_queue import ReviewQueueRepository, ReviewQueueService
+from .review_queue_postgres import PostgresReviewQueueRepository
 from .service import EvaluationService
 
 __all__ = [
@@ -20,4 +22,7 @@ __all__ = [
     "EvaluationService",
     "InvalidEvaluationState",
     "PostgresEvaluationRepository",
+    "PostgresReviewQueueRepository",
+    "ReviewQueueRepository",
+    "ReviewQueueService",
 ]

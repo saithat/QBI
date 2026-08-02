@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Filter, assign, and navigate HiveBlot evaluation cases.">
+  <title>HiveBlot — Review queue</title>
+  <link rel="stylesheet" href="/review/assets/review.css">
+  <script defer src="/review/assets/review.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/review" aria-label="HiveBlot review queue">
+      <span class="brand-mark" aria-hidden="true">HB</span>
+      <span>HiveBlot</span>
+    </a>
+    <div class="context">
+      <span class="context-label">Evaluation</span>
+      <strong>Review queue</strong>
+    </div>
+    <div class="reviewer">
+      <span>Local reviewer</span>
+      <code id="reviewer-id"></code>
+    </div>
+  </header>
+
+  <main>
+    <aside class="filters" aria-label="Case filters">
+      <div class="aside-heading">
+        <div>
+          <p class="kicker">Dataset browser</p>
+          <h1>Find review work</h1>
+        </div>
+        <button id="clear-filters" class="text-button" type="button">Clear</button>
+      </div>
+
+      <section class="saved-views" aria-labelledby="saved-heading">
+        <div class="section-label">
+          <h2 id="saved-heading">Saved views</h2>
+          <button id="save-view" class="icon-button" type="button" title="Save current filters">+</button>
+        </div>
+        <select id="saved-view" aria-label="Saved filter view">
+          <option value="">Current filters</option>
+        </select>
+      </section>
+
+      <form id="filter-form">
+        <label>
+          Review state
+          <select name="review_status">
+            <option value="">Any state</option>
+            <option value="unreviewed">Unreviewed</option>
+            <option value="in_review">In review</option>
+            <option value="reviewed">Reviewed</option>
+            <option value="needs_adjudication">Needs adjudication</option>
+            <option value="adjudicated">Adjudicated</option>
+          </select>
+        </label>
+
+        <label>
+          Dataset ID
+          <input name="dataset_id" type="text" inputmode="text" placeholder="UUID">
+        </label>
+
+        <label>
+          Assay classification
+          <select name="assay_type">
+            <option value="">Any assay</option>
+            <option value="western_blot">Western blot</option>
+          </select>
+        </label>
+
+        <label>
+          Source
+          <input name="source" type="search" placeholder="Repository, URI, or file" autocomplete="off">
+        </label>
+
+        <label>
+          Prediction version
+          <input name="prediction_version" type="text" placeholder="e.g. 1.2">
+        </label>
+
+        <div class="field-pair">
+          <label>
+            Confidence min
+            <input name="confidence_min" type="number" min="0" max="1" step="0.01" placeholder="0.00">
+          </label>
+          <label>
+            Confidence max
+            <input name="confidence_max" type="number" min="0" max="1" step="0.01" placeholder="1.00">
+          </label>
+        </div>
+
+        <label>
+          Error category
+          <input name="error_category" type="text" placeholder="field, spatial, provenance">
+        </label>
+
+        <label>
+          Reviewer ID
+          <input name="reviewer_id" type="text" placeholder="UUID">
+        </label>
+
+        <label>
+          Missing provenance
+          <select name="missing_provenance">
+            <option value="">Any</option>
+            <option value="true">Missing</option>
+            <option value="false">Complete</option>
+          </select>
+        </label>
+
+        <label>
+          Validation warnings
+          <select name="validation_warnings">
+            <option value="">Any</option>
+            <option value="true">Has warnings</option>
+            <option value="false">No warnings</option>
+          </select>
+        </label>
+
+        <label>
+          Gold eligibility
+          <select name="gold_eligible">
+            <option value="">Any</option>
+            <option value="true">Eligible</option>
+            <option value="false">Not eligible</option>
+          </select>
+        </label>
+
+        <label>
+          Model disagreement
+          <select name="model_disagreement">
+            <option value="">Any</option>
+            <option value="true">Disagreement</option>
+            <option value="false">Agreement</option>
+          </select>
+        </label>
+
+        <label>
+          Regression status
+          <select name="regression_status">
+            <option value="">Any</option>
+            <option value="not_evaluated">Not evaluated</option>
+            <option value="stable">Stable</option>
+            <option value="improved">Improved</option>
+            <option value="regressed">Regressed</option>
+          </select>
+        </label>
+
+        <button class="primary-button" type="submit">Apply filters</button>
+      </form>
+    </aside>
+
+    <section class="queue" aria-labelledby="queue-heading">
+      <div class="queue-header">
+        <div>
+          <p class="kicker">Reviewable evidence</p>
+          <h2 id="queue-heading"><span id="result-count">—</span> cases</h2>
+        </div>
+        <div class="queue-actions">
+          <button id="assign-case" class="secondary-button" type="button" disabled>Assign to me</button>
+          <button id="next-case" class="primary-button compact" type="button" disabled>Next case</button>
+        </div>
+      </div>
+
+      <div class="shortcut-bar" aria-label="Keyboard shortcuts">
+        <span><kbd>J</kbd>/<kbd>K</kbd> move</span>
+        <span><kbd>N</kbd> next case</span>
+        <span><kbd>A</kbd> assign</span>
+        <span><kbd>/</kbd> source filter</span>
+      </div>
+
+      <div id="notice" class="notice" role="status" aria-live="polite" hidden></div>
+      <div id="queue-list" class="queue-list" aria-busy="true"></div>
+
+      <nav class="pagination" aria-label="Review queue pages">
+        <button id="previous-page" class="text-button" type="button" disabled>← Previous</button>
+        <span id="page-status">Loading…</span>
+        <button id="next-page" class="text-button" type="button" disabled>Next →</button>
+      </nav>
+    </section>
+  </main>
+
+  <template id="case-template">
+    <article class="case-card" tabindex="0">
+      <div class="thumbnail-shell">
+        <img class="thumbnail" alt="" loading="lazy">
+        <span class="thumbnail-placeholder">Source preview</span>
+      </div>
+      <div class="case-main">
+        <div class="case-topline">
+          <span class="status-pill"></span>
+          <span class="case-key"></span>
+        </div>
+        <h3 class="source-label"></h3>
+        <div class="case-metadata"></div>
+      </div>
+      <div class="case-signals"></div>
+      <div class="case-review"></div>
+    </article>
+  </template>
+</body>
+</html>

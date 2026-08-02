@@ -1,8 +1,8 @@
 # HiveBlot
 
 HiveBlot turns western blot evidence from scientific papers into structured, searchable,
-reviewable observations. Milestone A is implemented: the PRD-001 platform foundation, PRD-002
-immutable artifact storage, and PRD-003 evaluation/annotation persistence. The useful local
+reviewable observations. Milestone A is implemented, and PRD-004 adds the first evaluation UI: a
+server-paginated review queue with shareable filters, saved views, and safe assignment. The useful local
 hackathon extraction path remains operational while new scientific state enters through strict,
 versioned contracts.
 
@@ -17,15 +17,18 @@ user multipart upload / allowlisted source adapter -> S3 staging -> hash + MIME 
 
 immutable artifact -> evaluation case -> immutable predictions + independent reviewer revisions
     -> explicit adjudication references
+
+evaluation cases -> server-side review filters -> paginated browser -> optimistic assignment
 ```
 
-Evaluation UI, Kubernetes, crawling, densitometry, authentication, and distributed execution remain
-out of scope. Legacy extraction adopts artifact IDs in PRD-011.
+Annotation editing, Kubernetes, crawling, densitometry, authentication, and distributed execution
+remain out of scope. Legacy extraction adopts artifact IDs in PRD-011.
 
 ## Repository boundaries
 
 ```text
 apps/api/                  FastAPI entry point and HTTP-only schemas
+apps/web/                  dependency-free review queue browser assets
 workers/extraction/        stable worker entry point around retained extraction code
 packages/contracts/        strict shared Pydantic v2 contracts and JSON Schemas
 packages/evaluation/       cases, predictions, reviews, assignments, and adjudication
@@ -72,7 +75,8 @@ docker compose ps
 curl http://localhost:8080/health
 ```
 
-Open <http://localhost:8080> after the services become healthy.
+Open <http://localhost:8080> for the retained evidence index or <http://localhost:8080/review> for
+the evaluation review queue after the services become healthy.
 
 To run only durable storage dependencies without a GPU:
 
@@ -110,6 +114,8 @@ model output remains enabled by default.
 - `POST /api/v1/evaluation-cases` anchors review state to immutable artifacts.
 - Case prediction routes preserve raw and normalized outputs as distinct immutable documents.
 - Annotation revision routes append snapshots and return `409` for stale expected-head UUIDs.
+- `GET /api/v1/review-queue` provides server-side filters and bounded pagination.
+- `/api/v1/review-views` persists owner-scoped, optimistic-versioned filter views.
 
 Public JSON bodies now carry `schema_version: "1.0"` and reject unknown request fields. The
 model never generates executable SQL; domain criteria are mapped to parameterized queries.

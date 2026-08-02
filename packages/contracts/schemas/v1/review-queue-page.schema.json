@@ -1,0 +1,467 @@
+{
+  "$defs": {
+    "Identifier": {
+      "maxLength": 200,
+      "minLength": 1,
+      "type": "string"
+    },
+    "RegressionStatus": {
+      "enum": [
+        "not_evaluated",
+        "stable",
+        "improved",
+        "regressed"
+      ],
+      "title": "RegressionStatus",
+      "type": "string"
+    },
+    "ReviewQueueCaseSummary": {
+      "additionalProperties": false,
+      "properties": {
+        "active_reviewer_ids": {
+          "default": [],
+          "items": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "title": "Active Reviewer Ids",
+          "type": "array"
+        },
+        "assay_type": {
+          "const": "western_blot",
+          "title": "Assay Type",
+          "type": "string"
+        },
+        "case_id": {
+          "format": "uuid",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "case_key": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "case_version": {
+          "minimum": 1,
+          "title": "Case Version",
+          "type": "integer"
+        },
+        "confidence": {
+          "anyOf": [
+            {
+              "maximum": 1,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Confidence"
+        },
+        "dataset_id": {
+          "anyOf": [
+            {
+              "format": "uuid",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Dataset Id"
+        },
+        "error_categories": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/Identifier"
+          },
+          "title": "Error Categories",
+          "type": "array"
+        },
+        "exclusively_assigned": {
+          "title": "Exclusively Assigned",
+          "type": "boolean"
+        },
+        "gold_eligible": {
+          "title": "Gold Eligible",
+          "type": "boolean"
+        },
+        "last_reviewed_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Last Reviewed At"
+        },
+        "last_reviewer_id": {
+          "anyOf": [
+            {
+              "format": "uuid",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Last Reviewer Id"
+        },
+        "missing_provenance": {
+          "title": "Missing Provenance",
+          "type": "boolean"
+        },
+        "model_disagreement": {
+          "title": "Model Disagreement",
+          "type": "boolean"
+        },
+        "prediction_id": {
+          "anyOf": [
+            {
+              "format": "uuid",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Prediction Id"
+        },
+        "prediction_version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Prediction Version"
+        },
+        "regression_status": {
+          "$ref": "#/$defs/RegressionStatus"
+        },
+        "review_status": {
+          "$ref": "#/$defs/ReviewStatus"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/SchemaVersion",
+          "default": "1.0"
+        },
+        "source_label": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Source Label"
+        },
+        "thumbnail_artifact_id": {
+          "anyOf": [
+            {
+              "format": "uuid",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Thumbnail Artifact Id"
+        },
+        "updated_at": {
+          "format": "date-time",
+          "title": "Updated At",
+          "type": "string"
+        },
+        "warning_count": {
+          "minimum": 0,
+          "title": "Warning Count",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "case_id",
+        "case_key",
+        "dataset_id",
+        "assay_type",
+        "review_status",
+        "case_version",
+        "source_label",
+        "thumbnail_artifact_id",
+        "prediction_id",
+        "prediction_version",
+        "warning_count",
+        "missing_provenance",
+        "gold_eligible",
+        "model_disagreement",
+        "regression_status",
+        "exclusively_assigned",
+        "last_reviewer_id",
+        "last_reviewed_at",
+        "updated_at"
+      ],
+      "title": "ReviewQueueCaseSummary",
+      "type": "object"
+    },
+    "ReviewQueueFilters": {
+      "additionalProperties": false,
+      "properties": {
+        "assay_type": {
+          "anyOf": [
+            {
+              "const": "western_blot",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Assay Type"
+        },
+        "confidence_max": {
+          "anyOf": [
+            {
+              "maximum": 1,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Confidence Max"
+        },
+        "confidence_min": {
+          "anyOf": [
+            {
+              "maximum": 1,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Confidence Min"
+        },
+        "dataset_id": {
+          "anyOf": [
+            {
+              "format": "uuid",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Dataset Id"
+        },
+        "error_category": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Identifier"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "gold_eligible": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Gold Eligible"
+        },
+        "has_validation_warnings": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Has Validation Warnings"
+        },
+        "missing_provenance": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Missing Provenance"
+        },
+        "model_disagreement": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Model Disagreement"
+        },
+        "prediction_version": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Identifier"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "regression_status": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RegressionStatus"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "review_statuses": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/ReviewStatus"
+          },
+          "title": "Review Statuses",
+          "type": "array"
+        },
+        "reviewer_id": {
+          "anyOf": [
+            {
+              "format": "uuid",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reviewer Id"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/SchemaVersion",
+          "default": "1.0"
+        },
+        "source_query": {
+          "anyOf": [
+            {
+              "maxLength": 500,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Query"
+        }
+      },
+      "title": "ReviewQueueFilters",
+      "type": "object"
+    },
+    "ReviewStatus": {
+      "enum": [
+        "unreviewed",
+        "in_review",
+        "reviewed",
+        "needs_adjudication",
+        "adjudicated"
+      ],
+      "title": "ReviewStatus",
+      "type": "string"
+    },
+    "SchemaVersion": {
+      "const": "1.0",
+      "type": "string"
+    }
+  },
+  "$id": "urn:hiveblot:schema:v1:review-queue-page",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "filters": {
+      "$ref": "#/$defs/ReviewQueueFilters"
+    },
+    "items": {
+      "items": {
+        "$ref": "#/$defs/ReviewQueueCaseSummary"
+      },
+      "title": "Items",
+      "type": "array"
+    },
+    "limit": {
+      "maximum": 200,
+      "minimum": 1,
+      "title": "Limit",
+      "type": "integer"
+    },
+    "next_offset": {
+      "anyOf": [
+        {
+          "minimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Next Offset"
+    },
+    "offset": {
+      "minimum": 0,
+      "title": "Offset",
+      "type": "integer"
+    },
+    "schema_version": {
+      "$ref": "#/$defs/SchemaVersion",
+      "default": "1.0"
+    },
+    "total": {
+      "minimum": 0,
+      "title": "Total",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "filters",
+    "items",
+    "total",
+    "limit",
+    "offset"
+  ],
+  "title": "ReviewQueuePage",
+  "type": "object"
+}
