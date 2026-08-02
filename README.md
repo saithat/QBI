@@ -34,6 +34,9 @@ pipeline DAG -> parent-linked component invocations -> strict output validation
 
 frozen references + versioned pipeline submission -> deterministic stage/end-to-end scoring
     -> calibration + grouped slices -> same-snapshot regression comparison
+
+reviewed cases -> versioned golden-dataset draft -> leakage-safe promotion
+    -> content-addressed snapshot -> deterministic JSONL + manifest exports
 ```
 
 Kubernetes, crawling, densitometry, authentication, and distributed execution remain out of scope.
@@ -154,6 +157,8 @@ model output remains enabled by default.
 - Evaluation metric routes score frozen reference/submission pairs, filter immutable run history,
   expose case/category calibration detail, and compare two pipeline versions on the same snapshot.
 - `hiveblot-evaluate` reproduces a canonical metric-run document from a strict scoring-input file.
+- Golden-dataset routes manage optimistic drafts, exact-revision promotion, paper/content leakage
+  checks, immutable snapshots, transition history, and content-addressed JSONL/manifest exports.
 
 Public JSON bodies now carry `schema_version: "1.0"` and reject unknown request fields. The
 model never generates executable SQL; domain criteria are mapped to parameterized queries.
@@ -172,4 +177,5 @@ See [the repository audit](docs/architecture/repository-audit.md),
 [the spatial review ADR](docs/adr/0007-source-pixel-spatial-review.md), and
 [the pipeline provenance ADR](docs/adr/0008-immutable-pipeline-runs-and-replay.md), and
 [the evaluation metrics ADR](docs/adr/0009-versioned-evaluation-metrics.md), and
+[the golden dataset ADR](docs/adr/0010-content-addressed-golden-datasets.md), and
 [development setup](docs/development/setup.md) for details.

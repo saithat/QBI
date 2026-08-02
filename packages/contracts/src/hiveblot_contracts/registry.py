@@ -20,6 +20,14 @@ from .annotations import (
 from .artifacts import ArtifactRecord, ArtifactReference, BoundingRegion, SourceDocumentRecord
 from .evaluation import EvaluationCaseReference, ValidationIssue
 from .evidence import CaseSourceContext, EvidenceOverlay, SourceEvidenceWorkbench
+from .golden_datasets import (
+    GoldenDatasetCaseExport,
+    GoldenDatasetDraftDetail,
+    GoldenDatasetExportManifest,
+    GoldenDatasetExportRecord,
+    GoldenDatasetRecord,
+    GoldenDatasetSnapshot,
+)
 from .identifiers import ModelIdentifier, PipelineIdentifier, ToolIdentifier
 from .jobs import JobResult, JobSpecification
 from .metrics import (
@@ -72,6 +80,12 @@ CONTRACT_REGISTRY: Mapping[str, Any] = {
     "evaluation-metric-run-record": EvaluationMetricRunRecord,
     "evaluation-scoring-input": EvaluationScoringInput,
     "evidence-overlay": EvidenceOverlay,
+    "golden-dataset-case-export": GoldenDatasetCaseExport,
+    "golden-dataset-draft-detail": GoldenDatasetDraftDetail,
+    "golden-dataset-export-manifest": GoldenDatasetExportManifest,
+    "golden-dataset-export-record": GoldenDatasetExportRecord,
+    "golden-dataset-record": GoldenDatasetRecord,
+    "golden-dataset-snapshot": GoldenDatasetSnapshot,
     "job-result": JobResult,
     "job-specification": JobSpecification,
     "model-identifier": ModelIdentifier,

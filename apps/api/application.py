@@ -20,6 +20,7 @@ from hiveblot.settings import get_settings
 
 from .artifacts import router as artifact_router
 from .evaluation import router as evaluation_router
+from .golden import router as golden_router
 from .metrics import router as metrics_router
 from .pipeline import router as pipeline_router
 from .review_queue import router as review_queue_router
@@ -48,6 +49,7 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
 app = FastAPI(title="HiveBlot", version="0.1.0", lifespan=lifespan)
 app.include_router(artifact_router)
 app.include_router(evaluation_router)
+app.include_router(golden_router)
 app.include_router(metrics_router)
 app.include_router(pipeline_router)
 app.include_router(review_queue_router)

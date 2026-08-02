@@ -1,0 +1,10 @@
+DROP TABLE golden_dataset_exports;
+ALTER TABLE golden_datasets DROP CONSTRAINT golden_dataset_predecessor_fk;
+DROP TABLE golden_dataset_snapshots;
+DROP TABLE golden_case_transitions;
+DROP TABLE golden_dataset_member_artifacts;
+DROP TABLE golden_dataset_content_hashes;
+DROP TABLE golden_dataset_members;
+DROP TABLE golden_dataset_papers;
+DROP TABLE golden_datasets;
+DELETE FROM schema_migrations WHERE version = '0009_golden_datasets';

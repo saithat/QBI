@@ -7,6 +7,17 @@ from .errors import (
     EvaluationNotFound,
     InvalidEvaluationState,
 )
+from .golden import GoldenDatasetService, build_golden_changelog
+from .golden_exports import (
+    ContentAddressedDatasetExportStore,
+    DatasetExportStore,
+    GoldenDatasetExportPublisher,
+    build_export_manifest,
+    render_cases_jsonl,
+    render_export_manifest,
+)
+from .golden_postgres import PostgresGoldenDatasetRepository
+from .golden_repository import GoldenDatasetRepository
 from .metrics import (
     EvaluationMetricsService,
     compare_metric_runs,
@@ -44,12 +55,18 @@ __all__ = [
     "EvaluationService",
     "EvidenceWorkbenchService",
     "InvalidEvaluationState",
+    "GoldenDatasetExportPublisher",
+    "GoldenDatasetRepository",
+    "GoldenDatasetService",
+    "ContentAddressedDatasetExportStore",
+    "DatasetExportStore",
     "OutputSchemaRegistry",
     "PipelineArtifactLookup",
     "PipelineRegistryService",
     "PipelineRunRepository",
     "PostgresEvaluationRepository",
     "PostgresEvaluationMetricRunRepository",
+    "PostgresGoldenDatasetRepository",
     "PostgresPipelineRunRepository",
     "PostgresReviewQueueRepository",
     "PostgresSourceContextRepository",
@@ -60,6 +77,10 @@ __all__ = [
     "StructuredAnnotationService",
     "ArtifactLookup",
     "compare_metric_runs",
+    "build_export_manifest",
+    "build_golden_changelog",
     "evaluation_scoring_input_sha256",
     "score_evaluation",
+    "render_cases_jsonl",
+    "render_export_manifest",
 ]
