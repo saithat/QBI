@@ -30,6 +30,7 @@ from .schemas import (
     SearchResponse,
     WesternBlotRecordResponse,
 )
+from .workbench import router as workbench_router
 
 API_RECORD_FIELDS = frozenset(WesternBlotRecordResponse.model_fields)
 
@@ -44,6 +45,7 @@ app = FastAPI(title="HiveBlot", version="0.1.0", lifespan=lifespan)
 app.include_router(artifact_router)
 app.include_router(evaluation_router)
 app.include_router(review_queue_router)
+app.include_router(workbench_router)
 INDEX = Path(hiveblot.__file__).with_name("static") / "index.html"
 REVIEW_WEB = Path(__file__).resolve().parents[1] / "web"
 app.mount("/review/assets", StaticFiles(directory=REVIEW_WEB / "assets"), name="review-assets")
@@ -57,6 +59,12 @@ def index() -> FileResponse:
 @app.get("/review", include_in_schema=False)
 def review_browser() -> FileResponse:
     return FileResponse(REVIEW_WEB / "index.html")
+
+
+@app.get("/workbench/{case_id}", include_in_schema=False)
+def evidence_workbench(case_id: str) -> FileResponse:
+    del case_id
+    return FileResponse(REVIEW_WEB / "workbench.html")
 
 
 @app.get("/health", response_model=HealthResponse)

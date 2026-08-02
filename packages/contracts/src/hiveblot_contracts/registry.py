@@ -19,6 +19,7 @@ from .annotations import (
 )
 from .artifacts import ArtifactRecord, ArtifactReference, BoundingRegion, SourceDocumentRecord
 from .evaluation import EvaluationCaseReference, ValidationIssue
+from .evidence import CaseSourceContext, EvidenceOverlay, SourceEvidenceWorkbench
 from .identifiers import ModelIdentifier, PipelineIdentifier, ToolIdentifier
 from .jobs import JobResult, JobSpecification
 from .review_queue import (
@@ -39,8 +40,10 @@ CONTRACT_REGISTRY: Mapping[str, Any] = {
     "artifact-record": ArtifactRecord,
     "artifact-reference": ArtifactReference,
     "bounding-region": BoundingRegion,
+    "case-source-context": CaseSourceContext,
     "evaluation-case-reference": EvaluationCaseReference,
     "evaluation-case-record": EvaluationCaseRecord,
+    "evidence-overlay": EvidenceOverlay,
     "job-result": JobResult,
     "job-specification": JobSpecification,
     "model-identifier": ModelIdentifier,
@@ -52,6 +55,7 @@ CONTRACT_REGISTRY: Mapping[str, Any] = {
     "review-queue-page": ReviewQueuePage,
     "saved-review-view": SavedReviewView,
     "source-document-record": SourceDocumentRecord,
+    "source-evidence-workbench": SourceEvidenceWorkbench,
     "tool-identifier": ToolIdentifier,
     "validation-issue": ValidationIssue,
 }

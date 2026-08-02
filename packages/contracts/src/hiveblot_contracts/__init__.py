@@ -36,6 +36,15 @@ from .artifacts import (
 )
 from .base import SCHEMA_VERSION, ContractModel, SchemaVersion
 from .evaluation import EvaluationCaseReference, ValidationIssue, ValidationSeverity
+from .evidence import (
+    AdjudicationEvidenceOverlay,
+    CaseSourceContext,
+    EvidenceOverlay,
+    PredictionEvidenceOverlay,
+    ReviewerEvidenceOverlay,
+    SourceEvidenceWorkbench,
+    WorkbenchEvidenceSource,
+)
 from .identifiers import ModelIdentifier, PipelineIdentifier, ProducerIdentifier, ToolIdentifier
 from .jobs import (
     CancelledJobResult,
@@ -61,6 +70,7 @@ from .review_queue import (
 __all__ = [
     "SCHEMA_VERSION",
     "AdjudicationRecord",
+    "AdjudicationEvidenceOverlay",
     "AnnotationDocumentRecord",
     "AnnotationErrorCode",
     "AnnotationRelationship",
@@ -75,11 +85,13 @@ __all__ = [
     "BoundingRegion",
     "CaseArtifactRole",
     "CaseSourceArtifact",
+    "CaseSourceContext",
     "CancelledJobResult",
     "ContainerSpecification",
     "ContractModel",
     "EvaluationCaseReference",
     "EvaluationCaseRecord",
+    "EvidenceOverlay",
     "ExpectedJobOutput",
     "EntityFieldTarget",
     "FailedJobResult",
@@ -96,6 +108,7 @@ __all__ = [
     "PipelineIdentifier",
     "ProducerIdentifier",
     "PredictionDocument",
+    "PredictionEvidenceOverlay",
     "PredictionEvidence",
     "ResourceRequirements",
     "RegressionStatus",
@@ -104,15 +117,18 @@ __all__ = [
     "ReviewQueuePage",
     "ReviewerAssignment",
     "ReviewerAssignmentStatus",
+    "ReviewerEvidenceOverlay",
     "ReviewStatus",
     "SchemaVersion",
     "SavedReviewView",
     "SourceDocumentKind",
     "SourceDocumentRecord",
+    "SourceEvidenceWorkbench",
     "SpatialAnnotation",
     "SpatialAnnotationType",
     "SucceededJobResult",
     "ToolIdentifier",
     "ValidationIssue",
     "ValidationSeverity",
+    "WorkbenchEvidenceSource",
 ]

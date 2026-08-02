@@ -1,5 +1,86 @@
 {
   "$defs": {
+    "BoundingRegion": {
+      "additionalProperties": false,
+      "description": "A rectangle expressed in immutable source-image pixel coordinates.",
+      "properties": {
+        "canvas_height": {
+          "exclusiveMinimum": 0,
+          "title": "Canvas Height",
+          "type": "integer"
+        },
+        "canvas_width": {
+          "exclusiveMinimum": 0,
+          "title": "Canvas Width",
+          "type": "integer"
+        },
+        "coordinate_space": {
+          "const": "source_pixels",
+          "default": "source_pixels",
+          "title": "Coordinate Space",
+          "type": "string"
+        },
+        "height": {
+          "exclusiveMinimum": 0,
+          "title": "Height",
+          "type": "number"
+        },
+        "page_number": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Page Number"
+        },
+        "region_id": {
+          "format": "uuid",
+          "title": "Region Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/SchemaVersion",
+          "default": "1.0"
+        },
+        "source_artifact_id": {
+          "format": "uuid",
+          "title": "Source Artifact Id",
+          "type": "string"
+        },
+        "width": {
+          "exclusiveMinimum": 0,
+          "title": "Width",
+          "type": "number"
+        },
+        "x": {
+          "minimum": 0,
+          "title": "X",
+          "type": "number"
+        },
+        "y": {
+          "minimum": 0,
+          "title": "Y",
+          "type": "number"
+        }
+      },
+      "required": [
+        "region_id",
+        "source_artifact_id",
+        "x",
+        "y",
+        "width",
+        "height",
+        "canvas_width",
+        "canvas_height"
+      ],
+      "title": "BoundingRegion",
+      "type": "object"
+    },
     "Identifier": {
       "maxLength": 200,
       "minLength": 1,
@@ -92,6 +173,17 @@
           ],
           "default": null,
           "title": "Field Path"
+        },
+        "region": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/BoundingRegion"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "region_id": {
           "anyOf": [

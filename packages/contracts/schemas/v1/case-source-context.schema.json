@@ -1,0 +1,105 @@
+{
+  "$defs": {
+    "CaseArtifactRole": {
+      "enum": [
+        "source_document",
+        "figure",
+        "raw_source",
+        "supplementary",
+        "context"
+      ],
+      "title": "CaseArtifactRole",
+      "type": "string"
+    },
+    "SchemaVersion": {
+      "const": "1.0",
+      "type": "string"
+    }
+  },
+  "$id": "urn:hiveblot:schema:v1:case-source-context",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "artifact_id": {
+      "format": "uuid",
+      "title": "Artifact Id",
+      "type": "string"
+    },
+    "artifact_role": {
+      "$ref": "#/$defs/CaseArtifactRole"
+    },
+    "caption": {
+      "anyOf": [
+        {
+          "maxLength": 50000,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Caption"
+    },
+    "case_id": {
+      "format": "uuid",
+      "title": "Case Id",
+      "type": "string"
+    },
+    "context_revision_id": {
+      "format": "uuid",
+      "title": "Context Revision Id",
+      "type": "string"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "nearby_text": {
+      "anyOf": [
+        {
+          "maxLength": 100000,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Nearby Text"
+    },
+    "prior_revision_id": {
+      "anyOf": [
+        {
+          "format": "uuid",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Prior Revision Id"
+    },
+    "revision_number": {
+      "minimum": 1,
+      "title": "Revision Number",
+      "type": "integer"
+    },
+    "schema_version": {
+      "$ref": "#/$defs/SchemaVersion",
+      "default": "1.0"
+    }
+  },
+  "required": [
+    "context_revision_id",
+    "case_id",
+    "artifact_id",
+    "artifact_role",
+    "revision_number",
+    "created_at"
+  ],
+  "title": "CaseSourceContext",
+  "type": "object"
+}

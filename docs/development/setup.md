@@ -54,10 +54,13 @@ HIVEBLOT_RUN_LIVE_EVALUATION=1 \
   uv run pytest tests/integration/test_evaluation_storage_live.py
 HIVEBLOT_RUN_LIVE_REVIEW_QUEUE=1 \
   uv run pytest tests/integration/test_review_queue_live.py
+HIVEBLOT_RUN_LIVE_WORKBENCH=1 \
+  uv run pytest tests/integration/test_workbench_live.py
 ```
 
 See `docs/development/artifact-storage.md` for the multipart API flow and
-`docs/development/review-queue.md` for browser verification.
+`docs/development/review-queue.md` and `docs/development/source-workbench.md` for browser
+verification.
 
 ## Baseline verification
 

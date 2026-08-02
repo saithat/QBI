@@ -2,7 +2,8 @@
 
 HiveBlot turns western blot evidence from scientific papers into structured, searchable,
 reviewable observations. Milestone A is implemented, and PRD-004 adds the first evaluation UI: a
-server-paginated review queue with shareable filters, saved views, and safe assignment. The useful local
+server-paginated review queue with shareable filters, saved views, and safe assignment. PRD-005 adds
+a source evidence workbench for immutable artifacts and distinct overlays. The useful local
 hackathon extraction path remains operational while new scientific state enters through strict,
 versioned contracts.
 
@@ -19,6 +20,9 @@ immutable artifact -> evaluation case -> immutable predictions + independent rev
     -> explicit adjudication references
 
 evaluation cases -> server-side review filters -> paginated browser -> optimistic assignment
+
+selected case -> artifact metadata + source context + immutable revision overlays
+    -> browser streams selected bytes from an expiring object-store URL
 ```
 
 Annotation editing, Kubernetes, crawling, densitometry, authentication, and distributed execution
@@ -28,7 +32,7 @@ remain out of scope. Legacy extraction adopts artifact IDs in PRD-011.
 
 ```text
 apps/api/                  FastAPI entry point and HTTP-only schemas
-apps/web/                  dependency-free review queue browser assets
+apps/web/                  dependency-free review queue and evidence workbench assets
 workers/extraction/        stable worker entry point around retained extraction code
 packages/contracts/        strict shared Pydantic v2 contracts and JSON Schemas
 packages/evaluation/       cases, predictions, reviews, assignments, and adjudication
@@ -116,6 +120,9 @@ model output remains enabled by default.
 - Annotation revision routes append snapshots and return `409` for stale expected-head UUIDs.
 - `GET /api/v1/review-queue` provides server-side filters and bounded pagination.
 - `/api/v1/review-views` persists owner-scoped, optimistic-versioned filter views.
+- `GET /api/v1/evaluation-cases/{id}/workbench` aggregates source metadata and immutable overlays.
+- Source-context routes append caption and nearby-text revisions to exact case/artifact/role
+  associations, returning `409` when an expected head is stale.
 
 Public JSON bodies now carry `schema_version: "1.0"` and reject unknown request fields. The
 model never generates executable SQL; domain criteria are mapped to parameterized queries.

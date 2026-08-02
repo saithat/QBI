@@ -41,6 +41,7 @@ async def test_annotation_api_appends_history_and_rejects_stale_edits() -> None:
             assert create_case.status_code == 201
             case_id = create_case.json()["case_id"]
 
+            prediction_region_id = uuid4()
             prediction = await client.post(
                 f"/api/v1/evaluation-cases/{case_id}/predictions",
                 json={
@@ -57,7 +58,28 @@ async def test_annotation_api_appends_history_and_rejects_stale_edits() -> None:
                     "raw_output_json": "raw malformed text remains available",
                     "normalized_output_json": '{"target":"p53"}',
                     "configuration_json": "{}",
-                    "evidence": [],
+                    "evidence": [
+                        {
+                            "schema_version": "1.0",
+                            "artifact_id": str(artifact_id),
+                            "field_path": "/targets/0/name",
+                            "region_id": str(prediction_region_id),
+                            "region": {
+                                "schema_version": "1.0",
+                                "region_id": str(prediction_region_id),
+                                "source_artifact_id": str(artifact_id),
+                                "coordinate_space": "source_pixels",
+                                "x": 10.0,
+                                "y": 20.0,
+                                "width": 30.0,
+                                "height": 12.0,
+                                "canvas_width": 200,
+                                "canvas_height": 100,
+                                "page_number": 4,
+                            },
+                            "description": "target row",
+                        }
+                    ],
                     "validation_issues": [],
                     "confidence": 0.8,
                     "trace_id": str(uuid4()),
@@ -67,6 +89,7 @@ async def test_annotation_api_appends_history_and_rejects_stale_edits() -> None:
             )
             assert prediction.status_code == 201
             assert prediction.json()["raw_output_json"].startswith("raw malformed")
+            assert prediction.json()["evidence"][0]["region"]["canvas_width"] == 200
 
             first_payload = _annotation_payload(artifact_id, reviewer_id, "p53")
             created = await client.post(

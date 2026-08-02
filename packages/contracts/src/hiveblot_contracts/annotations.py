@@ -68,12 +68,26 @@ class PredictionEvidence(ContractModel):
     artifact_id: UUID
     field_path: str | None = Field(default=None, min_length=1, max_length=1000)
     region_id: UUID | None = None
+    region: BoundingRegion | None = None
     description: str | None = Field(default=None, min_length=1, max_length=2000)
 
     @model_validator(mode="after")
     def evidence_must_locate_or_describe_source(self) -> Self:
-        if self.field_path is None and self.region_id is None and self.description is None:
+        if (
+            self.field_path is None
+            and self.region_id is None
+            and self.region is None
+            and self.description is None
+        ):
             raise ValueError("prediction evidence must include a field, region, or description")
+        if self.region is not None and self.region.source_artifact_id != self.artifact_id:
+            raise ValueError("prediction evidence region must use the evidence artifact")
+        if (
+            self.region is not None
+            and self.region_id is not None
+            and self.region.region_id != self.region_id
+        ):
+            raise ValueError("prediction evidence region IDs must agree")
         return self
 
 

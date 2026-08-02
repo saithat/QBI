@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Inspect source artifacts and scientific evidence overlays.">
+  <title>HiveBlot — Source evidence workbench</title>
+  <link rel="stylesheet" href="/review/assets/workbench.css">
+  <script defer src="/review/assets/workbench.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/review"><span class="brand-mark">HB</span><span>HiveBlot</span></a>
+    <div class="breadcrumb"><a href="/review">Review queue</a><span>/</span><strong>Source evidence</strong></div>
+    <code id="case-id">Loading…</code>
+  </header>
+
+  <main>
+    <aside class="source-panel" aria-labelledby="sources-heading">
+      <div class="panel-heading">
+        <p class="kicker">Case artifacts</p>
+        <h1 id="sources-heading">Sources</h1>
+      </div>
+      <div id="source-list" class="source-list" aria-busy="true"></div>
+      <section class="supplementary-section">
+        <h2>Supplementary files</h2>
+        <div id="supplementary-list" class="supplementary-list"></div>
+      </section>
+    </aside>
+
+    <section class="viewer-shell" aria-labelledby="viewer-heading">
+      <div class="viewer-toolbar">
+        <div>
+          <p class="kicker">Immutable source</p>
+          <h2 id="viewer-heading">Select a source</h2>
+        </div>
+        <div class="tool-groups">
+          <div class="tool-group" aria-label="Page controls">
+            <button id="previous-page" type="button" title="Previous page">←</button>
+            <span id="page-label">Page —</span>
+            <button id="next-page" type="button" title="Next page">→</button>
+          </div>
+          <div class="tool-group" aria-label="View controls">
+            <button id="zoom-out" type="button" title="Zoom out">−</button>
+            <button id="reset-view" type="button" title="Reset viewport"><span id="zoom-label">100%</span></button>
+            <button id="zoom-in" type="button" title="Zoom in">+</button>
+            <button id="rotate-left" type="button" title="Rotate counter-clockwise">↶</button>
+            <button id="rotate-right" type="button" title="Rotate clockwise">↷</button>
+            <button id="fullscreen" type="button" title="Fullscreen">⛶</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="overlay-toolbar" aria-label="Overlay visibility">
+        <span>Overlays</span>
+        <label class="prediction"><input type="checkbox" name="overlay" value="prediction" checked> Prediction</label>
+        <label class="reviewer"><input type="checkbox" name="overlay" value="reviewer" checked> Reviewer</label>
+        <label class="adjudication"><input type="checkbox" name="overlay" value="adjudication" checked> Adjudication</label>
+        <button id="clear-field" class="text-button" type="button" hidden>Clear field focus</button>
+      </div>
+
+      <div id="viewer" class="viewer" tabindex="0">
+        <div id="viewer-message" class="viewer-message">Choose a source artifact to begin.</div>
+        <div id="media-transform" class="media-transform" hidden>
+          <div id="visual" class="visual">
+            <img id="source-image" alt="Scientific source artifact" decoding="async">
+            <iframe id="source-pdf" title="Scientific source PDF" hidden></iframe>
+            <svg id="overlay-layer" aria-label="Evidence overlays"></svg>
+          </div>
+        </div>
+      </div>
+      <div class="viewer-footer">
+        <span>Drag to pan · scroll to zoom · double-click to reset</span>
+        <span id="load-status">No source loaded</span>
+      </div>
+    </section>
+
+    <aside class="details-panel" aria-labelledby="details-heading">
+      <div class="panel-heading">
+        <p class="kicker">Inspect</p>
+        <h2 id="details-heading">Evidence details</h2>
+      </div>
+
+      <div class="tabs" role="tablist">
+        <button class="tab active" data-tab="context" role="tab" aria-selected="true">Context</button>
+        <button class="tab" data-tab="fields" role="tab" aria-selected="false">Fields</button>
+        <button class="tab" data-tab="provenance" role="tab" aria-selected="false">Provenance</button>
+      </div>
+
+      <section id="tab-context" class="tab-panel active" role="tabpanel">
+        <article>
+          <h3>Figure caption</h3>
+          <p id="caption" class="prose muted">No caption recorded.</p>
+        </article>
+        <article>
+          <h3>Nearby text</h3>
+          <p id="nearby-text" class="prose muted">No nearby text recorded.</p>
+        </article>
+      </section>
+
+      <section id="tab-fields" class="tab-panel" role="tabpanel">
+        <p class="help">Choose a field to highlight every linked source region.</p>
+        <div id="field-list" class="field-list"></div>
+      </section>
+
+      <section id="tab-provenance" class="tab-panel" role="tabpanel">
+        <dl id="provenance" class="provenance"></dl>
+        <h3>Artifact relationships</h3>
+        <div id="relationship-list" class="relationship-list"></div>
+      </section>
+    </aside>
+  </main>
+
+  <template id="source-template">
+    <button class="source-card" type="button">
+      <span class="source-role"></span>
+      <strong class="source-name"></strong>
+      <span class="source-meta"></span>
+      <code class="source-hash"></code>
+    </button>
+  </template>
+</body>
+</html>

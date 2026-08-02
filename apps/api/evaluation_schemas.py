@@ -92,16 +92,51 @@ class PipelineInput(ContractModel):
     version: str = Field(min_length=1, max_length=200)
 
 
+class PredictionBoundingRegionInput(ContractModel):
+    region_id: JsonUUID
+    source_artifact_id: JsonUUID
+    coordinate_space: Literal["source_pixels"] = "source_pixels"
+    x: float = Field(ge=0)
+    y: float = Field(ge=0)
+    width: float = Field(gt=0)
+    height: float = Field(gt=0)
+    canvas_width: int = Field(gt=0)
+    canvas_height: int = Field(gt=0)
+    page_number: int | None = Field(default=None, ge=1)
+
+    @model_validator(mode="after")
+    def region_must_fit_source_canvas(self) -> Self:
+        if self.x + self.width > self.canvas_width:
+            raise ValueError("region exceeds source canvas width")
+        if self.y + self.height > self.canvas_height:
+            raise ValueError("region exceeds source canvas height")
+        return self
+
+
 class PredictionEvidenceInput(ContractModel):
     artifact_id: JsonUUID
     field_path: str | None = Field(default=None, min_length=1, max_length=1000)
     region_id: JsonUUID | None = None
+    region: PredictionBoundingRegionInput | None = None
     description: str | None = Field(default=None, min_length=1, max_length=2000)
 
     @model_validator(mode="after")
     def evidence_must_locate_or_describe_source(self) -> Self:
-        if self.field_path is None and self.region_id is None and self.description is None:
+        if (
+            self.field_path is None
+            and self.region_id is None
+            and self.region is None
+            and self.description is None
+        ):
             raise ValueError("prediction evidence must include a field, region, or description")
+        if self.region is not None and self.region.source_artifact_id != self.artifact_id:
+            raise ValueError("prediction evidence region must use the evidence artifact")
+        if (
+            self.region is not None
+            and self.region_id is not None
+            and self.region.region_id != self.region_id
+        ):
+            raise ValueError("prediction evidence region IDs must agree")
         return self
 
 
@@ -142,10 +177,24 @@ class PipelineResponse(ContractModel):
     version: str
 
 
+class BoundingRegionResponse(ContractModel):
+    region_id: UUID
+    source_artifact_id: UUID
+    coordinate_space: Literal["source_pixels"]
+    x: float
+    y: float
+    width: float
+    height: float
+    canvas_width: int
+    canvas_height: int
+    page_number: int | None
+
+
 class PredictionEvidenceResponse(ContractModel):
     artifact_id: UUID
     field_path: str | None
     region_id: UUID | None
+    region: BoundingRegionResponse | None
     description: str | None
 
 
@@ -312,19 +361,6 @@ class FieldAnnotationResponse(ContractModel):
     original_extracted_text: str | None
     evidence_region_ids: tuple[UUID, ...]
     notes: str | None
-
-
-class BoundingRegionResponse(ContractModel):
-    region_id: UUID
-    source_artifact_id: UUID
-    coordinate_space: Literal["source_pixels"]
-    x: float
-    y: float
-    width: float
-    height: float
-    canvas_width: int
-    canvas_height: int
-    page_number: int | None
 
 
 class SpatialAnnotationResponse(ContractModel):

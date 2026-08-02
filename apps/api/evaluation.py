@@ -68,6 +68,7 @@ from .evaluation_schemas import (
     EvaluationCaseResponse,
     FieldAnnotationInput,
     ModelProducerInput,
+    PredictionBoundingRegionInput,
     PredictionListResponse,
     PredictionResponse,
     RevisionListResponse,
@@ -179,6 +180,7 @@ def create_prediction(
                     artifact_id=item.artifact_id,
                     field_path=item.field_path,
                     region_id=item.region_id,
+                    region=_bounding_region(item.region) if item.region is not None else None,
                     description=item.description,
                 )
                 for item in request.evidence
@@ -506,7 +508,9 @@ def _spatial_annotation(value: SpatialAnnotationInput) -> SpatialAnnotation:
     )
 
 
-def _bounding_region(value: BoundingRegionInput) -> BoundingRegion:
+def _bounding_region(
+    value: BoundingRegionInput | PredictionBoundingRegionInput,
+) -> BoundingRegion:
     return BoundingRegion(
         region_id=value.region_id,
         source_artifact_id=value.source_artifact_id,
