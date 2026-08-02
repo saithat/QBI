@@ -5,7 +5,7 @@ run PostgreSQL and MinIO separately while pointing `VLLM_BASE_URL` at an OpenAI-
 vision endpoint:
 
 ```bash
-cp .env.example .env
+make local-env
 docker compose up --build -d postgres minio vllm
 uv run uvicorn apps.api.main:app --host 127.0.0.1 --port 8080
 ```

@@ -1,4 +1,6 @@
 from pathlib import Path
+from secrets import token_urlsafe
+from urllib.parse import urlsplit
 
 import pytest
 from pydantic import ValidationError
@@ -6,11 +8,21 @@ from pydantic import ValidationError
 from hiveblot.settings import RuntimeEnvironment, Settings
 
 
+def test_local_settings_do_not_embed_fixed_credentials() -> None:
+    settings = Settings(_env_file=None)
+
+    assert urlsplit(settings.database_url).password is None
+    assert settings.vllm_api_key.get_secret_value() == ""
+    assert settings.s3_access_key_id.get_secret_value() == ""
+    assert settings.s3_secret_access_key.get_secret_value() == ""
+
+
 def test_settings_parse_an_explicit_test_environment(monkeypatch, tmp_path) -> None:
+    model_api_key = token_urlsafe(18)
     monkeypatch.setenv("HIVEBLOT_ENV", "test")
-    monkeypatch.setenv("DATABASE_URL", "postgresql://test:test@localhost:5433/test")
+    monkeypatch.setenv("DATABASE_URL", "postgresql://localhost:5433/test")
     monkeypatch.setenv("VLLM_BASE_URL", "http://model.test/v1/")
-    monkeypatch.setenv("VLLM_API_KEY", "test-only")
+    monkeypatch.setenv("VLLM_API_KEY", model_api_key)
     monkeypatch.setenv("HIVEBLOT_DATA_DIR", str(tmp_path))
     monkeypatch.setenv("SOURCE_INGEST_ALLOWED_HOSTS", "repo.example, data.example")
 
@@ -20,7 +32,7 @@ def test_settings_parse_an_explicit_test_environment(monkeypatch, tmp_path) -> N
     assert settings.vllm_base_url == "http://model.test/v1"
     assert settings.data_dir == Path(tmp_path).resolve()
     assert settings.source_ingest_allowed_hosts == ("repo.example", "data.example")
-    assert "test-only" not in repr(settings)
+    assert model_api_key not in repr(settings)
 
 
 def test_deployed_settings_require_explicit_non_local_values(monkeypatch) -> None:
@@ -44,14 +56,14 @@ def test_deployed_settings_require_explicit_non_local_values(monkeypatch) -> Non
     with pytest.raises(ValidationError, match="placeholder"):
         Settings(
             environment=RuntimeEnvironment.DEPLOYED,
-            database_url="postgresql://service:secret@postgres.example/hiveblot",
+            database_url="postgresql://postgres.example/hiveblot",
             vllm_base_url="https://models.example/v1",
             vllm_model="deployed-model",
             vllm_model_revision="immutable-model-revision",
-            vllm_api_key="replace-me",
+            vllm_api_key="",
             s3_endpoint_url="https://objects.example",
             s3_bucket="hiveblot-production",
-            s3_access_key_id="service-account",
-            s3_secret_access_key="a-real-secret-value",
+            s3_access_key_id="",
+            s3_secret_access_key="",
             _env_file=None,
         )

@@ -36,7 +36,8 @@ HIVEBLOT_RUN_LIVE_GOLDEN=1 \
   uv run pytest tests/integration/test_golden_live.py
 ```
 
-The opt-in test requires the local PostgreSQL and MinIO values from `.env.example`. It uploads a
+The opt-in test requires PostgreSQL and MinIO values from the untracked file created by
+`make local-env`. It uploads a
 unique source artifact, creates and reviews a real evaluation case, checks paper/content leakage in
 PostgreSQL, freezes and reloads the snapshot, publishes JSONL and manifest bytes to MinIO, validates
 both against Pydantic, and downloads the manifest through an expiring signed URL.

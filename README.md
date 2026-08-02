@@ -102,7 +102,7 @@ Requirements:
 - About 17 GiB VRAM; defaults target a 24 GiB GPU
 
 ```bash
-cp .env.example .env
+make local-env
 # Set HF_CACHE_DIR in .env to the real host cache path.
 make up
 docker compose ps

@@ -1,8 +1,9 @@
 # Local artifact storage
 
 Docker Compose builds the security-fixed upstream MinIO tag from source and exposes its S3 API on
-`127.0.0.1:9000` and console on `127.0.0.1:9001`. Local credentials in `.env.example` are for the
-isolated development service only.
+`127.0.0.1:9000` and console on `127.0.0.1:9001`. Run `make local-env` once to create untracked,
+random credentials shared by MinIO and the local application. The tracked template contains no
+credential values.
 
 Start PostgreSQL and MinIO without the GPU model stack:
 

@@ -1,4 +1,5 @@
 from pathlib import Path
+from secrets import token_urlsafe
 
 import httpx
 import pytest
@@ -12,7 +13,7 @@ def settings() -> Settings:
         database_url="postgresql://unused",
         vllm_base_url="http://model.test/v1",
         vllm_model="local-model",
-        vllm_api_key="local",
+        vllm_api_key=token_urlsafe(18),
         vllm_timeout_seconds=10,
         vllm_max_tokens=100,
         vllm_image_max_side=1000,
@@ -38,11 +39,15 @@ def test_parse_filters_content_rejects_unexpected_fields() -> None:
 
 @pytest.mark.asyncio
 async def test_local_model_client_health_and_search() -> None:
+    configured = settings()
+
     def handler(request: httpx.Request) -> httpx.Response:
         if request.url.path == "/health":
             return httpx.Response(200)
         assert request.url.path == "/v1/chat/completions"
-        assert request.headers["authorization"] == "Bearer local"
+        assert request.headers["authorization"] == (
+            f"Bearer {configured.vllm_api_key.get_secret_value()}"
+        )
         payload = __import__("json").loads(request.content)
         assert payload["response_format"]["type"] == "json_schema"
         assert payload["chat_template_kwargs"] == {"enable_thinking": False}
@@ -59,7 +64,7 @@ async def test_local_model_client_health_and_search() -> None:
             },
         )
 
-    client = LocalModelClient(settings(), transport=httpx.MockTransport(handler))
+    client = LocalModelClient(configured, transport=httpx.MockTransport(handler))
 
     assert await client.health() is True
     assert (await client.parse_search("p53 in A549 with Nutlin-3")).model_dump() == {

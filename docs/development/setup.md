@@ -31,11 +31,12 @@ Do not edit schema snapshots by hand.
 
 ## Full local runtime
 
-Copy `.env.example` to `.env`, set the host Hugging Face cache path, and verify NVIDIA Docker
-support before starting Compose:
+Generate a private `.env`, set the host Hugging Face cache path in that ignored file, and verify
+NVIDIA Docker support before starting Compose. The generator creates independent random local
+credentials, writes the file with mode `0600`, and refuses to overwrite an existing file:
 
 ```bash
-cp .env.example .env
+make local-env
 docker compose config
 make up
 docker compose ps
@@ -73,6 +74,11 @@ See `docs/development/artifact-storage.md` for the multipart API flow and
 `docs/development/structured-annotation.md`, `docs/development/spatial-annotation.md`, and
 `docs/development/pipeline-registry.md`, `docs/development/evaluation-metrics.md`, and
 `docs/development/job-service.md` for browser and worker verification.
+
+The tracked `.env.example`, `.env.test.example`, and `.env.deployed.example` files intentionally
+contain no credential values. Do not copy production credentials into a tracked template. If a
+generated local credential has been used anywhere beyond the loopback-only development stack,
+rotate it rather than reusing it.
 
 ## Baseline verification
 

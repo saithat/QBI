@@ -1,4 +1,4 @@
-.PHONY: up down logs setup format lint typecheck schemas schema-check test check docker-test ingest
+.PHONY: up down logs setup local-env format lint typecheck schemas schema-check test check docker-test ingest
 
 up:
 	docker compose up --build -d
@@ -11,6 +11,9 @@ logs:
 
 setup:
 	uv sync --locked --all-extras
+
+local-env:
+	uv run python scripts/bootstrap_local_env.py
 
 format:
 	uv run ruff format .

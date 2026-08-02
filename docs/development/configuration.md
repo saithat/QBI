@@ -17,3 +17,8 @@ disabled until `SOURCE_INGEST_ALLOWED_HOSTS` contains an exact, comma-separated 
 `.env.deployed.example` is a shape-only template. Never fill it and commit it. Production values
 must come from the deployment's secret and configuration systems. No code should log
 `Settings.model_dump()` with unredacted secrets or pass secrets through job contracts.
+
+All tracked environment templates are credential-free. Run `make local-env` to generate a
+gitignored, mode-`0600` local file. `docker compose` requires those generated values and does not
+fall back to shared passwords or object-store keys. The generator is create-only and will not
+replace an existing `.env`.

@@ -36,7 +36,7 @@ class Settings(BaseSettings):
         validation_alias="HIVEBLOT_ENV",
     )
     database_url: str = Field(
-        default="postgresql://hiveblot:hiveblot@localhost:5432/hiveblot",
+        default="postgresql://localhost:5432/hiveblot",
         validation_alias="DATABASE_URL",
         min_length=1,
     )
@@ -56,7 +56,7 @@ class Settings(BaseSettings):
         min_length=1,
     )
     vllm_api_key: SecretStr = Field(
-        default=SecretStr("local"),
+        default=SecretStr(""),
         validation_alias="VLLM_API_KEY",
     )
     vllm_timeout_seconds: float = Field(
@@ -91,11 +91,11 @@ class Settings(BaseSettings):
         max_length=63,
     )
     s3_access_key_id: SecretStr = Field(
-        default=SecretStr("minioadmin"),
+        default=SecretStr(""),
         validation_alias="S3_ACCESS_KEY_ID",
     )
     s3_secret_access_key: SecretStr = Field(
-        default=SecretStr("minioadmin"),
+        default=SecretStr(""),
         validation_alias="S3_SECRET_ACCESS_KEY",
     )
     artifact_signed_url_seconds: int = Field(
@@ -215,8 +215,8 @@ class Settings(BaseSettings):
         key = self.vllm_api_key.get_secret_value().strip().casefold()
         if key in {"", "local", "replace-me", "changeme"}:
             raise ValueError("VLLM_API_KEY must not use a local or placeholder value when deployed")
-        if "hiveblot:hiveblot@" in self.database_url.casefold():
-            raise ValueError("DATABASE_URL must not use local default credentials when deployed")
+        if "localhost" in self.database_url.casefold() or "127.0.0.1" in self.database_url:
+            raise ValueError("DATABASE_URL must not point at localhost when deployed")
         if "localhost" in self.vllm_base_url or "127.0.0.1" in self.vllm_base_url:
             raise ValueError("VLLM_BASE_URL must not point at localhost when deployed")
         storage_key = self.s3_secret_access_key.get_secret_value().strip().casefold()
