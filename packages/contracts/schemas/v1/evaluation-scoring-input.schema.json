@@ -1,0 +1,1076 @@
+{
+  "$defs": {
+    "BoundingRegion": {
+      "additionalProperties": false,
+      "description": "A rectangle expressed in immutable source-image pixel coordinates.",
+      "properties": {
+        "canvas_height": {
+          "exclusiveMinimum": 0,
+          "title": "Canvas Height",
+          "type": "integer"
+        },
+        "canvas_width": {
+          "exclusiveMinimum": 0,
+          "title": "Canvas Width",
+          "type": "integer"
+        },
+        "coordinate_space": {
+          "const": "source_pixels",
+          "default": "source_pixels",
+          "title": "Coordinate Space",
+          "type": "string"
+        },
+        "height": {
+          "exclusiveMinimum": 0,
+          "title": "Height",
+          "type": "number"
+        },
+        "page_number": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Page Number"
+        },
+        "region_id": {
+          "format": "uuid",
+          "title": "Region Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/SchemaVersion",
+          "default": "1.0"
+        },
+        "source_artifact_id": {
+          "format": "uuid",
+          "title": "Source Artifact Id",
+          "type": "string"
+        },
+        "width": {
+          "exclusiveMinimum": 0,
+          "title": "Width",
+          "type": "number"
+        },
+        "x": {
+          "minimum": 0,
+          "title": "X",
+          "type": "number"
+        },
+        "y": {
+          "minimum": 0,
+          "title": "Y",
+          "type": "number"
+        }
+      },
+      "required": [
+        "region_id",
+        "source_artifact_id",
+        "x",
+        "y",
+        "width",
+        "height",
+        "canvas_width",
+        "canvas_height"
+      ],
+      "title": "BoundingRegion",
+      "type": "object"
+    },
+    "EvaluationCaseDimensions": {
+      "additionalProperties": false,
+      "properties": {
+        "assay_layout": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Identifier"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "image_quality": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Identifier"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "journal": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Identifier"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "repository": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Identifier"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "review_status": {
+          "$ref": "#/$defs/ReviewStatus"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/SchemaVersion",
+          "default": "1.0"
+        },
+        "source_type": {
+          "$ref": "#/$defs/Identifier"
+        }
+      },
+      "required": [
+        "source_type",
+        "review_status"
+      ],
+      "title": "EvaluationCaseDimensions",
+      "type": "object"
+    },
+    "EvaluationDatasetSnapshot": {
+      "additionalProperties": false,
+      "properties": {
+        "cases": {
+          "items": {
+            "$ref": "#/$defs/EvaluationReferenceCase"
+          },
+          "minItems": 1,
+          "title": "Cases",
+          "type": "array"
+        },
+        "content_sha256": {
+          "$ref": "#/$defs/Sha256Digest"
+        },
+        "dataset_name": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "dataset_version": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "frozen_at": {
+          "format": "date-time",
+          "title": "Frozen At",
+          "type": "string"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/SchemaVersion",
+          "default": "1.0"
+        },
+        "snapshot_id": {
+          "format": "uuid",
+          "title": "Snapshot Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "snapshot_id",
+        "dataset_name",
+        "dataset_version",
+        "content_sha256",
+        "frozen_at",
+        "cases"
+      ],
+      "title": "EvaluationDatasetSnapshot",
+      "type": "object"
+    },
+    "EvaluationGroupDimension": {
+      "enum": [
+        "source_type",
+        "journal",
+        "repository",
+        "image_quality",
+        "assay_layout",
+        "review_status",
+        "model_version",
+        "pipeline_version"
+      ],
+      "title": "EvaluationGroupDimension",
+      "type": "string"
+    },
+    "EvaluationMetricConfiguration": {
+      "additionalProperties": false,
+      "properties": {
+        "bounding_box_iou_threshold": {
+          "default": 0.5,
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Bounding Box Iou Threshold",
+          "type": "number"
+        },
+        "calibration_bins": {
+          "default": 10,
+          "maximum": 100,
+          "minimum": 2,
+          "title": "Calibration Bins",
+          "type": "integer"
+        },
+        "confidence_thresholds": {
+          "default": [
+            0.0,
+            0.25,
+            0.5,
+            0.75,
+            0.9
+          ],
+          "items": {
+            "type": "number"
+          },
+          "title": "Confidence Thresholds",
+          "type": "array"
+        },
+        "group_by": {
+          "default": [
+            "source_type",
+            "journal",
+            "repository",
+            "image_quality",
+            "assay_layout",
+            "review_status",
+            "model_version",
+            "pipeline_version"
+          ],
+          "items": {
+            "$ref": "#/$defs/EvaluationGroupDimension"
+          },
+          "title": "Group By",
+          "type": "array"
+        },
+        "normalized_string_casefold": {
+          "default": true,
+          "title": "Normalized String Casefold",
+          "type": "boolean"
+        },
+        "numerical_absolute_tolerance": {
+          "default": 0.01,
+          "minimum": 0,
+          "title": "Numerical Absolute Tolerance",
+          "type": "number"
+        },
+        "ranking_k": {
+          "default": 10,
+          "maximum": 1000,
+          "minimum": 1,
+          "title": "Ranking K",
+          "type": "integer"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/SchemaVersion",
+          "default": "1.0"
+        }
+      },
+      "title": "EvaluationMetricConfiguration",
+      "type": "object"
+    },
+    "EvaluationReferenceCase": {
+      "additionalProperties": false,
+      "properties": {
+        "case_id": {
+          "format": "uuid",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "dimensions": {
+          "$ref": "#/$defs/EvaluationCaseDimensions"
+        },
+        "reference": {
+          "$ref": "#/$defs/ReferenceObservationDocument"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/SchemaVersion",
+          "default": "1.0"
+        }
+      },
+      "required": [
+        "case_id",
+        "dimensions",
+        "reference"
+      ],
+      "title": "EvaluationReferenceCase",
+      "type": "object"
+    },
+    "Identifier": {
+      "maxLength": 200,
+      "minLength": 1,
+      "type": "string"
+    },
+    "ModelIdentifier": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "model",
+          "default": "model",
+          "title": "Kind",
+          "type": "string"
+        },
+        "name": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "provider": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/SchemaVersion",
+          "default": "1.0"
+        },
+        "version": {
+          "$ref": "#/$defs/Identifier"
+        }
+      },
+      "required": [
+        "provider",
+        "name",
+        "version"
+      ],
+      "title": "ModelIdentifier",
+      "type": "object"
+    },
+    "PipelineEvaluationCase": {
+      "additionalProperties": false,
+      "properties": {
+        "case_id": {
+          "format": "uuid",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "prediction": {
+          "$ref": "#/$defs/PredictedObservationDocument"
+        },
+        "publication_ids": {
+          "items": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Publication Ids",
+          "type": "array"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/SchemaVersion",
+          "default": "1.0"
+        }
+      },
+      "required": [
+        "case_id",
+        "publication_ids",
+        "prediction"
+      ],
+      "title": "PipelineEvaluationCase",
+      "type": "object"
+    },
+    "PipelineEvaluationSubmission": {
+      "additionalProperties": false,
+      "properties": {
+        "cases": {
+          "items": {
+            "$ref": "#/$defs/PipelineEvaluationCase"
+          },
+          "minItems": 1,
+          "title": "Cases",
+          "type": "array"
+        },
+        "model_versions": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/ModelIdentifier"
+          },
+          "title": "Model Versions",
+          "type": "array"
+        },
+        "pipeline": {
+          "$ref": "#/$defs/PipelineIdentifier"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/SchemaVersion",
+          "default": "1.0"
+        }
+      },
+      "required": [
+        "pipeline",
+        "cases"
+      ],
+      "title": "PipelineEvaluationSubmission",
+      "type": "object"
+    },
+    "PipelineIdentifier": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/SchemaVersion",
+          "default": "1.0"
+        },
+        "version": {
+          "$ref": "#/$defs/Identifier"
+        }
+      },
+      "required": [
+        "name",
+        "version"
+      ],
+      "title": "PipelineIdentifier",
+      "type": "object"
+    },
+    "PredictedFieldObservation": {
+      "additionalProperties": false,
+      "properties": {
+        "confidence": {
+          "anyOf": [
+            {
+              "maximum": 1,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Confidence"
+        },
+        "evidence_artifact_ids": {
+          "default": [],
+          "items": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "title": "Evidence Artifact Ids",
+          "type": "array"
+        },
+        "field_path": {
+          "maxLength": 1000,
+          "pattern": "^(?:/(?:[^/~]|~[01])+)*$",
+          "title": "Field Path",
+          "type": "string"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/SchemaVersion",
+          "default": "1.0"
+        },
+        "value_json": {
+          "minLength": 1,
+          "title": "Value Json",
+          "type": "string"
+        }
+      },
+      "required": [
+        "field_path",
+        "value_json"
+      ],
+      "title": "PredictedFieldObservation",
+      "type": "object"
+    },
+    "PredictedNumericalObservation": {
+      "additionalProperties": false,
+      "properties": {
+        "confidence": {
+          "anyOf": [
+            {
+              "maximum": 1,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Confidence"
+        },
+        "evidence_artifact_ids": {
+          "default": [],
+          "items": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "title": "Evidence Artifact Ids",
+          "type": "array"
+        },
+        "field_path": {
+          "maxLength": 1000,
+          "pattern": "^(?:/(?:[^/~]|~[01])+)*$",
+          "title": "Field Path",
+          "type": "string"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/SchemaVersion",
+          "default": "1.0"
+        },
+        "unit": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Identifier"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "value": {
+          "title": "Value",
+          "type": "number"
+        }
+      },
+      "required": [
+        "field_path",
+        "value"
+      ],
+      "title": "PredictedNumericalObservation",
+      "type": "object"
+    },
+    "PredictedObservationDocument": {
+      "additionalProperties": false,
+      "properties": {
+        "fields": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/PredictedFieldObservation"
+          },
+          "title": "Fields",
+          "type": "array"
+        },
+        "numerical_values": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/PredictedNumericalObservation"
+          },
+          "title": "Numerical Values",
+          "type": "array"
+        },
+        "ranked_results": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/PredictedRankingResult"
+          },
+          "title": "Ranked Results",
+          "type": "array"
+        },
+        "regions": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/PredictedRegionObservation"
+          },
+          "title": "Regions",
+          "type": "array"
+        },
+        "relationships": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/PredictedRelationshipObservation"
+          },
+          "title": "Relationships",
+          "type": "array"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/SchemaVersion",
+          "default": "1.0"
+        }
+      },
+      "title": "PredictedObservationDocument",
+      "type": "object"
+    },
+    "PredictedRankingResult": {
+      "additionalProperties": false,
+      "properties": {
+        "confidence": {
+          "anyOf": [
+            {
+              "maximum": 1,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Confidence"
+        },
+        "item_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "query_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "rank": {
+          "minimum": 1,
+          "title": "Rank",
+          "type": "integer"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/SchemaVersion",
+          "default": "1.0"
+        },
+        "score": {
+          "title": "Score",
+          "type": "number"
+        }
+      },
+      "required": [
+        "query_id",
+        "item_id",
+        "rank",
+        "score"
+      ],
+      "title": "PredictedRankingResult",
+      "type": "object"
+    },
+    "PredictedRegionObservation": {
+      "additionalProperties": false,
+      "properties": {
+        "annotation_type": {
+          "$ref": "#/$defs/SpatialAnnotationType"
+        },
+        "confidence": {
+          "anyOf": [
+            {
+              "maximum": 1,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Confidence"
+        },
+        "evidence_artifact_ids": {
+          "default": [],
+          "items": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "title": "Evidence Artifact Ids",
+          "type": "array"
+        },
+        "region": {
+          "$ref": "#/$defs/BoundingRegion"
+        },
+        "region_key": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/SchemaVersion",
+          "default": "1.0"
+        }
+      },
+      "required": [
+        "region_key",
+        "annotation_type",
+        "region"
+      ],
+      "title": "PredictedRegionObservation",
+      "type": "object"
+    },
+    "PredictedRelationshipObservation": {
+      "additionalProperties": false,
+      "properties": {
+        "confidence": {
+          "anyOf": [
+            {
+              "maximum": 1,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Confidence"
+        },
+        "evidence_artifact_ids": {
+          "default": [],
+          "items": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "title": "Evidence Artifact Ids",
+          "type": "array"
+        },
+        "object_key": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "relation_type": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/SchemaVersion",
+          "default": "1.0"
+        },
+        "subject_key": {
+          "$ref": "#/$defs/Identifier"
+        }
+      },
+      "required": [
+        "subject_key",
+        "relation_type",
+        "object_key"
+      ],
+      "title": "PredictedRelationshipObservation",
+      "type": "object"
+    },
+    "RankingJudgment": {
+      "additionalProperties": false,
+      "properties": {
+        "item_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "query_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "relevance": {
+          "maximum": 4,
+          "minimum": 0,
+          "title": "Relevance",
+          "type": "integer"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/SchemaVersion",
+          "default": "1.0"
+        }
+      },
+      "required": [
+        "query_id",
+        "item_id",
+        "relevance"
+      ],
+      "title": "RankingJudgment",
+      "type": "object"
+    },
+    "ReferenceFieldObservation": {
+      "additionalProperties": false,
+      "properties": {
+        "evidence_artifact_ids": {
+          "default": [],
+          "items": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "title": "Evidence Artifact Ids",
+          "type": "array"
+        },
+        "field_path": {
+          "maxLength": 1000,
+          "pattern": "^(?:/(?:[^/~]|~[01])+)*$",
+          "title": "Field Path",
+          "type": "string"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/SchemaVersion",
+          "default": "1.0"
+        },
+        "value_json": {
+          "minLength": 1,
+          "title": "Value Json",
+          "type": "string"
+        }
+      },
+      "required": [
+        "field_path",
+        "value_json"
+      ],
+      "title": "ReferenceFieldObservation",
+      "type": "object"
+    },
+    "ReferenceNumericalObservation": {
+      "additionalProperties": false,
+      "properties": {
+        "evidence_artifact_ids": {
+          "default": [],
+          "items": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "title": "Evidence Artifact Ids",
+          "type": "array"
+        },
+        "field_path": {
+          "maxLength": 1000,
+          "pattern": "^(?:/(?:[^/~]|~[01])+)*$",
+          "title": "Field Path",
+          "type": "string"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/SchemaVersion",
+          "default": "1.0"
+        },
+        "unit": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Identifier"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "value": {
+          "title": "Value",
+          "type": "number"
+        }
+      },
+      "required": [
+        "field_path",
+        "value"
+      ],
+      "title": "ReferenceNumericalObservation",
+      "type": "object"
+    },
+    "ReferenceObservationDocument": {
+      "additionalProperties": false,
+      "properties": {
+        "fields": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/ReferenceFieldObservation"
+          },
+          "title": "Fields",
+          "type": "array"
+        },
+        "numerical_values": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/ReferenceNumericalObservation"
+          },
+          "title": "Numerical Values",
+          "type": "array"
+        },
+        "ranking_judgments": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/RankingJudgment"
+          },
+          "title": "Ranking Judgments",
+          "type": "array"
+        },
+        "regions": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/ReferenceRegionObservation"
+          },
+          "title": "Regions",
+          "type": "array"
+        },
+        "relationships": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/ReferenceRelationshipObservation"
+          },
+          "title": "Relationships",
+          "type": "array"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/SchemaVersion",
+          "default": "1.0"
+        }
+      },
+      "title": "ReferenceObservationDocument",
+      "type": "object"
+    },
+    "ReferenceRegionObservation": {
+      "additionalProperties": false,
+      "properties": {
+        "annotation_type": {
+          "$ref": "#/$defs/SpatialAnnotationType"
+        },
+        "evidence_artifact_ids": {
+          "default": [],
+          "items": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "title": "Evidence Artifact Ids",
+          "type": "array"
+        },
+        "region": {
+          "$ref": "#/$defs/BoundingRegion"
+        },
+        "region_key": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/SchemaVersion",
+          "default": "1.0"
+        }
+      },
+      "required": [
+        "region_key",
+        "annotation_type",
+        "region"
+      ],
+      "title": "ReferenceRegionObservation",
+      "type": "object"
+    },
+    "ReferenceRelationshipObservation": {
+      "additionalProperties": false,
+      "properties": {
+        "evidence_artifact_ids": {
+          "default": [],
+          "items": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "title": "Evidence Artifact Ids",
+          "type": "array"
+        },
+        "object_key": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "relation_type": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/SchemaVersion",
+          "default": "1.0"
+        },
+        "subject_key": {
+          "$ref": "#/$defs/Identifier"
+        }
+      },
+      "required": [
+        "subject_key",
+        "relation_type",
+        "object_key"
+      ],
+      "title": "ReferenceRelationshipObservation",
+      "type": "object"
+    },
+    "ReviewStatus": {
+      "enum": [
+        "unreviewed",
+        "in_review",
+        "reviewed",
+        "needs_adjudication",
+        "adjudicated"
+      ],
+      "title": "ReviewStatus",
+      "type": "string"
+    },
+    "SchemaVersion": {
+      "const": "1.0",
+      "type": "string"
+    },
+    "Sha256Digest": {
+      "pattern": "^[a-f0-9]{64}$",
+      "type": "string"
+    },
+    "SpatialAnnotationType": {
+      "enum": [
+        "figure",
+        "panel",
+        "blot",
+        "lane",
+        "protein_row",
+        "band",
+        "label",
+        "quantification_plot"
+      ],
+      "title": "SpatialAnnotationType",
+      "type": "string"
+    },
+    "ToolIdentifier": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "tool",
+          "default": "tool",
+          "title": "Kind",
+          "type": "string"
+        },
+        "name": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/SchemaVersion",
+          "default": "1.0"
+        },
+        "version": {
+          "$ref": "#/$defs/Identifier"
+        }
+      },
+      "required": [
+        "name",
+        "version"
+      ],
+      "title": "ToolIdentifier",
+      "type": "object"
+    }
+  },
+  "$id": "urn:hiveblot:schema:v1:evaluation-scoring-input",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "configuration": {
+      "$ref": "#/$defs/EvaluationMetricConfiguration",
+      "default": {
+        "bounding_box_iou_threshold": 0.5,
+        "calibration_bins": 10,
+        "confidence_thresholds": [
+          0.0,
+          0.25,
+          0.5,
+          0.75,
+          0.9
+        ],
+        "group_by": [
+          "source_type",
+          "journal",
+          "repository",
+          "image_quality",
+          "assay_layout",
+          "review_status",
+          "model_version",
+          "pipeline_version"
+        ],
+        "normalized_string_casefold": true,
+        "numerical_absolute_tolerance": 0.01,
+        "ranking_k": 10,
+        "schema_version": "1.0"
+      }
+    },
+    "dataset": {
+      "$ref": "#/$defs/EvaluationDatasetSnapshot"
+    },
+    "schema_version": {
+      "$ref": "#/$defs/SchemaVersion",
+      "default": "1.0"
+    },
+    "scorer": {
+      "$ref": "#/$defs/ToolIdentifier"
+    },
+    "submission": {
+      "$ref": "#/$defs/PipelineEvaluationSubmission"
+    }
+  },
+  "required": [
+    "dataset",
+    "submission",
+    "scorer"
+  ],
+  "title": "EvaluationScoringInput",
+  "type": "object"
+}

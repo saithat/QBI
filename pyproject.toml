@@ -34,6 +34,7 @@ dev = [
 [project.scripts]
 hiveblot-ingest = "workers.extraction.entrypoint:main"
 hiveblot-schemas = "hiveblot_contracts.schema_cli:main"
+hiveblot-evaluate = "hiveblot_evaluation.metrics_cli:main"
 
 [tool.hatch.build.targets.wheel]
 packages = [

@@ -31,6 +31,9 @@ prediction/source regions -> source-pixel graph editor -> validated spatial rela
 
 pipeline DAG -> parent-linked component invocations -> strict output validation
     -> immutable failure/replay history -> explicit producer-linked publication
+
+frozen references + versioned pipeline submission -> deterministic stage/end-to-end scoring
+    -> calibration + grouped slices -> same-snapshot regression comparison
 ```
 
 Kubernetes, crawling, densitometry, authentication, and distributed execution remain out of scope.
@@ -90,6 +93,8 @@ curl http://localhost:8080/health
 Open <http://localhost:8080> for the retained evidence index or <http://localhost:8080/review> for
 the evaluation review queue after the services become healthy. Cases link to `/workbench/{id}` for
 source inspection, `/annotate/{id}` for structured review, and `/spatial/{id}` for geometry review.
+Open <http://localhost:8080/metrics> to inspect versioned metric runs, confidence calibration,
+grouped performance, and pipeline regressions.
 
 To run only durable storage dependencies without a GPU:
 
@@ -146,6 +151,9 @@ model output remains enabled by default.
   history per evaluation case.
 - Component result routes preserve raw and normalized output separately; selective replay appends a
   new attempt, and publication validates every final value against its producing invocation.
+- Evaluation metric routes score frozen reference/submission pairs, filter immutable run history,
+  expose case/category calibration detail, and compare two pipeline versions on the same snapshot.
+- `hiveblot-evaluate` reproduces a canonical metric-run document from a strict scoring-input file.
 
 Public JSON bodies now carry `schema_version: "1.0"` and reject unknown request fields. The
 model never generates executable SQL; domain criteria are mapped to parameterized queries.
@@ -163,4 +171,5 @@ See [the repository audit](docs/architecture/repository-audit.md),
 [the structured annotation ADR](docs/adr/0006-structured-annotation-revisions.md), and
 [the spatial review ADR](docs/adr/0007-source-pixel-spatial-review.md), and
 [the pipeline provenance ADR](docs/adr/0008-immutable-pipeline-runs-and-replay.md), and
+[the evaluation metrics ADR](docs/adr/0009-versioned-evaluation-metrics.md), and
 [development setup](docs/development/setup.md) for details.

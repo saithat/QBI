@@ -20,6 +20,7 @@ from hiveblot.settings import get_settings
 
 from .artifacts import router as artifact_router
 from .evaluation import router as evaluation_router
+from .metrics import router as metrics_router
 from .pipeline import router as pipeline_router
 from .review_queue import router as review_queue_router
 from .schemas import (
@@ -47,6 +48,7 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
 app = FastAPI(title="HiveBlot", version="0.1.0", lifespan=lifespan)
 app.include_router(artifact_router)
 app.include_router(evaluation_router)
+app.include_router(metrics_router)
 app.include_router(pipeline_router)
 app.include_router(review_queue_router)
 app.include_router(spatial_editor_router)
@@ -83,6 +85,11 @@ def structured_annotation_editor(case_id: str) -> FileResponse:
 def spatial_annotation_editor(case_id: str) -> FileResponse:
     del case_id
     return FileResponse(REVIEW_WEB / "spatial.html")
+
+
+@app.get("/metrics", include_in_schema=False)
+def evaluation_metrics_dashboard() -> FileResponse:
+    return FileResponse(REVIEW_WEB / "metrics.html")
 
 
 @app.get("/health", response_model=HealthResponse)

@@ -22,6 +22,13 @@ from .evaluation import EvaluationCaseReference, ValidationIssue
 from .evidence import CaseSourceContext, EvidenceOverlay, SourceEvidenceWorkbench
 from .identifiers import ModelIdentifier, PipelineIdentifier, ToolIdentifier
 from .jobs import JobResult, JobSpecification
+from .metrics import (
+    CalibrationSlice,
+    EvaluationDatasetSnapshot,
+    EvaluationMetricRunRecord,
+    EvaluationScoringInput,
+    PipelineComparisonRecord,
+)
 from .pipeline_runs import (
     ComponentInvocationRecord,
     ComponentResult,
@@ -54,17 +61,22 @@ CONTRACT_REGISTRY: Mapping[str, Any] = {
     "artifact-record": ArtifactRecord,
     "artifact-reference": ArtifactReference,
     "bounding-region": BoundingRegion,
+    "calibration-slice": CalibrationSlice,
     "canonical-entity-reference": CanonicalEntityReference,
     "case-source-context": CaseSourceContext,
     "component-invocation-record": ComponentInvocationRecord,
     "component-result": ComponentResult,
     "evaluation-case-reference": EvaluationCaseReference,
     "evaluation-case-record": EvaluationCaseRecord,
+    "evaluation-dataset-snapshot": EvaluationDatasetSnapshot,
+    "evaluation-metric-run-record": EvaluationMetricRunRecord,
+    "evaluation-scoring-input": EvaluationScoringInput,
     "evidence-overlay": EvidenceOverlay,
     "job-result": JobResult,
     "job-specification": JobSpecification,
     "model-identifier": ModelIdentifier,
     "pipeline-identifier": PipelineIdentifier,
+    "pipeline-comparison-record": PipelineComparisonRecord,
     "pipeline-definition-record": PipelineDefinitionRecord,
     "pipeline-publication-record": PipelinePublicationRecord,
     "pipeline-run-detail": PipelineRunDetail,

@@ -7,6 +7,14 @@ from .errors import (
     EvaluationNotFound,
     InvalidEvaluationState,
 )
+from .metrics import (
+    EvaluationMetricsService,
+    compare_metric_runs,
+    evaluation_scoring_input_sha256,
+    score_evaluation,
+)
+from .metrics_postgres import PostgresEvaluationMetricRunRepository
+from .metrics_repository import EvaluationMetricRunRepository
 from .pipeline import (
     OutputSchemaRegistry,
     PipelineArtifactLookup,
@@ -29,6 +37,8 @@ __all__ = [
     "CanonicalEntityCatalog",
     "DuplicateEvaluationRecord",
     "EvaluationError",
+    "EvaluationMetricRunRepository",
+    "EvaluationMetricsService",
     "EvaluationNotFound",
     "EvaluationRepository",
     "EvaluationService",
@@ -39,6 +49,7 @@ __all__ = [
     "PipelineRegistryService",
     "PipelineRunRepository",
     "PostgresEvaluationRepository",
+    "PostgresEvaluationMetricRunRepository",
     "PostgresPipelineRunRepository",
     "PostgresReviewQueueRepository",
     "PostgresSourceContextRepository",
@@ -48,4 +59,7 @@ __all__ = [
     "SpatialAnnotationService",
     "StructuredAnnotationService",
     "ArtifactLookup",
+    "compare_metric_runs",
+    "evaluation_scoring_input_sha256",
+    "score_evaluation",
 ]

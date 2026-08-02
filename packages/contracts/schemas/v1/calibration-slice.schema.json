@@ -1,0 +1,196 @@
+{
+  "$defs": {
+    "CalibrationBucket": {
+      "additionalProperties": false,
+      "properties": {
+        "accuracy": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Accuracy",
+          "type": "number"
+        },
+        "average_confidence": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Average Confidence",
+          "type": "number"
+        },
+        "count": {
+          "minimum": 0,
+          "title": "Count",
+          "type": "integer"
+        },
+        "lower_bound": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Lower Bound",
+          "type": "number"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/SchemaVersion",
+          "default": "1.0"
+        },
+        "upper_bound": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Upper Bound",
+          "type": "number"
+        }
+      },
+      "required": [
+        "lower_bound",
+        "upper_bound",
+        "count",
+        "average_confidence",
+        "accuracy"
+      ],
+      "title": "CalibrationBucket",
+      "type": "object"
+    },
+    "CalibrationCategory": {
+      "enum": [
+        "field",
+        "geometry",
+        "relationship",
+        "numerical",
+        "ranking"
+      ],
+      "title": "CalibrationCategory",
+      "type": "string"
+    },
+    "CalibrationSummary": {
+      "additionalProperties": false,
+      "properties": {
+        "brier_score": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Brier Score",
+          "type": "number"
+        },
+        "buckets": {
+          "items": {
+            "$ref": "#/$defs/CalibrationBucket"
+          },
+          "title": "Buckets",
+          "type": "array"
+        },
+        "coverage_curve": {
+          "items": {
+            "$ref": "#/$defs/CoveragePoint"
+          },
+          "title": "Coverage Curve",
+          "type": "array"
+        },
+        "expected_calibration_error": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Expected Calibration Error",
+          "type": "number"
+        },
+        "observations": {
+          "minimum": 0,
+          "title": "Observations",
+          "type": "integer"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/SchemaVersion",
+          "default": "1.0"
+        }
+      },
+      "required": [
+        "observations",
+        "brier_score",
+        "expected_calibration_error",
+        "buckets",
+        "coverage_curve"
+      ],
+      "title": "CalibrationSummary",
+      "type": "object"
+    },
+    "CoveragePoint": {
+      "additionalProperties": false,
+      "properties": {
+        "coverage": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Coverage",
+          "type": "number"
+        },
+        "precision": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Precision",
+          "type": "number"
+        },
+        "retained": {
+          "minimum": 0,
+          "title": "Retained",
+          "type": "integer"
+        },
+        "risk": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Risk",
+          "type": "number"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/SchemaVersion",
+          "default": "1.0"
+        },
+        "threshold": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Threshold",
+          "type": "number"
+        }
+      },
+      "required": [
+        "threshold",
+        "retained",
+        "coverage",
+        "precision",
+        "risk"
+      ],
+      "title": "CoveragePoint",
+      "type": "object"
+    },
+    "SchemaVersion": {
+      "const": "1.0",
+      "type": "string"
+    }
+  },
+  "$id": "urn:hiveblot:schema:v1:calibration-slice",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "calibration": {
+      "$ref": "#/$defs/CalibrationSummary"
+    },
+    "category": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/CalibrationCategory"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "metric_run_id": {
+      "format": "uuid",
+      "title": "Metric Run Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "$ref": "#/$defs/SchemaVersion",
+      "default": "1.0"
+    }
+  },
+  "required": [
+    "metric_run_id",
+    "category",
+    "calibration"
+  ],
+  "title": "CalibrationSlice",
+  "type": "object"
+}

@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Compare HiveBlot pipeline metrics, calibration, and regressions.">
+  <title>HiveBlot — Evaluation metrics</title>
+  <link rel="stylesheet" href="/review/assets/metrics.css">
+  <script defer src="/review/assets/metrics.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/review"><span class="brand-mark">HB</span><span>HiveBlot</span></a>
+    <nav><a href="/review">Review queue</a><span>/</span><strong>Evaluation metrics</strong></nav>
+    <div class="scope"><span>Frozen datasets</span><strong>Read-only scoring</strong></div>
+  </header>
+
+  <main>
+    <aside class="run-panel" aria-labelledby="runs-heading">
+      <div class="panel-heading">
+        <p class="kicker">Versioned history</p>
+        <h1 id="runs-heading">Metric runs</h1>
+      </div>
+      <form id="filters" class="filters">
+        <label>Dataset <input name="dataset_name" placeholder="All datasets"></label>
+        <label>Pipeline <input name="pipeline_name" placeholder="All pipelines"></label>
+        <button type="submit">Apply filters</button>
+      </form>
+      <div id="run-list" class="run-list" aria-busy="true">Loading metric history…</div>
+    </aside>
+
+    <section class="dashboard">
+      <header class="dashboard-heading">
+        <div>
+          <p class="kicker">Frozen-case evaluation</p>
+          <h2>Pipeline comparison</h2>
+          <p id="dataset-label" class="muted">Select a metric run to inspect.</p>
+        </div>
+        <div class="comparison-selectors">
+          <label>Baseline <select id="baseline-select"><option value="">Select run</option></select></label>
+          <label>Candidate <select id="candidate-select"><option value="">Select run</option></select></label>
+          <button id="compare-button" type="button" disabled>Compare</button>
+        </div>
+      </header>
+
+      <div id="notice" class="notice" role="status">Evaluation runs are immutable and tied to a frozen dataset hash.</div>
+
+      <section aria-labelledby="summary-heading">
+        <div class="section-heading">
+          <div><p class="kicker">Candidate summary</p><h3 id="summary-heading">Stage and end-to-end scores</h3></div>
+          <span id="candidate-label" class="pill">No candidate selected</span>
+        </div>
+        <div id="metric-grid" class="metric-grid">
+          <article class="metric-card empty">Choose a candidate run to load scores.</article>
+        </div>
+      </section>
+
+      <section class="analysis-grid">
+        <article class="analysis-card" aria-labelledby="calibration-heading">
+          <div class="section-heading compact">
+            <div><p class="kicker">Confidence quality</p><h3 id="calibration-heading">Reliability</h3></div>
+            <select id="calibration-category" aria-label="Calibration category">
+              <option value="">All observations</option>
+              <option value="field">Fields</option>
+              <option value="geometry">Geometry</option>
+              <option value="relationship">Relationships</option>
+              <option value="numerical">Numerical</option>
+              <option value="ranking">Ranking</option>
+            </select>
+          </div>
+          <div class="calibration-stats">
+            <div><span>Brier score</span><strong id="brier-score">—</strong></div>
+            <div><span>Expected calibration error</span><strong id="ece-score">—</strong></div>
+            <div><span>Observations</span><strong id="observation-count">—</strong></div>
+          </div>
+          <svg id="reliability-chart" viewBox="0 0 520 270" role="img" aria-label="Reliability diagram"></svg>
+        </article>
+
+        <article class="analysis-card" aria-labelledby="coverage-heading">
+          <div class="section-heading compact">
+            <div><p class="kicker">Abstention analysis</p><h3 id="coverage-heading">Precision vs coverage</h3></div>
+          </div>
+          <div class="table-shell">
+            <table>
+              <thead><tr><th>Threshold</th><th>Retained</th><th>Coverage</th><th>Precision</th><th>Risk</th></tr></thead>
+              <tbody id="coverage-body"><tr><td colspan="5" class="muted">No calibration selected.</td></tr></tbody>
+            </table>
+          </div>
+        </article>
+      </section>
+
+      <section class="comparison-section" aria-labelledby="comparison-heading">
+        <div class="section-heading">
+          <div><p class="kicker">Case-level inspection</p><h3 id="comparison-heading">Regressions and improvements</h3></div>
+          <strong id="overall-delta" class="delta neutral">—</strong>
+        </div>
+        <div class="comparison-columns">
+          <article><h4>Regressions <span id="regression-count">0</span></h4><div id="regressions" class="case-links"><p class="muted">Run a comparison to inspect regressions.</p></div></article>
+          <article><h4>Improvements <span id="improvement-count">0</span></h4><div id="improvements" class="case-links"><p class="muted">Run a comparison to inspect improvements.</p></div></article>
+        </div>
+      </section>
+
+      <section aria-labelledby="groups-heading">
+        <div class="section-heading"><div><p class="kicker">Slices</p><h3 id="groups-heading">Performance by category</h3></div></div>
+        <div id="group-grid" class="group-grid"><p class="muted">Select a candidate to inspect grouped metrics.</p></div>
+      </section>
+    </section>
+  </main>
+</body>
+</html>
