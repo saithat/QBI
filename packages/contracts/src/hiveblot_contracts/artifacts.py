@@ -20,6 +20,59 @@ class ArtifactReference(ContractModel):
     byte_size: int = Field(ge=0)
 
 
+class ArtifactVisibility(StrEnum):
+    """Visibility attached to artifact metadata and access grants."""
+
+    PUBLIC = "public"
+    ORGANIZATION_PRIVATE = "organization_private"
+
+
+class ArtifactAcquisitionMethod(StrEnum):
+    """How immutable bytes entered HiveBlot."""
+
+    USER_UPLOAD = "user_upload"
+    SOURCE_ADAPTER = "source_adapter"
+
+
+class ArtifactRelationshipKind(StrEnum):
+    """Directed provenance relationship between two artifacts."""
+
+    PARENT = "parent"
+    RELATED = "related"
+    DERIVED_FROM = "derived_from"
+    SUPPLEMENT_TO = "supplement_to"
+
+
+class ArtifactRelationship(ContractModel):
+    """A stable link from an artifact to another immutable artifact."""
+
+    related_artifact_id: UUID
+    kind: ArtifactRelationshipKind
+
+
+class ArtifactRecord(ArtifactReference):
+    """Published metadata for immutable, content-addressed scientific bytes."""
+
+    original_filename: str = Field(min_length=1, max_length=1024)
+    source_uri: str | None = Field(default=None, min_length=1, max_length=2048)
+    acquisition_method: ArtifactAcquisitionMethod
+    visibility: ArtifactVisibility
+    organization_id: UUID | None = None
+    relationships: tuple[ArtifactRelationship, ...] = ()
+    created_at: AwareDatetime
+
+    @model_validator(mode="after")
+    def visibility_scope_must_be_consistent(self) -> Self:
+        if self.visibility is ArtifactVisibility.PUBLIC and self.organization_id is not None:
+            raise ValueError("public artifacts cannot belong to an organization")
+        if (
+            self.visibility is ArtifactVisibility.ORGANIZATION_PRIVATE
+            and self.organization_id is None
+        ):
+            raise ValueError("organization-private artifacts require an organization_id")
+        return self
+
+
 class SourceDocumentKind(StrEnum):
     PDF = "pdf"
     IMAGE = "image"

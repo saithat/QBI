@@ -1,0 +1,159 @@
+{
+  "$defs": {
+    "ArtifactAcquisitionMethod": {
+      "description": "How immutable bytes entered HiveBlot.",
+      "enum": [
+        "user_upload",
+        "source_adapter"
+      ],
+      "title": "ArtifactAcquisitionMethod",
+      "type": "string"
+    },
+    "ArtifactRelationship": {
+      "additionalProperties": false,
+      "description": "A stable link from an artifact to another immutable artifact.",
+      "properties": {
+        "kind": {
+          "$ref": "#/$defs/ArtifactRelationshipKind"
+        },
+        "related_artifact_id": {
+          "format": "uuid",
+          "title": "Related Artifact Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/SchemaVersion",
+          "default": "1.0"
+        }
+      },
+      "required": [
+        "related_artifact_id",
+        "kind"
+      ],
+      "title": "ArtifactRelationship",
+      "type": "object"
+    },
+    "ArtifactRelationshipKind": {
+      "description": "Directed provenance relationship between two artifacts.",
+      "enum": [
+        "parent",
+        "related",
+        "derived_from",
+        "supplement_to"
+      ],
+      "title": "ArtifactRelationshipKind",
+      "type": "string"
+    },
+    "ArtifactVisibility": {
+      "description": "Visibility attached to artifact metadata and access grants.",
+      "enum": [
+        "public",
+        "organization_private"
+      ],
+      "title": "ArtifactVisibility",
+      "type": "string"
+    },
+    "MediaType": {
+      "pattern": "^[a-z0-9][a-z0-9!#$&^_.+-]*/[a-z0-9][a-z0-9!#$&^_.+-]*$",
+      "type": "string"
+    },
+    "SchemaVersion": {
+      "const": "1.0",
+      "type": "string"
+    },
+    "Sha256Digest": {
+      "pattern": "^[a-f0-9]{64}$",
+      "type": "string"
+    }
+  },
+  "$id": "urn:hiveblot:schema:v1:artifact-record",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Published metadata for immutable, content-addressed scientific bytes.",
+  "properties": {
+    "acquisition_method": {
+      "$ref": "#/$defs/ArtifactAcquisitionMethod"
+    },
+    "artifact_id": {
+      "format": "uuid",
+      "title": "Artifact Id",
+      "type": "string"
+    },
+    "byte_size": {
+      "minimum": 0,
+      "title": "Byte Size",
+      "type": "integer"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "media_type": {
+      "$ref": "#/$defs/MediaType"
+    },
+    "organization_id": {
+      "anyOf": [
+        {
+          "format": "uuid",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Organization Id"
+    },
+    "original_filename": {
+      "maxLength": 1024,
+      "minLength": 1,
+      "title": "Original Filename",
+      "type": "string"
+    },
+    "relationships": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/ArtifactRelationship"
+      },
+      "title": "Relationships",
+      "type": "array"
+    },
+    "schema_version": {
+      "$ref": "#/$defs/SchemaVersion",
+      "default": "1.0"
+    },
+    "sha256": {
+      "$ref": "#/$defs/Sha256Digest"
+    },
+    "source_uri": {
+      "anyOf": [
+        {
+          "maxLength": 2048,
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Source Uri"
+    },
+    "visibility": {
+      "$ref": "#/$defs/ArtifactVisibility"
+    }
+  },
+  "required": [
+    "artifact_id",
+    "sha256",
+    "media_type",
+    "byte_size",
+    "original_filename",
+    "acquisition_method",
+    "visibility",
+    "created_at"
+  ],
+  "title": "ArtifactRecord",
+  "type": "object"
+}

@@ -5,10 +5,10 @@ from __future__ import annotations
 from enum import StrEnum
 from functools import lru_cache
 from pathlib import Path
-from typing import Any, Self
+from typing import Annotated, Any, Self
 
 from pydantic import Field, SecretStr, field_validator, model_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 
 class RuntimeEnvironment(StrEnum):
@@ -73,6 +73,47 @@ class Settings(BaseSettings):
         le=16384,
     )
     data_dir: Path = Field(default=Path("data"), validation_alias="HIVEBLOT_DATA_DIR")
+    s3_endpoint_url: str = Field(
+        default="http://localhost:9000",
+        validation_alias="S3_ENDPOINT_URL",
+        min_length=1,
+    )
+    s3_region: str = Field(default="us-east-1", validation_alias="S3_REGION", min_length=1)
+    s3_bucket: str = Field(
+        default="hiveblot-artifacts",
+        validation_alias="S3_BUCKET",
+        min_length=3,
+        max_length=63,
+    )
+    s3_access_key_id: SecretStr = Field(
+        default=SecretStr("minioadmin"),
+        validation_alias="S3_ACCESS_KEY_ID",
+    )
+    s3_secret_access_key: SecretStr = Field(
+        default=SecretStr("minioadmin"),
+        validation_alias="S3_SECRET_ACCESS_KEY",
+    )
+    artifact_signed_url_seconds: int = Field(
+        default=900,
+        validation_alias="ARTIFACT_SIGNED_URL_SECONDS",
+        ge=60,
+        le=604800,
+    )
+    artifact_upload_url_seconds: int = Field(
+        default=3600,
+        validation_alias="ARTIFACT_UPLOAD_URL_SECONDS",
+        ge=60,
+        le=604800,
+    )
+    artifact_max_bytes: int = Field(
+        default=1_073_741_824,
+        validation_alias="ARTIFACT_MAX_BYTES",
+        ge=1,
+    )
+    source_ingest_allowed_hosts: Annotated[tuple[str, ...], NoDecode] = Field(
+        default=(),
+        validation_alias="SOURCE_INGEST_ALLOWED_HOSTS",
+    )
     pdf_dpi: int = Field(default=350, validation_alias="PDF_DPI", ge=72, le=1200)
     min_candidate_score: float = Field(
         default=0.35,
@@ -92,6 +133,18 @@ class Settings(BaseSettings):
     def strip_base_url_suffix(cls, value: str) -> str:
         return value.rstrip("/")
 
+    @field_validator("s3_endpoint_url")
+    @classmethod
+    def strip_s3_endpoint_suffix(cls, value: str) -> str:
+        return value.rstrip("/")
+
+    @field_validator("source_ingest_allowed_hosts", mode="before")
+    @classmethod
+    def parse_allowed_hosts(cls, value: object) -> object:
+        if isinstance(value, str):
+            return tuple(part.strip().casefold() for part in value.split(",") if part.strip())
+        return value
+
     @field_validator("data_dir")
     @classmethod
     def resolve_data_directory(cls, value: Path) -> Path:
@@ -102,7 +155,16 @@ class Settings(BaseSettings):
         if self.environment is not RuntimeEnvironment.DEPLOYED:
             return self
 
-        required = {"database_url", "vllm_base_url", "vllm_model", "vllm_api_key"}
+        required = {
+            "database_url",
+            "vllm_base_url",
+            "vllm_model",
+            "vllm_api_key",
+            "s3_endpoint_url",
+            "s3_bucket",
+            "s3_access_key_id",
+            "s3_secret_access_key",
+        }
         missing = sorted(required - self.model_fields_set)
         if missing:
             raise ValueError(
@@ -116,6 +178,11 @@ class Settings(BaseSettings):
             raise ValueError("DATABASE_URL must not use local default credentials when deployed")
         if "localhost" in self.vllm_base_url or "127.0.0.1" in self.vllm_base_url:
             raise ValueError("VLLM_BASE_URL must not point at localhost when deployed")
+        storage_key = self.s3_secret_access_key.get_secret_value().strip().casefold()
+        if storage_key in {"", "minioadmin", "replace-me", "changeme"}:
+            raise ValueError(
+                "S3_SECRET_ACCESS_KEY must not use a local or placeholder value when deployed"
+            )
         return self
 
     @classmethod

@@ -1,6 +1,16 @@
 """Canonical, strict Pydantic v2 contracts for HiveBlot boundaries."""
 
-from .artifacts import ArtifactReference, BoundingRegion, SourceDocumentKind, SourceDocumentRecord
+from .artifacts import (
+    ArtifactAcquisitionMethod,
+    ArtifactRecord,
+    ArtifactReference,
+    ArtifactRelationship,
+    ArtifactRelationshipKind,
+    ArtifactVisibility,
+    BoundingRegion,
+    SourceDocumentKind,
+    SourceDocumentRecord,
+)
 from .base import SCHEMA_VERSION, ContractModel, SchemaVersion
 from .evaluation import EvaluationCaseReference, ValidationIssue, ValidationSeverity
 from .identifiers import ModelIdentifier, PipelineIdentifier, ProducerIdentifier, ToolIdentifier
@@ -20,7 +30,12 @@ from .jobs import (
 
 __all__ = [
     "SCHEMA_VERSION",
+    "ArtifactAcquisitionMethod",
+    "ArtifactRecord",
     "ArtifactReference",
+    "ArtifactRelationship",
+    "ArtifactRelationshipKind",
+    "ArtifactVisibility",
     "BoundingRegion",
     "CancelledJobResult",
     "ContainerSpecification",

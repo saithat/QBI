@@ -45,6 +45,15 @@ curl http://localhost:8080/health
 Ingest an existing local PDF with `make ingest PDF=<filename>`. Inputs live under `data/input/`
 and resumable results under `data/runs/`; both are ignored.
 
+PostgreSQL and MinIO can run without the GPU stack:
+
+```bash
+docker compose up --build -d postgres minio
+HIVEBLOT_RUN_LIVE_STORAGE=1 uv run pytest tests/integration/test_artifact_storage_live.py
+```
+
+See `docs/development/artifact-storage.md` for the multipart API flow.
+
 ## Baseline verification
 
 ```bash

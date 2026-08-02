@@ -9,6 +9,7 @@ description = "Local western blot extraction and search"
 readme = "README.md"
 requires-python = ">=3.12,<3.14"
 dependencies = [
+  "boto3>=1.39,<2",
   "fastapi>=0.116,<1",
   "httpx>=0.28,<1",
   "numpy>=2,<3",
@@ -39,6 +40,7 @@ packages = [
   "apps",
   "hiveblot",
   "packages/contracts/src/hiveblot_contracts",
+  "packages/storage/src/hiveblot_storage",
   "workers",
 ]
 
@@ -48,7 +50,7 @@ packages = [
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-ra"
-pythonpath = [".", "packages/contracts/src"]
+pythonpath = [".", "packages/contracts/src", "packages/storage/src"]
 
 [tool.ruff]
 target-version = "py312"
@@ -69,4 +71,4 @@ warn_unreachable = true
 warn_unused_configs = true
 warn_unused_ignores = true
 exclude = ["data/", "tests/fixtures/"]
-mypy_path = "packages/contracts/src"
+mypy_path = "packages/contracts/src:packages/storage/src"

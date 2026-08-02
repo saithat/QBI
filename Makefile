@@ -7,7 +7,7 @@ down:
 	docker compose down
 
 logs:
-	docker compose logs -f app vllm
+	docker compose logs -f app minio vllm
 
 setup:
 	uv sync --locked --all-extras
@@ -21,7 +21,8 @@ lint:
 	uv run ruff check --no-cache .
 
 typecheck:
-	uv run mypy apps hiveblot packages/contracts/src/hiveblot_contracts workers
+	uv run mypy apps hiveblot packages/contracts/src/hiveblot_contracts \
+		packages/storage/src/hiveblot_storage workers
 
 schemas:
 	uv run hiveblot-schemas

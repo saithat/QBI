@@ -8,7 +8,7 @@ from typing import Any
 
 from pydantic import TypeAdapter
 
-from .artifacts import ArtifactReference, BoundingRegion, SourceDocumentRecord
+from .artifacts import ArtifactRecord, ArtifactReference, BoundingRegion, SourceDocumentRecord
 from .evaluation import EvaluationCaseReference, ValidationIssue
 from .identifiers import ModelIdentifier, PipelineIdentifier, ToolIdentifier
 from .jobs import JobResult, JobSpecification
@@ -17,6 +17,7 @@ JSON_SCHEMA_DIALECT = "https://json-schema.org/draft/2020-12/schema"
 SCHEMA_ID_PREFIX = "urn:hiveblot:schema:v1:"
 
 CONTRACT_REGISTRY: Mapping[str, Any] = {
+    "artifact-record": ArtifactRecord,
     "artifact-reference": ArtifactReference,
     "bounding-region": BoundingRegion,
     "evaluation-case-reference": EvaluationCaseReference,

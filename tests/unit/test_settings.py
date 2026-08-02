@@ -12,12 +12,14 @@ def test_settings_parse_an_explicit_test_environment(monkeypatch, tmp_path) -> N
     monkeypatch.setenv("VLLM_BASE_URL", "http://model.test/v1/")
     monkeypatch.setenv("VLLM_API_KEY", "test-only")
     monkeypatch.setenv("HIVEBLOT_DATA_DIR", str(tmp_path))
+    monkeypatch.setenv("SOURCE_INGEST_ALLOWED_HOSTS", "repo.example, data.example")
 
     settings = Settings(_env_file=None)
 
     assert settings.environment is RuntimeEnvironment.TEST
     assert settings.vllm_base_url == "http://model.test/v1"
     assert settings.data_dir == Path(tmp_path).resolve()
+    assert settings.source_ingest_allowed_hosts == ("repo.example", "data.example")
     assert "test-only" not in repr(settings)
 
 
@@ -28,6 +30,10 @@ def test_deployed_settings_require_explicit_non_local_values(monkeypatch) -> Non
         "VLLM_BASE_URL",
         "VLLM_MODEL",
         "VLLM_API_KEY",
+        "S3_ENDPOINT_URL",
+        "S3_BUCKET",
+        "S3_ACCESS_KEY_ID",
+        "S3_SECRET_ACCESS_KEY",
     ):
         monkeypatch.delenv(name, raising=False)
 
@@ -41,5 +47,9 @@ def test_deployed_settings_require_explicit_non_local_values(monkeypatch) -> Non
             vllm_base_url="https://models.example/v1",
             vllm_model="deployed-model",
             vllm_api_key="replace-me",
+            s3_endpoint_url="https://objects.example",
+            s3_bucket="hiveblot-production",
+            s3_access_key_id="service-account",
+            s3_secret_access_key="a-real-secret-value",
             _env_file=None,
         )

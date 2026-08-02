@@ -17,6 +17,7 @@ from hiveblot.model_client import LocalModelClient, ModelUnavailable, SearchFilt
 from hiveblot.persistence_models import WesternBlotRecordListRow
 from hiveblot.settings import get_settings
 
+from .artifacts import router as artifact_router
 from .schemas import (
     HealthResponse,
     RecordDetailResponse,
@@ -37,6 +38,7 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
 
 
 app = FastAPI(title="HiveBlot", version="0.1.0", lifespan=lifespan)
+app.include_router(artifact_router)
 INDEX = Path(hiveblot.__file__).with_name("static") / "index.html"
 
 

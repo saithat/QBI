@@ -9,6 +9,7 @@ import psycopg
 from psycopg.rows import dict_row
 
 from .domain import RecordSearchCriteria
+from .migrations import apply_migrations
 from .persistence_models import (
     WesternBlotRecordDetailRow,
     WesternBlotRecordListRow,
@@ -77,6 +78,7 @@ def initialize(database_url: str) -> None:
     schema = Path(__file__).with_name("schema.sql").read_text(encoding="utf-8")
     with psycopg.connect(database_url) as connection:
         connection.execute(schema)
+    apply_migrations(database_url)
 
 
 def health(database_url: str) -> bool:
