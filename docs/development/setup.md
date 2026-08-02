@@ -58,11 +58,14 @@ HIVEBLOT_RUN_LIVE_WORKBENCH=1 \
   uv run pytest tests/integration/test_workbench_live.py
 HIVEBLOT_RUN_LIVE_STRUCTURED_EDITOR=1 \
   uv run pytest tests/integration/test_structured_editor_live.py
+HIVEBLOT_RUN_LIVE_SPATIAL_EDITOR=1 \
+  uv run pytest tests/integration/test_spatial_editor_live.py
 ```
 
 See `docs/development/artifact-storage.md` for the multipart API flow and
 `docs/development/review-queue.md`, `docs/development/source-workbench.md`, and
-`docs/development/structured-annotation.md` for browser verification.
+`docs/development/structured-annotation.md`, and `docs/development/spatial-annotation.md` for browser
+verification.
 
 ## Baseline verification
 

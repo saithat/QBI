@@ -100,6 +100,7 @@ document.querySelector("#case-id").textContent = caseId;
 document.querySelector("#reviewer-id").textContent = reviewerId;
 document.querySelector("#evidence-link").href = `/workbench/${caseId}`;
 document.querySelector("#open-evidence").href = `/workbench/${caseId}`;
+document.querySelector("#spatial-link").href = `/spatial/${caseId}`;
 document.querySelector("#save-now").addEventListener("click", () => saveNow());
 document.querySelector("#accept-all").addEventListener("click", () => acceptPrediction([], true));
 document.querySelector("#add-relationship").addEventListener("click", addRelationship);

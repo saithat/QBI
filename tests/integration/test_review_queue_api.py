@@ -67,8 +67,10 @@ async def test_review_browser_filters_persists_views_and_serves_ui() -> None:
 
         assert browser.status_code == 200
         assert "Review queue" in browser.text
+        assert "Edit geometry" in browser.text
         assert javascript.status_code == 200
         assert "URLSearchParams" in javascript.text
+        assert "openSelectedSpatial" in javascript.text
         assert queue.status_code == 200
         assert invalid_range.status_code == 422
         assert queue.json()["total"] == 1

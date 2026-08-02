@@ -28,6 +28,7 @@ from .review_queue import (
     ReviewQueuePage,
     SavedReviewView,
 )
+from .spatial_editing import SpatialAnnotationComparison, SpatialAnnotationSet
 from .structured_annotations import (
     CanonicalEntityReference,
     StructuredAnnotationComparison,
@@ -62,6 +63,8 @@ CONTRACT_REGISTRY: Mapping[str, Any] = {
     "saved-review-view": SavedReviewView,
     "source-document-record": SourceDocumentRecord,
     "source-evidence-workbench": SourceEvidenceWorkbench,
+    "spatial-annotation-comparison": SpatialAnnotationComparison,
+    "spatial-annotation-set": SpatialAnnotationSet,
     "structured-annotation-comparison": StructuredAnnotationComparison,
     "tool-identifier": ToolIdentifier,
     "validation-issue": ValidationIssue,

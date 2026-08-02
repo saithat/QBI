@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Edit western blot geometry in immutable source-image coordinates.">
+  <title>HiveBlot — Spatial annotation</title>
+  <link rel="stylesheet" href="/review/assets/spatial.css">
+  <script defer src="/review/assets/spatial.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/review"><span class="brand-mark">HB</span><span>HiveBlot</span></a>
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href="/review">Review queue</a><span>/</span>
+      <a id="evidence-link" href="#">Evidence</a><span>/</span>
+      <a id="annotation-link" href="#">Fields</a><span>/</span>
+      <strong>Geometry</strong>
+    </nav>
+    <div class="save-cluster"><span id="save-status">Loading…</span><button id="save-now" class="primary" type="button">Save now</button></div>
+  </header>
+
+  <main>
+    <aside class="left-panel">
+      <div class="panel-heading"><p class="kicker">Source pixels</p><h1>Spatial editor</h1><code id="case-id"></code></div>
+      <section class="side-section">
+        <h2>Sources</h2>
+        <div id="source-list" class="source-list"></div>
+      </section>
+      <section class="side-section">
+        <h2>Prediction</h2>
+        <select id="prediction-select" class="wide-control"></select>
+        <button id="accept-all" class="secondary wide" type="button" disabled>Accept all regions</button>
+        <div id="prediction-list" class="compact-list"></div>
+      </section>
+      <section class="side-section">
+        <h2>Lane order</h2>
+        <p class="help">Order is stored as validated <code>precedes</code> relationships.</p>
+        <div id="lane-list" class="compact-list"></div>
+      </section>
+    </aside>
+
+    <section class="viewer-shell">
+      <div class="viewer-toolbar">
+        <div class="tool-group">
+          <button class="mode active" data-mode="select" type="button" title="Select (V)">Select</button>
+          <button class="mode" data-mode="create" type="button" title="Create (N)">Create</button>
+          <button class="mode" data-mode="pan" type="button" title="Pan (P)">Pan</button>
+          <select id="create-type" aria-label="New region type">
+            <option value="figure">Figure</option><option value="panel">Panel</option>
+            <option value="blot">Blot</option><option value="lane">Lane</option>
+            <option value="protein_row">Protein row</option><option value="band" selected>Band</option>
+            <option value="label">Label</option><option value="quantification_plot">Quantification plot</option>
+          </select>
+        </div>
+        <div class="tool-group">
+          <button id="zoom-out" type="button">−</button><button id="reset-view" type="button"><span id="zoom-label">100%</span></button><button id="zoom-in" type="button">+</button>
+          <button id="rotate-left" type="button">↶</button><button id="rotate-right" type="button">↷</button>
+          <button id="fullscreen" type="button">⛶</button>
+        </div>
+        <div class="tool-group action-tools">
+          <button id="split-region" type="button" disabled>Split</button>
+          <button id="group-regions" type="button" disabled>Group</button>
+          <button id="delete-region" class="danger" type="button" disabled>Delete</button>
+        </div>
+      </div>
+      <div class="overlay-toolbar">
+        <label class="prediction"><input id="show-prediction" type="checkbox" checked> Prediction</label>
+        <label class="reviewer"><input id="show-reviewer" type="checkbox" checked> Reviewer</label>
+        <span>Shift-click multi-select · P to pan · drag box/handles · scroll to zoom</span>
+      </div>
+      <div id="viewer" class="viewer" tabindex="0">
+        <div id="viewer-message" class="viewer-message">Choose a source image.</div>
+        <div id="canvas-transform" class="canvas-transform" hidden>
+          <div id="visual" class="visual">
+            <img id="source-image" alt="Scientific source for spatial annotation" decoding="async" draggable="false">
+            <iframe id="source-pdf" title="Scientific source PDF" hidden></iframe>
+            <svg id="spatial-layer" aria-label="Editable source-pixel regions"></svg>
+          </div>
+        </div>
+      </div>
+      <div class="viewer-footer"><span id="coordinate-status">Source coordinates —</span><span id="load-status">No source loaded</span></div>
+    </section>
+
+    <aside class="right-panel">
+      <div class="panel-heading"><p class="kicker">Selection</p><h2>Region inspector</h2><span>Reviewer <code id="reviewer-id"></code></span></div>
+      <div id="editor-notice" class="notice" role="alert" hidden></div>
+      <section id="region-inspector" class="side-section">
+        <p class="help">Select a reviewer region to edit its type, state, label, and exact source coordinates.</p>
+      </section>
+      <section class="side-section">
+        <div class="section-heading"><h2>Relationships</h2><button id="add-relationship" type="button">+ Add</button></div>
+        <div class="relationship-builder">
+          <select id="relationship-type">
+            <option value="contains">Parent contains child</option>
+            <option value="labels">Label links to region</option>
+            <option value="grouped_with">Grouped with</option>
+            <option value="precedes">Lane precedes lane</option>
+            <option value="target_uses_loading_control">Target uses loading control</option>
+          </select>
+          <select id="relationship-subject" aria-label="Relationship subject"></select>
+          <select id="relationship-object" aria-label="Relationship object"></select>
+        </div>
+        <div id="relationship-list" class="compact-list"></div>
+      </section>
+      <section class="side-section">
+        <h2>Geometry diff</h2>
+        <div id="diff-summary" class="chips"></div>
+        <div id="diff-list" class="compact-list"></div>
+      </section>
+      <section class="side-section">
+        <label class="stacked">Revision rationale<textarea id="rationale" rows="2" maxlength="10000"></textarea></label>
+        <h2>Error codes</h2>
+        <div id="error-codes" class="check-list"></div>
+      </section>
+      <section class="side-section">
+        <h2>Revision history</h2>
+        <div id="revision-list" class="compact-list"></div>
+      </section>
+    </aside>
+  </main>
+</body>
+</html>

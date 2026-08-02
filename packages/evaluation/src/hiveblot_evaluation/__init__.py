@@ -12,6 +12,7 @@ from .repository import EvaluationRepository
 from .review_queue import ReviewQueueRepository, ReviewQueueService
 from .review_queue_postgres import PostgresReviewQueueRepository
 from .service import EvaluationService
+from .spatial import SpatialAnnotationService
 from .structured import CanonicalEntityCatalog, StructuredAnnotationService
 from .workbench import ArtifactLookup, EvidenceWorkbenchService, SourceContextRepository
 from .workbench_postgres import PostgresSourceContextRepository
@@ -32,6 +33,7 @@ __all__ = [
     "ReviewQueueRepository",
     "ReviewQueueService",
     "SourceContextRepository",
+    "SpatialAnnotationService",
     "StructuredAnnotationService",
     "ArtifactLookup",
 ]

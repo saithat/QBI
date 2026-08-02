@@ -106,6 +106,7 @@ async def test_workbench_api_exposes_sources_context_and_browser_assets() -> Non
         assert workbench.json()["sources"][0]["page_number"] == 4
         assert page.status_code == 200
         assert "Source evidence" in page.text
+        assert "Edit geometry" in page.text
         assert script.status_code == 200
         assert "requestFullscreen" in script.text
         assert missing.status_code == 404

@@ -66,6 +66,14 @@ from .review_queue import (
     ReviewQueuePage,
     SavedReviewView,
 )
+from .spatial_editing import (
+    GeometryDiffStatus,
+    SpatialAnnotationComparison,
+    SpatialAnnotationDelta,
+    SpatialAnnotationSet,
+    SpatialEditorRelationship,
+    SpatialRelationshipType,
+)
 from .structured_annotations import (
     AntibodyAnnotation,
     BiologicalContextAnnotation,
@@ -123,6 +131,7 @@ __all__ = [
     "FieldAnnotation",
     "FieldAnnotationTarget",
     "FieldPathTarget",
+    "GeometryDiffStatus",
     "JobError",
     "JobResult",
     "JobSpecification",
@@ -160,6 +169,11 @@ __all__ = [
     "SemanticAnnotationDiff",
     "SemanticDiffStatus",
     "SpatialAnnotation",
+    "SpatialAnnotationComparison",
+    "SpatialAnnotationDelta",
+    "SpatialAnnotationSet",
+    "SpatialEditorRelationship",
+    "SpatialRelationshipType",
     "SpatialAnnotationType",
     "SucceededJobResult",
     "StructuredAnnotationComparison",

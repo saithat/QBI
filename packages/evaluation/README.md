@@ -12,3 +12,8 @@ immutable prediction, reviewer-head, and adjudication records. It never publishe
 prediction documents, merges individual or bulk prediction entities, computes semantic diffs,
 looks up canonical entity candidates, and appends save/undo revisions through `EvaluationService`.
 It does not mutate historic predictions or revisions.
+
+`SpatialAnnotationService` projects explicit prediction-evidence regions into typed drafts,
+validates complete source-pixel graphs, computes stable-ID geometry diffs, and appends spatial saves
+or surface-scoped restores. It carries current structured/field data and unrelated relationships
+forward rather than treating one editor as the owner of an entire review snapshot.

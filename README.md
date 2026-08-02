@@ -3,8 +3,8 @@
 HiveBlot turns western blot evidence from scientific papers into structured, searchable,
 reviewable observations. Milestone A is implemented, and the evaluation UI now includes a
 server-paginated review queue, a source evidence workbench, and a typed western-blot annotation
-editor. The useful local hackathon extraction path remains operational while new scientific state
-enters through strict, versioned contracts.
+editor with source-pixel spatial review. The useful local hackathon extraction path remains
+operational while new scientific state enters through strict, versioned contracts.
 
 ## Current data flow
 
@@ -25,11 +25,13 @@ selected case -> artifact metadata + source context + immutable revision overlay
 
 structured prediction -> typed western-blot review -> optimistic autosave revisions
     -> semantic diff + append-only undo + canonical entity references
+
+prediction/source regions -> source-pixel graph editor -> validated spatial relationships
+    -> semantic geometry diff + immutable reviewer revisions
 ```
 
-Spatial editing, Kubernetes, crawling, densitometry, authentication, and distributed execution
-remain out of scope. Legacy extraction adopts artifact IDs and the structured prediction contract
-in PRD-011.
+Kubernetes, crawling, densitometry, authentication, and distributed execution remain out of scope.
+Legacy extraction adopts artifact IDs and the structured/spatial prediction contracts in PRD-011.
 
 ## Repository boundaries
 
@@ -84,7 +86,7 @@ curl http://localhost:8080/health
 
 Open <http://localhost:8080> for the retained evidence index or <http://localhost:8080/review> for
 the evaluation review queue after the services become healthy. Cases link to `/workbench/{id}` for
-source inspection and `/annotate/{id}` for structured review.
+source inspection, `/annotate/{id}` for structured review, and `/spatial/{id}` for geometry review.
 
 To run only durable storage dependencies without a GPU:
 
@@ -133,6 +135,10 @@ model output remains enabled by default.
 - Prediction-acceptance and structured-undo routes produce drafts and new revisions without
   replacing prediction or annotation history.
 - `GET /api/v1/canonical-entities` provides bounded canonical entity suggestions.
+- `GET /api/v1/evaluation-cases/{id}/spatial-editor` composes spatial predictions, the reviewer
+  head, revision summaries, error codes, and a stable-ID geometry diff.
+- Spatial save, prediction-acceptance, and restore routes validate complete source-pixel graphs and
+  append revisions without reverting current non-spatial annotations.
 
 Public JSON bodies now carry `schema_version: "1.0"` and reject unknown request fields. The
 model never generates executable SQL; domain criteria are mapped to parameterized queries.
@@ -148,4 +154,5 @@ See [the repository audit](docs/architecture/repository-audit.md),
 [the foundation ADR](docs/adr/0001-platform-foundation.md), and
 [the artifact storage ADR](docs/adr/0002-content-addressed-artifact-storage.md), and
 [the structured annotation ADR](docs/adr/0006-structured-annotation-revisions.md), and
+[the spatial review ADR](docs/adr/0007-source-pixel-spatial-review.md), and
 [development setup](docs/development/setup.md) for details.

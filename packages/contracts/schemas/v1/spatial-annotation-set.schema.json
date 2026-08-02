@@ -1,0 +1,231 @@
+{
+  "$defs": {
+    "BoundingRegion": {
+      "additionalProperties": false,
+      "description": "A rectangle expressed in immutable source-image pixel coordinates.",
+      "properties": {
+        "canvas_height": {
+          "exclusiveMinimum": 0,
+          "title": "Canvas Height",
+          "type": "integer"
+        },
+        "canvas_width": {
+          "exclusiveMinimum": 0,
+          "title": "Canvas Width",
+          "type": "integer"
+        },
+        "coordinate_space": {
+          "const": "source_pixels",
+          "default": "source_pixels",
+          "title": "Coordinate Space",
+          "type": "string"
+        },
+        "height": {
+          "exclusiveMinimum": 0,
+          "title": "Height",
+          "type": "number"
+        },
+        "page_number": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Page Number"
+        },
+        "region_id": {
+          "format": "uuid",
+          "title": "Region Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/SchemaVersion",
+          "default": "1.0"
+        },
+        "source_artifact_id": {
+          "format": "uuid",
+          "title": "Source Artifact Id",
+          "type": "string"
+        },
+        "width": {
+          "exclusiveMinimum": 0,
+          "title": "Width",
+          "type": "number"
+        },
+        "x": {
+          "minimum": 0,
+          "title": "X",
+          "type": "number"
+        },
+        "y": {
+          "minimum": 0,
+          "title": "Y",
+          "type": "number"
+        }
+      },
+      "required": [
+        "region_id",
+        "source_artifact_id",
+        "x",
+        "y",
+        "width",
+        "height",
+        "canvas_width",
+        "canvas_height"
+      ],
+      "title": "BoundingRegion",
+      "type": "object"
+    },
+    "ObservationState": {
+      "enum": [
+        "present",
+        "absent",
+        "unknown",
+        "ambiguous",
+        "not_applicable"
+      ],
+      "title": "ObservationState",
+      "type": "string"
+    },
+    "SchemaVersion": {
+      "const": "1.0",
+      "type": "string"
+    },
+    "SpatialAnnotation": {
+      "additionalProperties": false,
+      "properties": {
+        "annotation_type": {
+          "$ref": "#/$defs/SpatialAnnotationType"
+        },
+        "label": {
+          "anyOf": [
+            {
+              "maxLength": 1000,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Label"
+        },
+        "region": {
+          "$ref": "#/$defs/BoundingRegion"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/SchemaVersion",
+          "default": "1.0"
+        },
+        "spatial_annotation_id": {
+          "format": "uuid",
+          "title": "Spatial Annotation Id",
+          "type": "string"
+        },
+        "state": {
+          "$ref": "#/$defs/ObservationState"
+        }
+      },
+      "required": [
+        "spatial_annotation_id",
+        "annotation_type",
+        "state",
+        "region"
+      ],
+      "title": "SpatialAnnotation",
+      "type": "object"
+    },
+    "SpatialAnnotationType": {
+      "enum": [
+        "figure",
+        "panel",
+        "blot",
+        "lane",
+        "protein_row",
+        "band",
+        "label",
+        "quantification_plot"
+      ],
+      "title": "SpatialAnnotationType",
+      "type": "string"
+    },
+    "SpatialEditorRelationship": {
+      "additionalProperties": false,
+      "properties": {
+        "object_id": {
+          "format": "uuid",
+          "title": "Object Id",
+          "type": "string"
+        },
+        "relation_type": {
+          "$ref": "#/$defs/SpatialRelationshipType"
+        },
+        "relationship_id": {
+          "format": "uuid",
+          "title": "Relationship Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/SchemaVersion",
+          "default": "1.0"
+        },
+        "subject_id": {
+          "format": "uuid",
+          "title": "Subject Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "relationship_id",
+        "subject_id",
+        "relation_type",
+        "object_id"
+      ],
+      "title": "SpatialEditorRelationship",
+      "type": "object"
+    },
+    "SpatialRelationshipType": {
+      "enum": [
+        "contains",
+        "labels",
+        "grouped_with",
+        "precedes",
+        "target_uses_loading_control"
+      ],
+      "title": "SpatialRelationshipType",
+      "type": "string"
+    }
+  },
+  "$id": "urn:hiveblot:schema:v1:spatial-annotation-set",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "relationships": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/SpatialEditorRelationship"
+      },
+      "title": "Relationships",
+      "type": "array"
+    },
+    "schema_version": {
+      "$ref": "#/$defs/SchemaVersion",
+      "default": "1.0"
+    },
+    "spatial_annotations": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/SpatialAnnotation"
+      },
+      "title": "Spatial Annotations",
+      "type": "array"
+    }
+  },
+  "title": "SpatialAnnotationSet",
+  "type": "object"
+}

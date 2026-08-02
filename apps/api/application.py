@@ -30,6 +30,7 @@ from .schemas import (
     SearchResponse,
     WesternBlotRecordResponse,
 )
+from .spatial_editor import router as spatial_editor_router
 from .structured_editor import router as structured_editor_router
 from .workbench import router as workbench_router
 
@@ -46,6 +47,7 @@ app = FastAPI(title="HiveBlot", version="0.1.0", lifespan=lifespan)
 app.include_router(artifact_router)
 app.include_router(evaluation_router)
 app.include_router(review_queue_router)
+app.include_router(spatial_editor_router)
 app.include_router(structured_editor_router)
 app.include_router(workbench_router)
 INDEX = Path(hiveblot.__file__).with_name("static") / "index.html"
@@ -73,6 +75,12 @@ def evidence_workbench(case_id: str) -> FileResponse:
 def structured_annotation_editor(case_id: str) -> FileResponse:
     del case_id
     return FileResponse(REVIEW_WEB / "annotate.html")
+
+
+@app.get("/spatial/{case_id}", include_in_schema=False)
+def spatial_annotation_editor(case_id: str) -> FileResponse:
+    del case_id
+    return FileResponse(REVIEW_WEB / "spatial.html")
 
 
 @app.get("/health", response_model=HealthResponse)

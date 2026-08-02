@@ -12,6 +12,7 @@ const nextCase = document.querySelector("#next-case");
 const assignCase = document.querySelector("#assign-case");
 const openWorkbench = document.querySelector("#open-workbench");
 const openAnnotation = document.querySelector("#open-annotation");
+const openSpatial = document.querySelector("#open-spatial");
 const savedView = document.querySelector("#saved-view");
 const reviewerOutput = document.querySelector("#reviewer-id");
 
@@ -48,6 +49,7 @@ nextCase.addEventListener("click", () => moveSelection(1));
 assignCase.addEventListener("click", assignSelectedCase);
 openWorkbench.addEventListener("click", openSelectedWorkbench);
 openAnnotation.addEventListener("click", openSelectedAnnotation);
+openSpatial.addEventListener("click", openSelectedSpatial);
 window.addEventListener("popstate", () => {
   readFiltersFromUrl();
   loadQueue();
@@ -108,6 +110,7 @@ function renderQueue() {
   assignCase.disabled = state.selectedIndex < 0;
   openWorkbench.disabled = state.selectedIndex < 0;
   openAnnotation.disabled = state.selectedIndex < 0;
+  openSpatial.disabled = state.selectedIndex < 0;
 }
 
 function renderCase(item, index) {
@@ -176,6 +179,7 @@ function selectCase(index, focus = false) {
   assignCase.disabled = false;
   openWorkbench.disabled = false;
   openAnnotation.disabled = false;
+  openSpatial.disabled = false;
   if (focus) document.querySelectorAll(".case-card")[index]?.focus();
 }
 
@@ -232,6 +236,11 @@ function openSelectedWorkbench() {
 function openSelectedAnnotation() {
   const item = state.items[state.selectedIndex];
   if (item) window.location.assign(`/annotate/${item.case_id}`);
+}
+
+function openSelectedSpatial() {
+  const item = state.items[state.selectedIndex];
+  if (item) window.location.assign(`/spatial/${item.case_id}`);
 }
 
 async function loadSavedViews() {
@@ -362,6 +371,9 @@ function handleShortcut(event) {
   } else if (!editing && event.key.toLowerCase() === "a") {
     event.preventDefault();
     assignSelectedCase();
+  } else if (!editing && event.key.toLowerCase() === "g") {
+    event.preventDefault();
+    openSelectedSpatial();
   }
 }
 
