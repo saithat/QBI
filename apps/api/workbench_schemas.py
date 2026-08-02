@@ -52,7 +52,7 @@ class WorkbenchArtifactResponse(ContractModel):
     byte_size: int
     original_filename: str
     source_uri: str | None
-    acquisition_method: Literal["user_upload", "source_adapter"]
+    acquisition_method: Literal["user_upload", "source_adapter", "tool_output"]
     visibility: Literal["public", "organization_private"]
     organization_id: UUID | None
     relationships: tuple[ArtifactRelationshipResponse, ...]

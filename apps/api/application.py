@@ -19,6 +19,7 @@ from hiveblot.persistence_models import WesternBlotRecordListRow
 from hiveblot.settings import get_settings
 
 from .artifacts import router as artifact_router
+from .densitometry import router as densitometry_router
 from .evaluation import router as evaluation_router
 from .extraction import router as extraction_router
 from .golden import router as golden_router
@@ -49,6 +50,7 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
 
 app = FastAPI(title="HiveBlot", version="0.1.0", lifespan=lifespan)
 app.include_router(artifact_router)
+app.include_router(densitometry_router)
 app.include_router(evaluation_router)
 app.include_router(extraction_router)
 app.include_router(golden_router)
@@ -89,6 +91,12 @@ def structured_annotation_editor(case_id: str) -> FileResponse:
 def spatial_annotation_editor(case_id: str) -> FileResponse:
     del case_id
     return FileResponse(REVIEW_WEB / "spatial.html")
+
+
+@app.get("/densitometry/{case_id}", include_in_schema=False)
+def densitometry_workbench(case_id: str) -> FileResponse:
+    del case_id
+    return FileResponse(REVIEW_WEB / "densitometry.html")
 
 
 @app.get("/metrics", include_in_schema=False)

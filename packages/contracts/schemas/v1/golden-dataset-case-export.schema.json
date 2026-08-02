@@ -386,7 +386,8 @@
       "description": "How immutable bytes entered HiveBlot.",
       "enum": [
         "user_upload",
-        "source_adapter"
+        "source_adapter",
+        "tool_output"
       ],
       "title": "ArtifactAcquisitionMethod",
       "type": "string"

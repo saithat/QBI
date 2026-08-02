@@ -18,6 +18,12 @@ from .annotations import (
     ReviewerAssignment,
 )
 from .artifacts import ArtifactRecord, ArtifactReference, BoundingRegion, SourceDocumentRecord
+from .densitometry import (
+    DensitometryInput,
+    DensitometryReplayRecord,
+    DensitometryResult,
+    DensitometryRunRecord,
+)
 from .evaluation import EvaluationCaseReference, ValidationIssue
 from .evidence import CaseSourceContext, EvidenceOverlay, SourceEvidenceWorkbench
 from .golden_datasets import (
@@ -82,6 +88,10 @@ CONTRACT_REGISTRY: Mapping[str, Any] = {
     "case-source-context": CaseSourceContext,
     "component-invocation-record": ComponentInvocationRecord,
     "component-result": ComponentResult,
+    "densitometry-input": DensitometryInput,
+    "densitometry-replay-record": DensitometryReplayRecord,
+    "densitometry-result": DensitometryResult,
+    "densitometry-run-record": DensitometryRunRecord,
     "evaluation-case-reference": EvaluationCaseReference,
     "evaluation-case-record": EvaluationCaseRecord,
     "evaluation-dataset-snapshot": EvaluationDatasetSnapshot,

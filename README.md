@@ -1,10 +1,11 @@
 # HiveBlot
 
 HiveBlot turns western blot evidence from scientific papers into structured, searchable,
-reviewable observations. Milestone A is implemented, and the evaluation UI now includes a
+reviewable observations. Milestones A through C are implemented, and the evaluation UI includes a
 server-paginated review queue, a source evidence workbench, and a typed western-blot annotation
-editor with source-pixel spatial review. The useful local hackathon extraction path remains
-operational while new scientific state enters through strict, versioned contracts.
+editor with source-pixel spatial review and deterministic densitometry. The useful local hackathon
+extraction path remains operational while new scientific state enters through strict, versioned
+contracts.
 
 ## Current data flow
 
@@ -40,9 +41,12 @@ reviewed cases -> versioned golden-dataset draft -> leakage-safe promotion
 
 published PDF/image artifact -> verified bytes -> detection -> versioned model normalization
     -> structured/spatial case assembly -> immutable prediction + publication
+
+immutable raster + exact geometry revision -> deterministic pixel measurement + QC
+    -> content-addressed overlay -> immutable result/publication + exact replay
 ```
 
-Kubernetes, crawling, densitometry, authentication, and distributed execution remain out of scope.
+Kubernetes, crawling, authentication, and distributed execution remain out of scope.
 The retained extractor now runs through stored artifacts and versioned scientific stages; the
 filesystem ingestion CLI remains available as a compatibility path.
 
@@ -50,11 +54,12 @@ filesystem ingestion CLI remains available as a compatibility path.
 
 ```text
 apps/api/                  FastAPI entry point and HTTP-only schemas
-apps/web/                  dependency-free review queue, workbench, and annotation editor
+apps/web/                  dependency-free review, annotation, metrics, and densitometry surfaces
 workers/extraction/        stable worker entry point around retained extraction code
 packages/contracts/        strict shared Pydantic v2 contracts and JSON Schemas
 packages/evaluation/       cases, predictions, reviews, assignments, and adjudication
 packages/extraction/       versioned western-blot normalization and pipeline orchestration
+packages/densitometry/     deterministic pixel measurement, QC, and provenance orchestration
 packages/storage/          immutable publication, S3, and PostgreSQL storage boundaries
 hiveblot/                  retained domain, persistence, model, and extraction modules
 services/                  future long-lived service boundary
@@ -101,6 +106,9 @@ curl http://localhost:8080/health
 Open <http://localhost:8080> for the retained evidence index or <http://localhost:8080/review> for
 the evaluation review queue after the services become healthy. Cases link to `/workbench/{id}` for
 source inspection, `/annotate/{id}` for structured review, and `/spatial/{id}` for geometry review.
+Use `/densitometry/{id}` to measure an exact geometry revision, inspect QC and reproducibility, and
+replay the deterministic component.
+
 Open <http://localhost:8080/metrics> to inspect versioned metric runs, confidence calibration,
 grouped performance, and pipeline regressions.
 
@@ -166,6 +174,8 @@ model output remains enabled by default.
   checks, immutable snapshots, transition history, and content-addressed JSONL/manifest exports.
 - Western-blot extraction routes list pinned implementations, run stored PDF/image artifacts
   through detection/model/assembly stages, and selectively replay immutable component attempts.
+- Densitometry routes list complete geometry revisions, run exact deterministic measurements,
+  expose signed source/overlay access, and append exact-input replay attempts.
 
 Public JSON bodies now carry `schema_version: "1.0"` and reject unknown request fields. The
 model never generates executable SQL; domain criteria are mapped to parameterized queries.
@@ -186,4 +196,5 @@ See [the repository audit](docs/architecture/repository-audit.md),
 [the evaluation metrics ADR](docs/adr/0009-versioned-evaluation-metrics.md), and
 [the golden dataset ADR](docs/adr/0010-content-addressed-golden-datasets.md), and
 [the western-blot extraction ADR](docs/adr/0011-versioned-western-blot-extraction.md), and
+[the deterministic densitometry ADR](docs/adr/0012-deterministic-densitometry.md), and
 [development setup](docs/development/setup.md) for details.

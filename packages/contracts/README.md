@@ -21,5 +21,9 @@ prediction grids, review-ready structured/spatial results, run records, and repl
 raw provider response remains outside the normalized contract and is preserved by pipeline and
 evaluation records before normalization.
 
+PRD-012 adds exact image/geometry/configuration inputs, deterministic measurements, QC and
+suitability, reproducibility metadata, and immutable run/replay summaries. Numeric values cannot be
+constructed without naming their source hash and geometry revision.
+
 Generate snapshots with `uv run hiveblot-schemas`. Verify committed snapshots with
 `uv run hiveblot-schemas --check`.

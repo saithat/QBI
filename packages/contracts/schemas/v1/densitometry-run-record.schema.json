@@ -1,0 +1,943 @@
+{
+  "$defs": {
+    "ArtifactReference": {
+      "additionalProperties": false,
+      "description": "Stable metadata needed to identify immutable bytes without embedding them.",
+      "properties": {
+        "artifact_id": {
+          "format": "uuid",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "byte_size": {
+          "minimum": 0,
+          "title": "Byte Size",
+          "type": "integer"
+        },
+        "media_type": {
+          "$ref": "#/$defs/MediaType"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/SchemaVersion",
+          "default": "1.0"
+        },
+        "sha256": {
+          "$ref": "#/$defs/Sha256Digest"
+        }
+      },
+      "required": [
+        "artifact_id",
+        "sha256",
+        "media_type",
+        "byte_size"
+      ],
+      "title": "ArtifactReference",
+      "type": "object"
+    },
+    "BoundingRegion": {
+      "additionalProperties": false,
+      "description": "A rectangle expressed in immutable source-image pixel coordinates.",
+      "properties": {
+        "canvas_height": {
+          "exclusiveMinimum": 0,
+          "title": "Canvas Height",
+          "type": "integer"
+        },
+        "canvas_width": {
+          "exclusiveMinimum": 0,
+          "title": "Canvas Width",
+          "type": "integer"
+        },
+        "coordinate_space": {
+          "const": "source_pixels",
+          "default": "source_pixels",
+          "title": "Coordinate Space",
+          "type": "string"
+        },
+        "height": {
+          "exclusiveMinimum": 0,
+          "title": "Height",
+          "type": "number"
+        },
+        "page_number": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Page Number"
+        },
+        "region_id": {
+          "format": "uuid",
+          "title": "Region Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/SchemaVersion",
+          "default": "1.0"
+        },
+        "source_artifact_id": {
+          "format": "uuid",
+          "title": "Source Artifact Id",
+          "type": "string"
+        },
+        "width": {
+          "exclusiveMinimum": 0,
+          "title": "Width",
+          "type": "number"
+        },
+        "x": {
+          "minimum": 0,
+          "title": "X",
+          "type": "number"
+        },
+        "y": {
+          "minimum": 0,
+          "title": "Y",
+          "type": "number"
+        }
+      },
+      "required": [
+        "region_id",
+        "source_artifact_id",
+        "x",
+        "y",
+        "width",
+        "height",
+        "canvas_width",
+        "canvas_height"
+      ],
+      "title": "BoundingRegion",
+      "type": "object"
+    },
+    "DensitometryBackgroundMethod": {
+      "enum": [
+        "none",
+        "global_percentile",
+        "local_border"
+      ],
+      "title": "DensitometryBackgroundMethod",
+      "type": "string"
+    },
+    "DensitometryBandRegion": {
+      "additionalProperties": false,
+      "properties": {
+        "band_id": {
+          "format": "uuid",
+          "title": "Band Id",
+          "type": "string"
+        },
+        "lane_id": {
+          "format": "uuid",
+          "title": "Lane Id",
+          "type": "string"
+        },
+        "region": {
+          "$ref": "#/$defs/BoundingRegion"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/SchemaVersion",
+          "default": "1.0"
+        },
+        "target_id": {
+          "format": "uuid",
+          "title": "Target Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "band_id",
+        "lane_id",
+        "target_id",
+        "region"
+      ],
+      "title": "DensitometryBandRegion",
+      "type": "object"
+    },
+    "DensitometryConfiguration": {
+      "additionalProperties": false,
+      "properties": {
+        "background_method": {
+          "$ref": "#/$defs/DensitometryBackgroundMethod",
+          "default": "global_percentile"
+        },
+        "background_percentile": {
+          "default": 20.0,
+          "maximum": 100,
+          "minimum": 0,
+          "title": "Background Percentile",
+          "type": "number"
+        },
+        "exposure_known": {
+          "default": false,
+          "title": "Exposure Known",
+          "type": "boolean"
+        },
+        "lane_boundaries_reviewed": {
+          "default": false,
+          "title": "Lane Boundaries Reviewed",
+          "type": "boolean"
+        },
+        "local_border_pixels": {
+          "default": 4,
+          "maximum": 100,
+          "minimum": 1,
+          "title": "Local Border Pixels",
+          "type": "integer"
+        },
+        "minimum_band_area_pixels": {
+          "default": 9,
+          "maximum": 100000000,
+          "minimum": 1,
+          "title": "Minimum Band Area Pixels",
+          "type": "integer"
+        },
+        "minimum_band_height_pixels": {
+          "default": 2,
+          "maximum": 10000,
+          "minimum": 1,
+          "title": "Minimum Band Height Pixels",
+          "type": "integer"
+        },
+        "minimum_band_width_pixels": {
+          "default": 3,
+          "maximum": 10000,
+          "minimum": 1,
+          "title": "Minimum Band Width Pixels",
+          "type": "integer"
+        },
+        "normalization_method": {
+          "$ref": "#/$defs/DensitometryNormalizationMethod",
+          "default": "loading_control"
+        },
+        "saturation_black_level": {
+          "default": 4,
+          "maximum": 254,
+          "minimum": 0,
+          "title": "Saturation Black Level",
+          "type": "integer"
+        },
+        "saturation_fraction_threshold": {
+          "default": 0.05,
+          "exclusiveMinimum": 0,
+          "maximum": 1,
+          "title": "Saturation Fraction Threshold",
+          "type": "number"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/SchemaVersion",
+          "default": "1.0"
+        },
+        "uneven_background_cv_threshold": {
+          "default": 0.35,
+          "exclusiveMinimum": 0,
+          "maximum": 10,
+          "title": "Uneven Background Cv Threshold",
+          "type": "number"
+        }
+      },
+      "title": "DensitometryConfiguration",
+      "type": "object"
+    },
+    "DensitometryGeometryReference": {
+      "discriminator": {
+        "mapping": {
+          "prediction": "#/$defs/PredictionGeometryReference",
+          "reviewer_revision": "#/$defs/ReviewerGeometryReference"
+        },
+        "propertyName": "source_type"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/PredictionGeometryReference"
+        },
+        {
+          "$ref": "#/$defs/ReviewerGeometryReference"
+        }
+      ]
+    },
+    "DensitometryImageKind": {
+      "enum": [
+        "raw_source",
+        "publication_figure"
+      ],
+      "title": "DensitometryImageKind",
+      "type": "string"
+    },
+    "DensitometryInput": {
+      "additionalProperties": false,
+      "properties": {
+        "bands": {
+          "items": {
+            "$ref": "#/$defs/DensitometryBandRegion"
+          },
+          "minItems": 1,
+          "title": "Bands",
+          "type": "array"
+        },
+        "case_id": {
+          "format": "uuid",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "configuration": {
+          "$ref": "#/$defs/DensitometryConfiguration"
+        },
+        "geometry": {
+          "$ref": "#/$defs/DensitometryGeometryReference"
+        },
+        "image_artifact": {
+          "$ref": "#/$defs/ArtifactReference"
+        },
+        "image_kind": {
+          "$ref": "#/$defs/DensitometryImageKind"
+        },
+        "lanes": {
+          "items": {
+            "$ref": "#/$defs/DensitometryLaneRegion"
+          },
+          "minItems": 1,
+          "title": "Lanes",
+          "type": "array"
+        },
+        "loading_control_target_id": {
+          "anyOf": [
+            {
+              "format": "uuid",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Loading Control Target Id"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/SchemaVersion",
+          "default": "1.0"
+        },
+        "targets": {
+          "items": {
+            "$ref": "#/$defs/DensitometryTargetRegion"
+          },
+          "minItems": 1,
+          "title": "Targets",
+          "type": "array"
+        }
+      },
+      "required": [
+        "case_id",
+        "image_artifact",
+        "image_kind",
+        "geometry",
+        "lanes",
+        "targets",
+        "bands",
+        "configuration"
+      ],
+      "title": "DensitometryInput",
+      "type": "object"
+    },
+    "DensitometryLaneRegion": {
+      "additionalProperties": false,
+      "properties": {
+        "label": {
+          "anyOf": [
+            {
+              "maxLength": 1000,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Label"
+        },
+        "lane_id": {
+          "format": "uuid",
+          "title": "Lane Id",
+          "type": "string"
+        },
+        "lane_index": {
+          "minimum": 1,
+          "title": "Lane Index",
+          "type": "integer"
+        },
+        "region": {
+          "$ref": "#/$defs/BoundingRegion"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/SchemaVersion",
+          "default": "1.0"
+        }
+      },
+      "required": [
+        "lane_id",
+        "lane_index",
+        "region"
+      ],
+      "title": "DensitometryLaneRegion",
+      "type": "object"
+    },
+    "DensitometryMeasurement": {
+      "additionalProperties": false,
+      "properties": {
+        "background_estimate": {
+          "minimum": 0,
+          "title": "Background Estimate",
+          "type": "number"
+        },
+        "background_per_pixel": {
+          "maximum": 255,
+          "minimum": 0,
+          "title": "Background Per Pixel",
+          "type": "number"
+        },
+        "band_id": {
+          "format": "uuid",
+          "title": "Band Id",
+          "type": "string"
+        },
+        "corrected_intensity": {
+          "minimum": 0,
+          "title": "Corrected Intensity",
+          "type": "number"
+        },
+        "lane_id": {
+          "format": "uuid",
+          "title": "Lane Id",
+          "type": "string"
+        },
+        "lane_index": {
+          "minimum": 1,
+          "title": "Lane Index",
+          "type": "integer"
+        },
+        "lane_label": {
+          "anyOf": [
+            {
+              "maxLength": 1000,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Lane Label"
+        },
+        "measurement_id": {
+          "format": "uuid",
+          "title": "Measurement Id",
+          "type": "string"
+        },
+        "normalized_intensity": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Normalized Intensity"
+        },
+        "pixel_count": {
+          "exclusiveMinimum": 0,
+          "title": "Pixel Count",
+          "type": "integer"
+        },
+        "qc_flags": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/DensitometryQcFlag"
+          },
+          "title": "Qc Flags",
+          "type": "array"
+        },
+        "raw_intensity": {
+          "minimum": 0,
+          "title": "Raw Intensity",
+          "type": "number"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/SchemaVersion",
+          "default": "1.0"
+        },
+        "target_id": {
+          "format": "uuid",
+          "title": "Target Id",
+          "type": "string"
+        },
+        "target_label": {
+          "maxLength": 1000,
+          "minLength": 1,
+          "title": "Target Label",
+          "type": "string"
+        }
+      },
+      "required": [
+        "measurement_id",
+        "lane_id",
+        "lane_index",
+        "target_id",
+        "target_label",
+        "band_id",
+        "pixel_count",
+        "raw_intensity",
+        "background_per_pixel",
+        "background_estimate",
+        "corrected_intensity"
+      ],
+      "title": "DensitometryMeasurement",
+      "type": "object"
+    },
+    "DensitometryNormalizationMethod": {
+      "enum": [
+        "none",
+        "loading_control"
+      ],
+      "title": "DensitometryNormalizationMethod",
+      "type": "string"
+    },
+    "DensitometryQcCode": {
+      "enum": [
+        "saturation",
+        "insufficient_resolution",
+        "missing_loading_control",
+        "zero_loading_control",
+        "unclear_lane_boundaries",
+        "publication_figure_source",
+        "unknown_exposure",
+        "uneven_background",
+        "empty_background"
+      ],
+      "title": "DensitometryQcCode",
+      "type": "string"
+    },
+    "DensitometryQcFlag": {
+      "additionalProperties": false,
+      "properties": {
+        "band_id": {
+          "anyOf": [
+            {
+              "format": "uuid",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Band Id"
+        },
+        "code": {
+          "$ref": "#/$defs/DensitometryQcCode"
+        },
+        "flag_id": {
+          "format": "uuid",
+          "title": "Flag Id",
+          "type": "string"
+        },
+        "lane_id": {
+          "anyOf": [
+            {
+              "format": "uuid",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Lane Id"
+        },
+        "message": {
+          "maxLength": 2000,
+          "minLength": 1,
+          "title": "Message",
+          "type": "string"
+        },
+        "metric_value": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Metric Value"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/SchemaVersion",
+          "default": "1.0"
+        },
+        "severity": {
+          "$ref": "#/$defs/DensitometryQcSeverity"
+        },
+        "target_id": {
+          "anyOf": [
+            {
+              "format": "uuid",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Target Id"
+        }
+      },
+      "required": [
+        "flag_id",
+        "code",
+        "severity",
+        "message"
+      ],
+      "title": "DensitometryQcFlag",
+      "type": "object"
+    },
+    "DensitometryQcSeverity": {
+      "enum": [
+        "warning",
+        "error"
+      ],
+      "title": "DensitometryQcSeverity",
+      "type": "string"
+    },
+    "DensitometryReproducibility": {
+      "additionalProperties": false,
+      "properties": {
+        "algorithm": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "configuration_sha256": {
+          "$ref": "#/$defs/Sha256Digest"
+        },
+        "input_sha256": {
+          "$ref": "#/$defs/Sha256Digest"
+        },
+        "library_versions": {
+          "items": {
+            "$ref": "#/$defs/ToolIdentifier"
+          },
+          "title": "Library Versions",
+          "type": "array"
+        },
+        "numerical_precision_decimal_places": {
+          "maximum": 15,
+          "minimum": 0,
+          "title": "Numerical Precision Decimal Places",
+          "type": "integer"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/SchemaVersion",
+          "default": "1.0"
+        },
+        "source_image_sha256": {
+          "$ref": "#/$defs/Sha256Digest"
+        },
+        "tool": {
+          "$ref": "#/$defs/ToolIdentifier"
+        }
+      },
+      "required": [
+        "algorithm",
+        "tool",
+        "input_sha256",
+        "configuration_sha256",
+        "source_image_sha256",
+        "numerical_precision_decimal_places",
+        "library_versions"
+      ],
+      "title": "DensitometryReproducibility",
+      "type": "object"
+    },
+    "DensitometryResult": {
+      "additionalProperties": false,
+      "properties": {
+        "analysis_overlay": {
+          "$ref": "#/$defs/ArtifactReference"
+        },
+        "global_qc_flags": {
+          "items": {
+            "$ref": "#/$defs/DensitometryQcFlag"
+          },
+          "title": "Global Qc Flags",
+          "type": "array"
+        },
+        "input": {
+          "$ref": "#/$defs/DensitometryInput"
+        },
+        "measurements": {
+          "items": {
+            "$ref": "#/$defs/DensitometryMeasurement"
+          },
+          "title": "Measurements",
+          "type": "array"
+        },
+        "reproducibility": {
+          "$ref": "#/$defs/DensitometryReproducibility"
+        },
+        "result_id": {
+          "format": "uuid",
+          "title": "Result Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/SchemaVersion",
+          "default": "1.0"
+        },
+        "suitability": {
+          "$ref": "#/$defs/DensitometrySuitability"
+        },
+        "tool": {
+          "$ref": "#/$defs/ToolIdentifier"
+        }
+      },
+      "required": [
+        "result_id",
+        "input",
+        "tool",
+        "suitability",
+        "measurements",
+        "global_qc_flags",
+        "analysis_overlay",
+        "reproducibility"
+      ],
+      "title": "DensitometryResult",
+      "type": "object"
+    },
+    "DensitometrySuitability": {
+      "enum": [
+        "quantitative",
+        "semi_quantitative",
+        "exploratory_only",
+        "not_analyzable"
+      ],
+      "title": "DensitometrySuitability",
+      "type": "string"
+    },
+    "DensitometryTargetRegion": {
+      "additionalProperties": false,
+      "properties": {
+        "is_loading_control": {
+          "title": "Is Loading Control",
+          "type": "boolean"
+        },
+        "label": {
+          "maxLength": 1000,
+          "minLength": 1,
+          "title": "Label",
+          "type": "string"
+        },
+        "region": {
+          "$ref": "#/$defs/BoundingRegion"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/SchemaVersion",
+          "default": "1.0"
+        },
+        "target_id": {
+          "format": "uuid",
+          "title": "Target Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "target_id",
+        "label",
+        "is_loading_control",
+        "region"
+      ],
+      "title": "DensitometryTargetRegion",
+      "type": "object"
+    },
+    "Identifier": {
+      "maxLength": 200,
+      "minLength": 1,
+      "type": "string"
+    },
+    "MediaType": {
+      "pattern": "^[a-z0-9][a-z0-9!#$&^_.+-]*/[a-z0-9][a-z0-9!#$&^_.+-]*$",
+      "type": "string"
+    },
+    "PipelineIdentifier": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/SchemaVersion",
+          "default": "1.0"
+        },
+        "version": {
+          "$ref": "#/$defs/Identifier"
+        }
+      },
+      "required": [
+        "name",
+        "version"
+      ],
+      "title": "PipelineIdentifier",
+      "type": "object"
+    },
+    "PredictionGeometryReference": {
+      "additionalProperties": false,
+      "properties": {
+        "prediction_id": {
+          "format": "uuid",
+          "title": "Prediction Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/SchemaVersion",
+          "default": "1.0"
+        },
+        "source_type": {
+          "const": "prediction",
+          "default": "prediction",
+          "title": "Source Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "prediction_id"
+      ],
+      "title": "PredictionGeometryReference",
+      "type": "object"
+    },
+    "ReviewerGeometryReference": {
+      "additionalProperties": false,
+      "properties": {
+        "annotation_revision_id": {
+          "format": "uuid",
+          "title": "Annotation Revision Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/SchemaVersion",
+          "default": "1.0"
+        },
+        "source_type": {
+          "const": "reviewer_revision",
+          "default": "reviewer_revision",
+          "title": "Source Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "annotation_revision_id"
+      ],
+      "title": "ReviewerGeometryReference",
+      "type": "object"
+    },
+    "SchemaVersion": {
+      "const": "1.0",
+      "type": "string"
+    },
+    "Sha256Digest": {
+      "pattern": "^[a-f0-9]{64}$",
+      "type": "string"
+    },
+    "ToolIdentifier": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "tool",
+          "default": "tool",
+          "title": "Kind",
+          "type": "string"
+        },
+        "name": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/SchemaVersion",
+          "default": "1.0"
+        },
+        "version": {
+          "$ref": "#/$defs/Identifier"
+        }
+      },
+      "required": [
+        "name",
+        "version"
+      ],
+      "title": "ToolIdentifier",
+      "type": "object"
+    }
+  },
+  "$id": "urn:hiveblot:schema:v1:densitometry-run-record",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "case_id": {
+      "format": "uuid",
+      "title": "Case Id",
+      "type": "string"
+    },
+    "definition_id": {
+      "format": "uuid",
+      "title": "Definition Id",
+      "type": "string"
+    },
+    "invocation_id": {
+      "format": "uuid",
+      "title": "Invocation Id",
+      "type": "string"
+    },
+    "pipeline": {
+      "$ref": "#/$defs/PipelineIdentifier"
+    },
+    "publication_id": {
+      "format": "uuid",
+      "title": "Publication Id",
+      "type": "string"
+    },
+    "result": {
+      "$ref": "#/$defs/DensitometryResult"
+    },
+    "run_id": {
+      "format": "uuid",
+      "title": "Run Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "$ref": "#/$defs/SchemaVersion",
+      "default": "1.0"
+    },
+    "trace_id": {
+      "format": "uuid",
+      "title": "Trace Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "run_id",
+    "definition_id",
+    "case_id",
+    "invocation_id",
+    "publication_id",
+    "trace_id",
+    "pipeline",
+    "result"
+  ],
+  "title": "DensitometryRunRecord",
+  "type": "object"
+}

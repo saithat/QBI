@@ -32,6 +32,7 @@ class ArtifactAcquisitionMethod(StrEnum):
 
     USER_UPLOAD = "user_upload"
     SOURCE_ADAPTER = "source_adapter"
+    TOOL_OUTPUT = "tool_output"
 
 
 class ArtifactRelationshipKind(StrEnum):

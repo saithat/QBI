@@ -41,6 +41,7 @@ packages = [
   "apps",
   "hiveblot",
   "packages/contracts/src/hiveblot_contracts",
+  "packages/densitometry/src/hiveblot_densitometry",
   "packages/evaluation/src/hiveblot_evaluation",
   "packages/extraction/src/hiveblot_extraction",
   "packages/storage/src/hiveblot_storage",
@@ -56,6 +57,7 @@ addopts = "-ra"
 pythonpath = [
   ".",
   "packages/contracts/src",
+  "packages/densitometry/src",
   "packages/evaluation/src",
   "packages/extraction/src",
   "packages/storage/src",
@@ -80,4 +82,4 @@ warn_unreachable = true
 warn_unused_configs = true
 warn_unused_ignores = true
 exclude = ["data/", "tests/fixtures/"]
-mypy_path = "packages/contracts/src:packages/evaluation/src:packages/extraction/src:packages/storage/src"
+mypy_path = "packages/contracts/src:packages/densitometry/src:packages/evaluation/src:packages/extraction/src:packages/storage/src"

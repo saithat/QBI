@@ -42,6 +42,7 @@ document.querySelector("#case-id").textContent = caseId;
 document.querySelector("#reviewer-id").textContent = reviewerId;
 document.querySelector("#evidence-link").href = `/workbench/${caseId}`;
 document.querySelector("#annotation-link").href = `/annotate/${caseId}`;
+document.querySelector("#densitometry-link").href = `/densitometry/${caseId}`;
 document.querySelector("#save-now").addEventListener("click", () => saveNow());
 document.querySelector("#accept-all").addEventListener("click", () => acceptPrediction([], true));
 document.querySelector("#delete-region").addEventListener("click", deleteSelected);
@@ -424,7 +425,7 @@ function createRegion(box) {
       coordinate_space: "source_pixels",
       x: box.x, y: box.y, width: box.width, height: box.height,
       canvas_width: state.canvas.width, canvas_height: state.canvas.height,
-      page_number: currentSource().page_number,
+      page_number: currentSource().artifact.media_type === "application/pdf" ? currentSource().page_number : null,
     },
     label: null,
   };

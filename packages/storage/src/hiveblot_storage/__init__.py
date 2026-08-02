@@ -15,6 +15,7 @@ from .models import (
     UploadStatus,
 )
 from .object_store import ObjectStore, S3ObjectStore
+from .reader import ArtifactByteLocator, ArtifactReader, VerifiedArtifactReader
 from .repository import ArtifactRepository, PostgresArtifactRepository
 from .service import ArtifactService, PublishedArtifact, UploadInstructions
 from .source_adapters import HttpSourceAdapter, SourceAdapter, SourceAdapterRegistry
@@ -23,6 +24,8 @@ __all__ = [
     "ArtifactEvent",
     "ArtifactEventType",
     "ArtifactNotFound",
+    "ArtifactByteLocator",
+    "ArtifactReader",
     "ArtifactRepository",
     "ArtifactService",
     "ArtifactStorageError",
@@ -40,4 +43,5 @@ __all__ = [
     "UploadInstructions",
     "UploadSession",
     "UploadStatus",
+    "VerifiedArtifactReader",
 ]

@@ -7,3 +7,7 @@ boundaries. The spatial-editor adapter composes strict source-pixel graph contra
 immutable annotation service. The pipeline-registry adapter maps explicit HTTP schemas to immutable
 definition, invocation, replay, and publication contracts; it does not execute containers.
 `hiveblot.api` is only a compatibility facade.
+
+The densitometry adapter exposes complete geometry options, immutable attempt history, execution,
+and exact replay. It maps HTTP-friendly UUID/enumeration values into strict canonical contracts and
+returns expiring object-store URLs for source and overlay bytes.

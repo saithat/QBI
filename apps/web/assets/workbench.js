@@ -25,6 +25,7 @@ const state = {
 document.querySelector("#case-id").textContent = caseId;
 document.querySelector("#annotation-link").href = `/annotate/${caseId}`;
 document.querySelector("#spatial-link").href = `/spatial/${caseId}`;
+document.querySelector("#densitometry-link").href = `/densitometry/${caseId}`;
 document.querySelectorAll("input[name=overlay]").forEach((input) => input.addEventListener("change", toggleOverlay));
 document.querySelectorAll(".tab").forEach((tab) => tab.addEventListener("click", selectTab));
 document.querySelector("#zoom-in").addEventListener("click", () => zoomBy(1.2));

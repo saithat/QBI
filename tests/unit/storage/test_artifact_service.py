@@ -240,6 +240,58 @@ def test_server_side_adapter_preserves_source_provenance() -> None:
     assert len(repository.artifacts) == 1
 
 
+def test_tool_output_is_immutable_deduplicated_and_derived() -> None:
+    service, repository, store = make_service()
+    source = upload_bytes(service, repository, store, PDF_BYTES)
+    relationship = ArtifactRelationship(
+        related_artifact_id=source.artifact.artifact_id,
+        kind=ArtifactRelationshipKind.DERIVED_FROM,
+    )
+    png = b"\x89PNG\r\n\x1a\ndeterministic-overlay"
+
+    first = service.publish_tool_output(
+        original_filename="overlay.png",
+        declared_media_type="image/png",
+        content=png,
+        source_uri="urn:hiveblot:tool:test:one",
+        visibility=ArtifactVisibility.PUBLIC,
+        organization_id=None,
+        relationships=(relationship,),
+        actor_id=None,
+    )
+    second = service.publish_tool_output(
+        original_filename="overlay-again.png",
+        declared_media_type="image/png",
+        content=png,
+        source_uri="urn:hiveblot:tool:test:one",
+        visibility=ArtifactVisibility.PUBLIC,
+        organization_id=None,
+        relationships=(relationship,),
+        actor_id=None,
+    )
+
+    assert first.artifact.acquisition_method is ArtifactAcquisitionMethod.TOOL_OUTPUT
+    assert first.artifact.relationships == (relationship,)
+    assert second.deduplicated is True
+    assert second.artifact.artifact_id == first.artifact.artifact_id
+
+
+def test_tool_output_requires_derived_from_provenance() -> None:
+    service, _, _ = make_service()
+
+    with pytest.raises(InvalidArtifact, match="derived-from"):
+        service.publish_tool_output(
+            original_filename="overlay.png",
+            declared_media_type="image/png",
+            content=b"\x89PNG\r\n\x1a\nno-parent",
+            source_uri="urn:hiveblot:tool:test:missing-parent",
+            visibility=ArtifactVisibility.PUBLIC,
+            organization_id=None,
+            relationships=(),
+            actor_id=None,
+        )
+
+
 def test_private_upload_requires_organization_scope() -> None:
     service, _, _ = make_service()
     with pytest.raises(InvalidArtifact, match="organization_id"):
