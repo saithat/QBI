@@ -1,56 +1,5 @@
 {
   "$defs": {
-    "AnnotationRelationship": {
-      "additionalProperties": false,
-      "properties": {
-        "object_id": {
-          "format": "uuid",
-          "title": "Object Id",
-          "type": "string"
-        },
-        "relation_type": {
-          "$ref": "#/$defs/Identifier"
-        },
-        "relationship_id": {
-          "format": "uuid",
-          "title": "Relationship Id",
-          "type": "string"
-        },
-        "schema_version": {
-          "$ref": "#/$defs/SchemaVersion",
-          "default": "1.0"
-        },
-        "subject_id": {
-          "format": "uuid",
-          "title": "Subject Id",
-          "type": "string"
-        }
-      },
-      "required": [
-        "relationship_id",
-        "subject_id",
-        "relation_type",
-        "object_id"
-      ],
-      "title": "AnnotationRelationship",
-      "type": "object"
-    },
-    "AnnotationScalar": {
-      "anyOf": [
-        {
-          "type": "string"
-        },
-        {
-          "type": "integer"
-        },
-        {
-          "type": "number"
-        },
-        {
-          "type": "boolean"
-        }
-      ]
-    },
     "AntibodyAnnotation": {
       "additionalProperties": false,
       "properties": {
@@ -313,87 +262,6 @@
       "title": "BiologicalContextType",
       "type": "string"
     },
-    "BoundingRegion": {
-      "additionalProperties": false,
-      "description": "A rectangle expressed in immutable source-image pixel coordinates.",
-      "properties": {
-        "canvas_height": {
-          "exclusiveMinimum": 0,
-          "title": "Canvas Height",
-          "type": "integer"
-        },
-        "canvas_width": {
-          "exclusiveMinimum": 0,
-          "title": "Canvas Width",
-          "type": "integer"
-        },
-        "coordinate_space": {
-          "const": "source_pixels",
-          "default": "source_pixels",
-          "title": "Coordinate Space",
-          "type": "string"
-        },
-        "height": {
-          "exclusiveMinimum": 0,
-          "title": "Height",
-          "type": "number"
-        },
-        "page_number": {
-          "anyOf": [
-            {
-              "minimum": 1,
-              "type": "integer"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "title": "Page Number"
-        },
-        "region_id": {
-          "format": "uuid",
-          "title": "Region Id",
-          "type": "string"
-        },
-        "schema_version": {
-          "$ref": "#/$defs/SchemaVersion",
-          "default": "1.0"
-        },
-        "source_artifact_id": {
-          "format": "uuid",
-          "title": "Source Artifact Id",
-          "type": "string"
-        },
-        "width": {
-          "exclusiveMinimum": 0,
-          "title": "Width",
-          "type": "number"
-        },
-        "x": {
-          "minimum": 0,
-          "title": "X",
-          "type": "number"
-        },
-        "y": {
-          "minimum": 0,
-          "title": "Y",
-          "type": "number"
-        }
-      },
-      "required": [
-        "region_id",
-        "source_artifact_id",
-        "x",
-        "y",
-        "width",
-        "height",
-        "canvas_width",
-        "canvas_height"
-      ],
-      "title": "BoundingRegion",
-      "type": "object"
-    },
     "CanonicalEntityReference": {
       "additionalProperties": false,
       "properties": {
@@ -452,158 +320,6 @@
       ],
       "title": "CanonicalEntityType",
       "type": "string"
-    },
-    "EntityFieldTarget": {
-      "additionalProperties": false,
-      "properties": {
-        "entity_id": {
-          "format": "uuid",
-          "title": "Entity Id",
-          "type": "string"
-        },
-        "field_name": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/Identifier"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null
-        },
-        "schema_version": {
-          "$ref": "#/$defs/SchemaVersion",
-          "default": "1.0"
-        },
-        "target_type": {
-          "const": "entity",
-          "default": "entity",
-          "title": "Target Type",
-          "type": "string"
-        }
-      },
-      "required": [
-        "entity_id"
-      ],
-      "title": "EntityFieldTarget",
-      "type": "object"
-    },
-    "FieldAnnotation": {
-      "additionalProperties": false,
-      "properties": {
-        "evidence_region_ids": {
-          "default": [],
-          "items": {
-            "format": "uuid",
-            "type": "string"
-          },
-          "title": "Evidence Region Ids",
-          "type": "array"
-        },
-        "field_annotation_id": {
-          "format": "uuid",
-          "title": "Field Annotation Id",
-          "type": "string"
-        },
-        "notes": {
-          "anyOf": [
-            {
-              "maxLength": 10000,
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "title": "Notes"
-        },
-        "original_extracted_text": {
-          "anyOf": [
-            {
-              "maxLength": 10000,
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "title": "Original Extracted Text"
-        },
-        "schema_version": {
-          "$ref": "#/$defs/SchemaVersion",
-          "default": "1.0"
-        },
-        "state": {
-          "$ref": "#/$defs/ObservationState"
-        },
-        "target": {
-          "$ref": "#/$defs/FieldAnnotationTarget"
-        },
-        "value": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/AnnotationScalar"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null
-        }
-      },
-      "required": [
-        "field_annotation_id",
-        "target",
-        "state"
-      ],
-      "title": "FieldAnnotation",
-      "type": "object"
-    },
-    "FieldAnnotationTarget": {
-      "discriminator": {
-        "mapping": {
-          "entity": "#/$defs/EntityFieldTarget",
-          "field_path": "#/$defs/FieldPathTarget"
-        },
-        "propertyName": "target_type"
-      },
-      "oneOf": [
-        {
-          "$ref": "#/$defs/FieldPathTarget"
-        },
-        {
-          "$ref": "#/$defs/EntityFieldTarget"
-        }
-      ]
-    },
-    "FieldPathTarget": {
-      "additionalProperties": false,
-      "properties": {
-        "field_path": {
-          "maxLength": 1000,
-          "pattern": "^/(?:[^/~]|~[01])+(?:/(?:[^/~]|~[01])+)*$",
-          "title": "Field Path",
-          "type": "string"
-        },
-        "schema_version": {
-          "$ref": "#/$defs/SchemaVersion",
-          "default": "1.0"
-        },
-        "target_type": {
-          "const": "field_path",
-          "default": "field_path",
-          "title": "Target Type",
-          "type": "string"
-        }
-      },
-      "required": [
-        "field_path"
-      ],
-      "title": "FieldPathTarget",
-      "type": "object"
     },
     "Identifier": {
       "maxLength": 200,
@@ -1076,64 +792,6 @@
       "title": "ScientificRelationshipType",
       "type": "string"
     },
-    "SpatialAnnotation": {
-      "additionalProperties": false,
-      "properties": {
-        "annotation_type": {
-          "$ref": "#/$defs/SpatialAnnotationType"
-        },
-        "label": {
-          "anyOf": [
-            {
-              "maxLength": 1000,
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "title": "Label"
-        },
-        "region": {
-          "$ref": "#/$defs/BoundingRegion"
-        },
-        "schema_version": {
-          "$ref": "#/$defs/SchemaVersion",
-          "default": "1.0"
-        },
-        "spatial_annotation_id": {
-          "format": "uuid",
-          "title": "Spatial Annotation Id",
-          "type": "string"
-        },
-        "state": {
-          "$ref": "#/$defs/ObservationState"
-        }
-      },
-      "required": [
-        "spatial_annotation_id",
-        "annotation_type",
-        "state",
-        "region"
-      ],
-      "title": "SpatialAnnotation",
-      "type": "object"
-    },
-    "SpatialAnnotationType": {
-      "enum": [
-        "figure",
-        "panel",
-        "blot",
-        "lane",
-        "protein_row",
-        "band",
-        "label",
-        "quantification_plot"
-      ],
-      "title": "SpatialAnnotationType",
-      "type": "string"
-    },
     "TreatmentAnnotation": {
       "additionalProperties": false,
       "properties": {
@@ -1244,212 +902,100 @@
       ],
       "title": "TreatmentAnnotation",
       "type": "object"
-    },
-    "WesternBlotStructuredAnnotation": {
-      "additionalProperties": false,
-      "properties": {
-        "antibodies": {
-          "default": [],
-          "items": {
-            "$ref": "#/$defs/AntibodyAnnotation"
-          },
-          "title": "Antibodies",
-          "type": "array"
-        },
-        "assay_type": {
-          "const": "western_blot",
-          "default": "western_blot",
-          "title": "Assay Type",
-          "type": "string"
-        },
-        "biological_contexts": {
-          "default": [],
-          "items": {
-            "$ref": "#/$defs/BiologicalContextAnnotation"
-          },
-          "title": "Biological Contexts",
-          "type": "array"
-        },
-        "lane_conditions": {
-          "default": [],
-          "items": {
-            "$ref": "#/$defs/LaneConditionAnnotation"
-          },
-          "title": "Lane Conditions",
-          "type": "array"
-        },
-        "molecular_weights": {
-          "default": [],
-          "items": {
-            "$ref": "#/$defs/MolecularWeightAnnotation"
-          },
-          "title": "Molecular Weights",
-          "type": "array"
-        },
-        "proteins": {
-          "default": [],
-          "items": {
-            "$ref": "#/$defs/ProteinAnnotation"
-          },
-          "title": "Proteins",
-          "type": "array"
-        },
-        "relationships": {
-          "default": [],
-          "items": {
-            "$ref": "#/$defs/ScientificRelationship"
-          },
-          "title": "Relationships",
-          "type": "array"
-        },
-        "replicates": {
-          "default": [],
-          "items": {
-            "$ref": "#/$defs/ReplicateAnnotation"
-          },
-          "title": "Replicates",
-          "type": "array"
-        },
-        "reviewer_notes": {
-          "anyOf": [
-            {
-              "maxLength": 20000,
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "title": "Reviewer Notes"
-        },
-        "schema_version": {
-          "$ref": "#/$defs/SchemaVersion",
-          "default": "1.0"
-        },
-        "treatments": {
-          "default": [],
-          "items": {
-            "$ref": "#/$defs/TreatmentAnnotation"
-          },
-          "title": "Treatments",
-          "type": "array"
-        }
-      },
-      "title": "WesternBlotStructuredAnnotation",
-      "type": "object"
     }
   },
-  "$id": "urn:hiveblot:schema:v1:annotation-revision",
+  "$id": "urn:hiveblot:schema:v1:western-blot-structured-annotation",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
   "properties": {
-    "annotation_id": {
-      "format": "uuid",
-      "title": "Annotation Id",
-      "type": "string"
-    },
-    "created_at": {
-      "format": "date-time",
-      "title": "Created At",
-      "type": "string"
-    },
-    "error_codes": {
+    "antibodies": {
       "default": [],
       "items": {
-        "$ref": "#/$defs/Identifier"
+        "$ref": "#/$defs/AntibodyAnnotation"
       },
-      "title": "Error Codes",
+      "title": "Antibodies",
       "type": "array"
     },
-    "field_annotations": {
+    "assay_type": {
+      "const": "western_blot",
+      "default": "western_blot",
+      "title": "Assay Type",
+      "type": "string"
+    },
+    "biological_contexts": {
       "default": [],
       "items": {
-        "$ref": "#/$defs/FieldAnnotation"
+        "$ref": "#/$defs/BiologicalContextAnnotation"
       },
-      "title": "Field Annotations",
+      "title": "Biological Contexts",
       "type": "array"
     },
-    "prior_revision_id": {
-      "anyOf": [
-        {
-          "format": "uuid",
-          "type": "string"
-        },
-        {
-          "type": "null"
-        }
-      ],
-      "default": null,
-      "title": "Prior Revision Id"
+    "lane_conditions": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/LaneConditionAnnotation"
+      },
+      "title": "Lane Conditions",
+      "type": "array"
     },
-    "rationale": {
-      "anyOf": [
-        {
-          "maxLength": 10000,
-          "type": "string"
-        },
-        {
-          "type": "null"
-        }
-      ],
-      "default": null,
-      "title": "Rationale"
+    "molecular_weights": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/MolecularWeightAnnotation"
+      },
+      "title": "Molecular Weights",
+      "type": "array"
+    },
+    "proteins": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/ProteinAnnotation"
+      },
+      "title": "Proteins",
+      "type": "array"
     },
     "relationships": {
       "default": [],
       "items": {
-        "$ref": "#/$defs/AnnotationRelationship"
+        "$ref": "#/$defs/ScientificRelationship"
       },
       "title": "Relationships",
       "type": "array"
     },
-    "reviewer_id": {
-      "format": "uuid",
-      "title": "Reviewer Id",
-      "type": "string"
+    "replicates": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/ReplicateAnnotation"
+      },
+      "title": "Replicates",
+      "type": "array"
     },
-    "revision_id": {
-      "format": "uuid",
-      "title": "Revision Id",
-      "type": "string"
-    },
-    "revision_number": {
-      "minimum": 1,
-      "title": "Revision Number",
-      "type": "integer"
+    "reviewer_notes": {
+      "anyOf": [
+        {
+          "maxLength": 20000,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Reviewer Notes"
     },
     "schema_version": {
       "$ref": "#/$defs/SchemaVersion",
       "default": "1.0"
     },
-    "spatial_annotations": {
+    "treatments": {
       "default": [],
       "items": {
-        "$ref": "#/$defs/SpatialAnnotation"
+        "$ref": "#/$defs/TreatmentAnnotation"
       },
-      "title": "Spatial Annotations",
+      "title": "Treatments",
       "type": "array"
-    },
-    "structured_annotation": {
-      "anyOf": [
-        {
-          "$ref": "#/$defs/WesternBlotStructuredAnnotation"
-        },
-        {
-          "type": "null"
-        }
-      ],
-      "default": null
     }
   },
-  "required": [
-    "revision_id",
-    "annotation_id",
-    "revision_number",
-    "reviewer_id",
-    "created_at"
-  ],
-  "title": "AnnotationRevision",
+  "title": "WesternBlotStructuredAnnotation",
   "type": "object"
 }

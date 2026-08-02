@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Validate structured western blot metadata with immutable revisions.">
+  <title>HiveBlot — Structured annotation</title>
+  <link rel="stylesheet" href="/review/assets/annotate.css">
+  <script defer src="/review/assets/annotate.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/review"><span class="brand-mark">HB</span><span>HiveBlot</span></a>
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href="/review">Review queue</a><span>/</span>
+      <a id="evidence-link" href="#">Source evidence</a><span>/</span>
+      <strong>Structured annotation</strong>
+    </nav>
+    <div class="save-cluster">
+      <span id="save-status" class="save-status" role="status">Loading…</span>
+      <button id="save-now" class="primary-button" type="button">Save now</button>
+    </div>
+  </header>
+
+  <main>
+    <aside class="prediction-panel">
+      <div class="panel-heading">
+        <p class="kicker">Model output</p>
+        <h1>Prediction</h1>
+        <code id="case-id"></code>
+      </div>
+      <label class="stacked-field">
+        Prediction version
+        <select id="prediction-select"></select>
+      </label>
+      <button id="accept-all" class="secondary-button wide" type="button" disabled>Accept all as predicted</button>
+      <p class="help">Accept one entity or copy every unchanged prediction into this review draft.</p>
+      <div id="prediction-entities" class="prediction-entities"></div>
+      <div class="source-link-card">
+        <strong>Need the original evidence?</strong>
+        <p>Open PDFs, figures, raw images, captions, and spatial overlays without losing this draft.</p>
+        <a id="open-evidence" class="text-link" href="#">Open source workbench →</a>
+      </div>
+    </aside>
+
+    <section class="editor-panel" aria-labelledby="editor-heading">
+      <div class="editor-heading">
+        <div>
+          <p class="kicker">Reviewer truth</p>
+          <h2 id="editor-heading">Western blot metadata</h2>
+        </div>
+        <p>Autosave appends an immutable revision after each settled edit.</p>
+      </div>
+      <div id="editor-notice" class="notice" role="alert" hidden></div>
+
+      <section class="entity-section" data-collection="proteins">
+        <div class="section-heading"><div><h3>Protein targets &amp; loading controls</h3><p>Canonical targets and controls remain distinct.</p></div><button class="add-entity" type="button">+ Protein</button></div>
+        <div class="entity-list"></div>
+      </section>
+      <section class="entity-section" data-collection="biological_contexts">
+        <div class="section-heading"><div><h3>Biological systems</h3><p>Cell lines, tissues, organisms, and genotypes.</p></div><button class="add-entity" type="button">+ Context</button></div>
+        <div class="entity-list"></div>
+      </section>
+      <section class="entity-section" data-collection="treatments">
+        <div class="section-heading"><div><h3>Treatments</h3><p>Treatment identity, dose, and duration.</p></div><button class="add-entity" type="button">+ Treatment</button></div>
+        <div class="entity-list"></div>
+      </section>
+      <section class="entity-section" data-collection="lane_conditions">
+        <div class="section-heading"><div><h3>Lane conditions</h3><p>Ordered lanes and their experimental labels.</p></div><button class="add-entity" type="button">+ Lane</button></div>
+        <div class="entity-list"></div>
+      </section>
+      <section class="entity-section" data-collection="antibodies">
+        <div class="section-heading"><div><h3>Antibodies</h3><p>Reagent identity, clone, vendor, catalog, and dilution.</p></div><button class="add-entity" type="button">+ Antibody</button></div>
+        <div class="entity-list"></div>
+      </section>
+      <section class="entity-section" data-collection="molecular_weights">
+        <div class="section-heading"><div><h3>Molecular weights</h3><p>Expected or reported mass in kDa.</p></div><button class="add-entity" type="button">+ Weight</button></div>
+        <div class="entity-list"></div>
+      </section>
+      <section class="entity-section" data-collection="replicates">
+        <div class="section-heading"><div><h3>Replicates</h3><p>Biological and technical replicate information.</p></div><button class="add-entity" type="button">+ Replicate</button></div>
+        <div class="entity-list"></div>
+      </section>
+      <section class="entity-section relationships-section">
+        <div class="section-heading"><div><h3>Scientific relationships</h3><p>Map lanes to conditions, targets, controls, antibodies, weights, and replicates.</p></div><button id="add-relationship" type="button">+ Relationship</button></div>
+        <div id="relationship-list" class="entity-list"></div>
+      </section>
+    </section>
+
+    <aside class="review-panel">
+      <div class="panel-heading">
+        <p class="kicker">Revision controls</p>
+        <h2>Review details</h2>
+        <span>Reviewer <code id="reviewer-id"></code></span>
+      </div>
+      <label class="stacked-field">
+        Reviewer notes
+        <textarea id="reviewer-notes" rows="4" maxlength="20000" placeholder="Scientific interpretation or unresolved ambiguity"></textarea>
+      </label>
+      <label class="stacked-field">
+        Revision rationale
+        <textarea id="rationale" rows="3" maxlength="10000" placeholder="Why this revision was made"></textarea>
+      </label>
+      <section class="side-section">
+        <h3>Error codes</h3>
+        <div id="error-codes" class="check-list"></div>
+      </section>
+      <section class="side-section">
+        <h3>Prediction diff</h3>
+        <div id="diff-summary" class="diff-summary"></div>
+        <div id="diff-list" class="diff-list"></div>
+      </section>
+      <section class="side-section">
+        <h3>Revision history</h3>
+        <div id="revision-list" class="revision-list"></div>
+      </section>
+      <details class="json-fallback">
+        <summary>Advanced JSON editor</summary>
+        <p>Paste a full Pydantic-compatible western-blot annotation. Invalid or unknown fields are rejected.</p>
+        <textarea id="raw-json" rows="18" spellcheck="false"></textarea>
+        <button id="apply-json" class="secondary-button wide" type="button">Validate &amp; apply JSON</button>
+      </details>
+    </aside>
+  </main>
+</body>
+</html>

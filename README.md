@@ -1,11 +1,10 @@
 # HiveBlot
 
 HiveBlot turns western blot evidence from scientific papers into structured, searchable,
-reviewable observations. Milestone A is implemented, and PRD-004 adds the first evaluation UI: a
-server-paginated review queue with shareable filters, saved views, and safe assignment. PRD-005 adds
-a source evidence workbench for immutable artifacts and distinct overlays. The useful local
-hackathon extraction path remains operational while new scientific state enters through strict,
-versioned contracts.
+reviewable observations. Milestone A is implemented, and the evaluation UI now includes a
+server-paginated review queue, a source evidence workbench, and a typed western-blot annotation
+editor. The useful local hackathon extraction path remains operational while new scientific state
+enters through strict, versioned contracts.
 
 ## Current data flow
 
@@ -23,16 +22,20 @@ evaluation cases -> server-side review filters -> paginated browser -> optimisti
 
 selected case -> artifact metadata + source context + immutable revision overlays
     -> browser streams selected bytes from an expiring object-store URL
+
+structured prediction -> typed western-blot review -> optimistic autosave revisions
+    -> semantic diff + append-only undo + canonical entity references
 ```
 
-Annotation editing, Kubernetes, crawling, densitometry, authentication, and distributed execution
-remain out of scope. Legacy extraction adopts artifact IDs in PRD-011.
+Spatial editing, Kubernetes, crawling, densitometry, authentication, and distributed execution
+remain out of scope. Legacy extraction adopts artifact IDs and the structured prediction contract
+in PRD-011.
 
 ## Repository boundaries
 
 ```text
 apps/api/                  FastAPI entry point and HTTP-only schemas
-apps/web/                  dependency-free review queue and evidence workbench assets
+apps/web/                  dependency-free review queue, workbench, and annotation editor
 workers/extraction/        stable worker entry point around retained extraction code
 packages/contracts/        strict shared Pydantic v2 contracts and JSON Schemas
 packages/evaluation/       cases, predictions, reviews, assignments, and adjudication
@@ -80,7 +83,8 @@ curl http://localhost:8080/health
 ```
 
 Open <http://localhost:8080> for the retained evidence index or <http://localhost:8080/review> for
-the evaluation review queue after the services become healthy.
+the evaluation review queue after the services become healthy. Cases link to `/workbench/{id}` for
+source inspection and `/annotate/{id}` for structured review.
 
 To run only durable storage dependencies without a GPU:
 
@@ -123,6 +127,12 @@ model output remains enabled by default.
 - `GET /api/v1/evaluation-cases/{id}/workbench` aggregates source metadata and immutable overlays.
 - Source-context routes append caption and nearby-text revisions to exact case/artifact/role
   associations, returning `409` when an expected head is stale.
+- `GET /api/v1/evaluation-cases/{id}/structured-editor` aggregates predictions, review history,
+  semantic diffs, and error codes for one reviewer.
+- `PUT /api/v1/evaluation-cases/{id}/structured-annotations` appends a validated autosave revision.
+- Prediction-acceptance and structured-undo routes produce drafts and new revisions without
+  replacing prediction or annotation history.
+- `GET /api/v1/canonical-entities` provides bounded canonical entity suggestions.
 
 Public JSON bodies now carry `schema_version: "1.0"` and reject unknown request fields. The
 model never generates executable SQL; domain criteria are mapped to parameterized queries.
@@ -137,4 +147,5 @@ a GPU, source publication, model service, or database.
 See [the repository audit](docs/architecture/repository-audit.md),
 [the foundation ADR](docs/adr/0001-platform-foundation.md), and
 [the artifact storage ADR](docs/adr/0002-content-addressed-artifact-storage.md), and
+[the structured annotation ADR](docs/adr/0006-structured-annotation-revisions.md), and
 [development setup](docs/development/setup.md) for details.

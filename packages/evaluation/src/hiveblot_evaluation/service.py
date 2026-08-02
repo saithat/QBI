@@ -25,6 +25,7 @@ from hiveblot_contracts import (
     ReviewStatus,
     SpatialAnnotation,
     ValidationIssue,
+    WesternBlotStructuredAnnotation,
 )
 
 from .errors import EvaluationNotFound, InvalidEvaluationState
@@ -171,6 +172,7 @@ class EvaluationService:
         field_annotations: tuple[FieldAnnotation, ...],
         spatial_annotations: tuple[SpatialAnnotation, ...],
         relationships: tuple[AnnotationRelationship, ...],
+        structured_annotation: WesternBlotStructuredAnnotation | None = None,
     ) -> tuple[AnnotationDocumentRecord, AnnotationRevision]:
         self.get_case(case_id)
         self._validate_error_codes(error_codes)
@@ -189,6 +191,7 @@ class EvaluationService:
             field_annotations=field_annotations,
             spatial_annotations=spatial_annotations,
             relationships=relationships,
+            structured_annotation=structured_annotation,
             created_at=now,
         )
         document = AnnotationDocumentRecord(
@@ -213,6 +216,7 @@ class EvaluationService:
         field_annotations: tuple[FieldAnnotation, ...],
         spatial_annotations: tuple[SpatialAnnotation, ...],
         relationships: tuple[AnnotationRelationship, ...],
+        structured_annotation: WesternBlotStructuredAnnotation | None = None,
     ) -> tuple[AnnotationDocumentRecord, AnnotationRevision]:
         document = self.get_annotation(annotation_id)
         if document.reviewer_id != reviewer_id:
@@ -231,6 +235,7 @@ class EvaluationService:
             field_annotations=field_annotations,
             spatial_annotations=spatial_annotations,
             relationships=relationships,
+            structured_annotation=structured_annotation,
             created_at=now,
         )
         updated = self._repository.append_revision(

@@ -1,5 +1,6 @@
 # API application
 
-`apps.api.main:app` is the canonical ASGI entry point. HTTP request/response models are kept
-in `schemas.py` and are distinct from model output, persistence rows, and queue messages.
-The route implementation moved here in PRD-001; `hiveblot.api` is only a compatibility facade.
+`apps.api.main:app` is the canonical ASGI entry point. HTTP request/response models remain distinct
+from canonical domain contracts, model output, persistence rows, and queue messages. Feature routes
+and their HTTP adapters are split by artifact, evaluation, queue, workbench, and structured-editor
+boundaries. `hiveblot.api` is only a compatibility facade.

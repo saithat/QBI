@@ -41,6 +41,8 @@ button { cursor: pointer; }
 .breadcrumb { display: flex; gap: 8px; color: var(--muted); }
 .breadcrumb a { color: var(--green); text-decoration: none; }
 .topbar code { color: var(--muted); font-size: 10px; }
+.topbar-actions { display: flex; align-items: center; gap: 14px; }
+.topbar-actions a { color: var(--green); font-size: 11px; font-weight: 700; text-decoration: none; }
 
 main { display: grid; grid-template-columns: 270px minmax(440px, 1fr) 320px; height: calc(100% - 64px); }
 .source-panel, .details-panel { overflow-y: auto; background: var(--panel); }

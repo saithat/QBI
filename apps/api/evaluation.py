@@ -32,6 +32,7 @@ from hiveblot_contracts import (
     ToolIdentifier,
     ValidationIssue,
     ValidationSeverity,
+    WesternBlotStructuredAnnotation,
 )
 from hiveblot_evaluation import (
     ConcurrencyConflict,
@@ -87,6 +88,7 @@ class SnapshotArguments(TypedDict):
     field_annotations: tuple[FieldAnnotation, ...]
     spatial_annotations: tuple[SpatialAnnotation, ...]
     relationships: tuple[AnnotationRelationship, ...]
+    structured_annotation: WesternBlotStructuredAnnotation | None
 
 
 @router.post(
@@ -475,6 +477,7 @@ def _snapshot_arguments(request: AnnotationSnapshotInput) -> SnapshotArguments:
             _spatial_annotation(item) for item in request.spatial_annotations
         ),
         "relationships": tuple(_relationship(item) for item in request.relationships),
+        "structured_annotation": request.structured_annotation,
     }
 
 

@@ -11,6 +11,7 @@ const nextPage = document.querySelector("#next-page");
 const nextCase = document.querySelector("#next-case");
 const assignCase = document.querySelector("#assign-case");
 const openWorkbench = document.querySelector("#open-workbench");
+const openAnnotation = document.querySelector("#open-annotation");
 const savedView = document.querySelector("#saved-view");
 const reviewerOutput = document.querySelector("#reviewer-id");
 
@@ -46,6 +47,7 @@ nextPage.addEventListener("click", () => changePage(state.offset + PAGE_SIZE));
 nextCase.addEventListener("click", () => moveSelection(1));
 assignCase.addEventListener("click", assignSelectedCase);
 openWorkbench.addEventListener("click", openSelectedWorkbench);
+openAnnotation.addEventListener("click", openSelectedAnnotation);
 window.addEventListener("popstate", () => {
   readFiltersFromUrl();
   loadQueue();
@@ -105,6 +107,7 @@ function renderQueue() {
   nextCase.disabled = !state.items.length;
   assignCase.disabled = state.selectedIndex < 0;
   openWorkbench.disabled = state.selectedIndex < 0;
+  openAnnotation.disabled = state.selectedIndex < 0;
 }
 
 function renderCase(item, index) {
@@ -172,6 +175,7 @@ function selectCase(index, focus = false) {
   });
   assignCase.disabled = false;
   openWorkbench.disabled = false;
+  openAnnotation.disabled = false;
   if (focus) document.querySelectorAll(".case-card")[index]?.focus();
 }
 
@@ -223,6 +227,11 @@ async function assignSelectedCase() {
 function openSelectedWorkbench() {
   const item = state.items[state.selectedIndex];
   if (item) window.location.assign(`/workbench/${item.case_id}`);
+}
+
+function openSelectedAnnotation() {
+  const item = state.items[state.selectedIndex];
+  if (item) window.location.assign(`/annotate/${item.case_id}`);
 }
 
 async function loadSavedViews() {

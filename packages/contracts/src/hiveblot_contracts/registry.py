@@ -28,6 +28,11 @@ from .review_queue import (
     ReviewQueuePage,
     SavedReviewView,
 )
+from .structured_annotations import (
+    CanonicalEntityReference,
+    StructuredAnnotationComparison,
+    WesternBlotStructuredAnnotation,
+)
 
 JSON_SCHEMA_DIALECT = "https://json-schema.org/draft/2020-12/schema"
 SCHEMA_ID_PREFIX = "urn:hiveblot:schema:v1:"
@@ -40,6 +45,7 @@ CONTRACT_REGISTRY: Mapping[str, Any] = {
     "artifact-record": ArtifactRecord,
     "artifact-reference": ArtifactReference,
     "bounding-region": BoundingRegion,
+    "canonical-entity-reference": CanonicalEntityReference,
     "case-source-context": CaseSourceContext,
     "evaluation-case-reference": EvaluationCaseReference,
     "evaluation-case-record": EvaluationCaseRecord,
@@ -56,8 +62,10 @@ CONTRACT_REGISTRY: Mapping[str, Any] = {
     "saved-review-view": SavedReviewView,
     "source-document-record": SourceDocumentRecord,
     "source-evidence-workbench": SourceEvidenceWorkbench,
+    "structured-annotation-comparison": StructuredAnnotationComparison,
     "tool-identifier": ToolIdentifier,
     "validation-issue": ValidationIssue,
+    "western-blot-structured-annotation": WesternBlotStructuredAnnotation,
 }
 
 

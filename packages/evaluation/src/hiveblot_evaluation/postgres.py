@@ -34,6 +34,7 @@ from hiveblot_contracts import (
     SpatialAnnotation,
     SpatialAnnotationType,
     ValidationIssue,
+    WesternBlotStructuredAnnotation,
 )
 from psycopg import errors
 from psycopg.rows import dict_row
@@ -345,8 +346,8 @@ class PostgresEvaluationRepository:
             """
             INSERT INTO annotation_revisions (
                 revision_id, annotation_id, revision_number, prior_revision_id,
-                reviewer_id, rationale, created_at
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s)
+                reviewer_id, rationale, structured_annotation_json, created_at
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
             """,
             (
                 revision.revision_id,
@@ -355,6 +356,11 @@ class PostgresEvaluationRepository:
                 revision.prior_revision_id,
                 revision.reviewer_id,
                 revision.rationale,
+                (
+                    Jsonb(revision.structured_annotation.model_dump(mode="json"))
+                    if revision.structured_annotation is not None
+                    else None
+                ),
                 revision.created_at,
             ),
         )
@@ -579,6 +585,13 @@ class PostgresEvaluationRepository:
                     object_id=relationship["object_id"],
                 )
                 for relationship in relationship_rows
+            ),
+            structured_annotation=(
+                WesternBlotStructuredAnnotation.model_validate_json(
+                    json.dumps(row["structured_annotation_json"])
+                )
+                if row["structured_annotation_json"] is not None
+                else None
             ),
             created_at=row["created_at"],
         )

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from datetime import datetime
 from typing import Annotated, Literal, Self
 from uuid import UUID
@@ -15,6 +16,7 @@ from hiveblot_contracts import (
     ReviewStatus,
     SpatialAnnotationType,
     ValidationSeverity,
+    WesternBlotStructuredAnnotation,
 )
 from pydantic import BeforeValidator, Field, model_validator
 
@@ -27,8 +29,18 @@ def _json_tuple(value: object) -> object:
     return tuple(value) if isinstance(value, list) else value
 
 
+def _json_structured_annotation(value: object) -> object:
+    if isinstance(value, WesternBlotStructuredAnnotation):
+        return value
+    return WesternBlotStructuredAnnotation.model_validate_json(json.dumps(value))
+
+
 type JsonUUID = Annotated[UUID, BeforeValidator(_json_uuid)]
 type JsonTuple[T] = Annotated[tuple[T, ...], BeforeValidator(_json_tuple)]
+type JsonStructuredAnnotation = Annotated[
+    WesternBlotStructuredAnnotation,
+    BeforeValidator(_json_structured_annotation),
+]
 
 
 class CaseSourceInput(ContractModel):
@@ -314,6 +326,7 @@ class AnnotationSnapshotInput(ContractModel):
     field_annotations: JsonTuple[FieldAnnotationInput] = ()
     spatial_annotations: JsonTuple[SpatialAnnotationInput] = ()
     relationships: JsonTuple[AnnotationRelationshipInput] = ()
+    structured_annotation: JsonStructuredAnnotation | None = None
 
     @model_validator(mode="after")
     def snapshot_entity_ids_must_be_unique(self) -> Self:
@@ -389,6 +402,7 @@ class AnnotationRevisionResponse(ContractModel):
     field_annotations: tuple[FieldAnnotationResponse, ...]
     spatial_annotations: tuple[SpatialAnnotationResponse, ...]
     relationships: tuple[AnnotationRelationshipResponse, ...]
+    structured_annotation: WesternBlotStructuredAnnotation | None
     created_at: datetime
 
 

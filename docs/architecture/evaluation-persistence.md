@@ -33,4 +33,6 @@ and reviewer uniqueness per case.
   optional PDF page number.
 - Relationships retain stable subject/object IDs and a constrained relation name.
 
-The PRD-006/007 editors will operate on these contracts; they do not need a new persistence model.
+The PRD-006 editor adds an optional typed western-blot JSONB snapshot to the same immutable
+revision transaction; it does not create a parallel annotation document or overwrite generic
+field/spatial history. PRD-007 will extend spatial editing through these existing revision records.

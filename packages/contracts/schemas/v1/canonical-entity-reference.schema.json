@@ -1,0 +1,72 @@
+{
+  "$defs": {
+    "CanonicalEntityType": {
+      "enum": [
+        "protein",
+        "cell_line",
+        "tissue",
+        "organism",
+        "treatment",
+        "genotype",
+        "antibody"
+      ],
+      "title": "CanonicalEntityType",
+      "type": "string"
+    },
+    "Identifier": {
+      "maxLength": 200,
+      "minLength": 1,
+      "type": "string"
+    },
+    "SchemaVersion": {
+      "const": "1.0",
+      "type": "string"
+    }
+  },
+  "$id": "urn:hiveblot:schema:v1:canonical-entity-reference",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "accession": {
+      "anyOf": [
+        {
+          "maxLength": 500,
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Accession"
+    },
+    "canonical_id": {
+      "$ref": "#/$defs/Identifier"
+    },
+    "entity_type": {
+      "$ref": "#/$defs/CanonicalEntityType"
+    },
+    "label": {
+      "maxLength": 1000,
+      "minLength": 1,
+      "title": "Label",
+      "type": "string"
+    },
+    "schema_version": {
+      "$ref": "#/$defs/SchemaVersion",
+      "default": "1.0"
+    },
+    "vocabulary": {
+      "$ref": "#/$defs/Identifier"
+    }
+  },
+  "required": [
+    "entity_type",
+    "canonical_id",
+    "label",
+    "vocabulary"
+  ],
+  "title": "CanonicalEntityReference",
+  "type": "object"
+}

@@ -20,6 +20,8 @@ from .artifacts import BoundingRegion
 from .base import ContractModel, Identifier
 from .evaluation import ValidationIssue
 from .identifiers import PipelineIdentifier, ProducerIdentifier
+from .observation import ObservationState
+from .structured_annotations import WesternBlotStructuredAnnotation
 
 
 class ReviewStatus(StrEnum):
@@ -28,14 +30,6 @@ class ReviewStatus(StrEnum):
     REVIEWED = "reviewed"
     NEEDS_ADJUDICATION = "needs_adjudication"
     ADJUDICATED = "adjudicated"
-
-
-class ObservationState(StrEnum):
-    PRESENT = "present"
-    ABSENT = "absent"
-    UNKNOWN = "unknown"
-    AMBIGUOUS = "ambiguous"
-    NOT_APPLICABLE = "not_applicable"
 
 
 class CaseArtifactRole(StrEnum):
@@ -190,6 +184,7 @@ class AnnotationRevision(ContractModel):
     field_annotations: tuple[FieldAnnotation, ...] = ()
     spatial_annotations: tuple[SpatialAnnotation, ...] = ()
     relationships: tuple[AnnotationRelationship, ...] = ()
+    structured_annotation: WesternBlotStructuredAnnotation | None = None
     created_at: AwareDatetime
 
     @model_validator(mode="after")
