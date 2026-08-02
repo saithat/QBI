@@ -21,15 +21,15 @@ services:
       - --served-model-name
       - Qwen/Qwen3-VL-8B-Instruct
       - --max-model-len
-      - "8192"
+      - "12288"
       - --gpu-memory-utilization
       - "0.90"
       - --max-num-seqs
       - "1"
+      # The compiled path corrupts Qwen3-VL output on Ampere GPUs with vLLM 0.16.
+      - --enforce-eager
       - --limit-mm-per-prompt
       - '{"image":1}'
-      - --generation-config
-      - vllm
     devices:
       - nvidia.com/gpu=all
     ipc: host
@@ -37,7 +37,7 @@ services:
       HF_HUB_OFFLINE: "1"
       TRANSFORMERS_OFFLINE: "1"
     volumes:
-      - ${HF_CACHE_DIR:-/home/saithat/.cache/huggingface}:/root/.cache/huggingface:ro
+      - ${HF_CACHE_DIR:-./data/huggingface-cache}:/root/.cache/huggingface:ro
     ports:
       - "127.0.0.1:8000:8000"
     healthcheck:
@@ -55,12 +55,13 @@ services:
   app:
     build: .
     environment:
+      HIVEBLOT_ENV: local
       DATABASE_URL: postgresql://${POSTGRES_USER:-hiveblot}:${POSTGRES_PASSWORD:-hiveblot}@postgres:5432/${POSTGRES_DB:-hiveblot}
       VLLM_BASE_URL: http://vllm:8000/v1
       VLLM_MODEL: Qwen/Qwen3-VL-8B-Instruct
       VLLM_API_KEY: local
       VLLM_TIMEOUT_SECONDS: ${VLLM_TIMEOUT_SECONDS:-300}
-      VLLM_MAX_TOKENS: ${VLLM_MAX_TOKENS:-2048}
+      VLLM_MAX_TOKENS: ${VLLM_MAX_TOKENS:-4096}
       VLLM_IMAGE_MAX_SIDE: ${VLLM_IMAGE_MAX_SIDE:-1800}
       HIVEBLOT_DATA_DIR: /data
       PDF_DPI: ${PDF_DPI:-350}

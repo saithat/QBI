@@ -1,0 +1,1 @@
+"""HiveBlot HTTP application boundary."""

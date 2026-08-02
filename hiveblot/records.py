@@ -3,6 +3,8 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
+from .persistence_models import WesternBlotRecordWrite
+
 
 def determine_blot_type(target: str | None, loading: bool) -> str:
     if loading:
@@ -17,9 +19,9 @@ def flatten_records(
     figures: list[dict[str, Any]],
     *,
     source_pdf: str | None = None,
-) -> list[dict[str, Any]]:
+) -> list[WesternBlotRecordWrite]:
     """Expand positive figure-level model output into idempotent band rows."""
-    rows: list[dict[str, Any]] = []
+    rows: list[WesternBlotRecordWrite] = []
     for figure in figures:
         extraction = figure.get("extraction")
         if not isinstance(extraction, dict) or extraction.get("is_western_blot") is not True:

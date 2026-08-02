@@ -14,7 +14,7 @@ from typing import Any
 from . import pdf_preprocess
 
 DEFAULT_VLM_MODEL = "Qwen/Qwen3-VL-8B-Instruct"
-DEFAULT_MAX_TOKENS = 2048
+DEFAULT_MAX_TOKENS = 4096
 DEFAULT_TIMEOUT = 300
 DEFAULT_IMAGE_MAX_SIDE = 1800
 
@@ -258,7 +258,7 @@ class OpenAICompatibleVLM:
         except ImportError as exc:  # pragma: no cover - depends on local env
             raise RuntimeError("requests is required for VLM extraction") from exc
 
-        payload = {
+        payload: dict[str, Any] = {
             "model": self.model,
             "messages": [
                 {
@@ -282,6 +282,7 @@ class OpenAICompatibleVLM:
             ],
             "temperature": 0,
             "max_tokens": max_tokens,
+            "chat_template_kwargs": {"enable_thinking": False},
             "response_format": {
                 "type": "json_schema",
                 "json_schema": {
@@ -352,8 +353,8 @@ def run_vlm_extraction(
     cached_results = 0
     if resume and output_jsonl.exists():
         existing_by_path = {}
-        with output_jsonl.open(encoding="utf-8") as handle:
-            for line in handle:
+        with output_jsonl.open(encoding="utf-8") as read_handle:
+            for line in read_handle:
                 if not line.strip():
                     continue
                 record = json.loads(line)
@@ -428,7 +429,7 @@ def run_vlm_extraction(
     output_mode = "a" if resume else "w"
     streamed_positive_rows = 0
     queried_candidates = 0
-    with output_jsonl.open(output_mode, encoding="utf-8") as handle:
+    with output_jsonl.open(output_mode, encoding="utf-8") as stream_handle:
         for idx, candidate in enumerate(candidates, 1):
             candidate_path = candidate["candidate_path"]
             if candidate_path in done_paths:
@@ -458,8 +459,8 @@ def run_vlm_extraction(
 
             record = {**candidate, "extraction": extraction}
             results.append(record)
-            handle.write(json.dumps(record) + "\n")
-            handle.flush()
+            stream_handle.write(json.dumps(record) + "\n")
+            stream_handle.flush()
             if (
                 on_positive is not None
                 and isinstance(extraction, dict)
@@ -572,7 +573,7 @@ def _split_large_candidate(candidate_path: Path) -> list[Path]:
 
 
 def _merge_split_extractions(extractions: list[Any]) -> dict[str, Any] | None:
-    panels = []
+    panels: list[dict[str, Any]] = []
     root: dict[str, Any] = {
         "is_western_blot": True,
         "figure_label": "",

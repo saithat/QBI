@@ -166,7 +166,7 @@ def extract_figure_context(full_text: str, max_chars: int = 5000) -> str:
         r"\bExtended\s+Data\s+Fig\.\s*\d+",
     ]
 
-    matches = []
+    matches: list[re.Match[str]] = []
     for pattern in patterns:
         matches.extend(re.finditer(pattern, text, flags=re.IGNORECASE))
 
@@ -410,13 +410,14 @@ def preprocess_pdf(
     dpi: int = DEFAULT_DPI,
     min_candidate_score: float = DEFAULT_MIN_CANDIDATE_SCORE,
     min_llm_score: float = DEFAULT_MIN_LLM_SCORE,
+    data_dir: str | Path | None = None,
 ) -> dict[str, Any]:
     """Run all pre-LLM preprocessing and write JSON manifests."""
     pdf_path = Path(pdf_path)
     extracted_doi = extract_paper_doi(pdf_path)
     paper_id = paper_id or extracted_doi or pdf_path.stem
     out_dir_name = _safe_path_segment(paper_id)
-    data_dir = Path(os.environ.get("HIVEBLOT_DATA_DIR", "data"))
+    data_dir = Path(data_dir or os.environ.get("HIVEBLOT_DATA_DIR", "data"))
     default_out_dir = data_dir / "runs" / out_dir_name
     out_dir = Path(out_dir) if out_dir is not None else default_out_dir
     page_dir = out_dir / "rendered_pages"

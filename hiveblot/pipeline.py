@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 from pathlib import Path
 from typing import Any
 
@@ -23,20 +22,14 @@ def run_pdf_pipeline(
     if not pdf_path.is_file():
         raise FileNotFoundError(f"PDF not found: {pdf_path}")
 
-    os.environ["HIVEBLOT_DATA_DIR"] = str(settings.data_dir)
     db.initialize(settings.database_url)
     preprocess = pdf_preprocess.preprocess_pdf(
         pdf_path=pdf_path,
         out_dir=out_dir,
-        dpi=_env_int("PDF_DPI", pdf_preprocess.DEFAULT_DPI),
-        min_candidate_score=_env_float(
-            "MIN_CANDIDATE_SCORE",
-            pdf_preprocess.DEFAULT_MIN_CANDIDATE_SCORE,
-        ),
-        min_llm_score=_env_float(
-            "MIN_VLM_SCORE",
-            pdf_preprocess.DEFAULT_MIN_LLM_SCORE,
-        ),
+        dpi=settings.pdf_dpi,
+        min_candidate_score=settings.min_candidate_score,
+        min_llm_score=settings.min_vlm_score,
+        data_dir=settings.data_dir,
     )
 
     def upsert_positive(record: dict[str, Any]) -> int:
@@ -46,7 +39,7 @@ def run_pdf_pipeline(
     vlm = vlm_extract.run_vlm_extraction(
         run_dir=preprocess["out_dir"],
         base_url=settings.vllm_base_url,
-        api_key=settings.vllm_api_key,
+        api_key=settings.vllm_api_key.get_secret_value(),
         model=settings.vllm_model,
         max_tokens=settings.vllm_max_tokens,
         timeout=int(settings.vllm_timeout_seconds),
@@ -74,16 +67,6 @@ def run_pdf_pipeline(
         encoding="utf-8",
     )
     return summary
-
-
-def _env_int(name: str, default: int) -> int:
-    value = os.getenv(name)
-    return int(value) if value else default
-
-
-def _env_float(name: str, default: float) -> float:
-    value = os.getenv(name)
-    return float(value) if value else default
 
 
 def main() -> None:

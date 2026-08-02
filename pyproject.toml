@@ -16,28 +16,39 @@ dependencies = [
   "Pillow>=11,<13",
   "psycopg[binary]>=3.2,<4",
   "pydantic>=2.11,<3",
+  "pydantic-settings>=2.10,<3",
   "PyMuPDF>=1.26,<2",
-  "python-dotenv>=1.1,<2",
   "requests>=2.32,<3",
   "uvicorn[standard]>=0.35,<1",
 ]
 
 [project.optional-dependencies]
 dev = [
+  "mypy>=1.17,<2",
   "pytest>=8.4,<10",
   "pytest-asyncio>=1.1,<2",
   "ruff>=0.12,<1",
 ]
 
 [project.scripts]
-hiveblot-ingest = "hiveblot.pipeline:main"
+hiveblot-ingest = "workers.extraction.entrypoint:main"
+hiveblot-schemas = "hiveblot_contracts.schema_cli:main"
 
 [tool.hatch.build.targets.wheel]
-packages = ["hiveblot"]
+packages = [
+  "apps",
+  "hiveblot",
+  "packages/contracts/src/hiveblot_contracts",
+  "workers",
+]
+
+[tool.hatch.build.targets.wheel.force-include]
+"packages/contracts/schemas/v1" = "hiveblot_contracts/schemas/v1"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-ra"
+pythonpath = [".", "packages/contracts/src"]
 
 [tool.ruff]
 target-version = "py312"
@@ -45,3 +56,17 @@ line-length = 100
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.mypy]
+python_version = "3.12"
+plugins = ["pydantic.mypy"]
+ignore_missing_imports = true
+check_untyped_defs = true
+disallow_any_generics = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unreachable = true
+warn_unused_configs = true
+warn_unused_ignores = true
+exclude = ["data/", "tests/fixtures/"]
+mypy_path = "packages/contracts/src"

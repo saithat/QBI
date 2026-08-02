@@ -1,0 +1,483 @@
+{
+  "paper_id": "10.3389/fonc.2024.1363543",
+  "page": 4,
+  "bbox_page": [
+    0,
+    288,
+    2696,
+    2946
+  ],
+  "tight_bbox_page": [
+    219,
+    348,
+    2676,
+    2926
+  ],
+  "candidate_path": "/data/runs/10.3389_fonc.2024.1363543/panel_candidates/page_004_cand_0034.png",
+  "cv_score": 0.7784390975201184,
+  "extraction": {
+    "is_western_blot": true,
+    "figure_label": "FIGURE 1",
+    "figure_caption": "Proteasome inhibition results in degradation of mutant p53 protein. Immunoblot analysis of p53 level in R273H mutant bearing lung cancer cell line (H1975) and wildtype p53 bearing lung cancer cell line (A549) treated with 100nM Bortezomib for indicated timepoints (A, B). The intensity of p53 was determined by densitometry using ImageJ software and expressed relative to control (C, D). (E) Lung cancer cell line H1975 (p53R273H) was treated with cycloheximide with and without bortezomib. Cell lysates were obtained at indicated timepoints and immunoblotted with indicated antibodies. (F) Detected bands were quantified on image J and plotted relative to 0 time point. Graph shows average of 3 replicates. * = p<0.05, ns = not significant.",
+    "biological_sample": "",
+    "cell_line_tissue": "H1975 (R273H); A549 (WTp53)",
+    "organism": "",
+    "sample_type": "",
+    "treatment_context": "treated with 100nM Bortezomib for indicated timepoints (A, B); treated with cycloheximide with and without bortezomib (E)",
+    "panels": [
+      {
+        "panel_label": "A",
+        "panel_title": "H1975 (R273H)",
+        "treatment_context": "treated with 100nM Bortezomib for indicated timepoints",
+        "targets_top_to_bottom": [
+          {
+            "row_index": 1,
+            "target": "p53",
+            "is_loading_control": false,
+            "confidence": "high"
+          },
+          {
+            "row_index": 2,
+            "target": "GAPDH",
+            "is_loading_control": true,
+            "confidence": "high"
+          }
+        ],
+        "lanes_left_to_right": [
+          {
+            "lane_index": 1,
+            "condition": "0 hours",
+            "confidence": "high"
+          },
+          {
+            "lane_index": 2,
+            "condition": "1 hour",
+            "confidence": "high"
+          },
+          {
+            "lane_index": 3,
+            "condition": "3 hours",
+            "confidence": "high"
+          },
+          {
+            "lane_index": 4,
+            "condition": "6 hours",
+            "confidence": "high"
+          },
+          {
+            "lane_index": 5,
+            "condition": "18 hours",
+            "confidence": "high"
+          },
+          {
+            "lane_index": 6,
+            "condition": "24 hours",
+            "confidence": "high"
+          }
+        ],
+        "bands": [
+          {
+            "row_index": 1,
+            "target": "p53",
+            "lane_index": 1,
+            "band_state": "present",
+            "confidence": "high"
+          },
+          {
+            "row_index": 1,
+            "target": "p53",
+            "lane_index": 2,
+            "band_state": "present",
+            "confidence": "high"
+          },
+          {
+            "row_index": 1,
+            "target": "p53",
+            "lane_index": 3,
+            "band_state": "present",
+            "confidence": "high"
+          },
+          {
+            "row_index": 1,
+            "target": "p53",
+            "lane_index": 4,
+            "band_state": "present",
+            "confidence": "high"
+          },
+          {
+            "row_index": 1,
+            "target": "p53",
+            "lane_index": 5,
+            "band_state": "present",
+            "confidence": "high"
+          },
+          {
+            "row_index": 1,
+            "target": "p53",
+            "lane_index": 6,
+            "band_state": "present",
+            "confidence": "high"
+          },
+          {
+            "row_index": 2,
+            "target": "GAPDH",
+            "lane_index": 1,
+            "band_state": "present",
+            "confidence": "high"
+          },
+          {
+            "row_index": 2,
+            "target": "GAPDH",
+            "lane_index": 2,
+            "band_state": "present",
+            "confidence": "high"
+          },
+          {
+            "row_index": 2,
+            "target": "GAPDH",
+            "lane_index": 3,
+            "band_state": "present",
+            "confidence": "high"
+          },
+          {
+            "row_index": 2,
+            "target": "GAPDH",
+            "lane_index": 4,
+            "band_state": "present",
+            "confidence": "high"
+          },
+          {
+            "row_index": 2,
+            "target": "GAPDH",
+            "lane_index": 5,
+            "band_state": "present",
+            "confidence": "high"
+          },
+          {
+            "row_index": 2,
+            "target": "GAPDH",
+            "lane_index": 6,
+            "band_state": "present",
+            "confidence": "high"
+          }
+        ],
+        "warnings": []
+      },
+      {
+        "panel_label": "B",
+        "panel_title": "A549 (WTp53)",
+        "treatment_context": "treated with 100nM Bortezomib for indicated timepoints",
+        "targets_top_to_bottom": [
+          {
+            "row_index": 1,
+            "target": "p53",
+            "is_loading_control": false,
+            "confidence": "high"
+          },
+          {
+            "row_index": 2,
+            "target": "Vinculin",
+            "is_loading_control": true,
+            "confidence": "high"
+          }
+        ],
+        "lanes_left_to_right": [
+          {
+            "lane_index": 1,
+            "condition": "0 hours",
+            "confidence": "high"
+          },
+          {
+            "lane_index": 2,
+            "condition": "1 hour",
+            "confidence": "high"
+          },
+          {
+            "lane_index": 3,
+            "condition": "3 hours",
+            "confidence": "high"
+          },
+          {
+            "lane_index": 4,
+            "condition": "6 hours",
+            "confidence": "high"
+          },
+          {
+            "lane_index": 5,
+            "condition": "18 hours",
+            "confidence": "high"
+          },
+          {
+            "lane_index": 6,
+            "condition": "24 hours",
+            "confidence": "high"
+          }
+        ],
+        "bands": [
+          {
+            "row_index": 1,
+            "target": "p53",
+            "lane_index": 1,
+            "band_state": "present",
+            "confidence": "high"
+          },
+          {
+            "row_index": 1,
+            "target": "p53",
+            "lane_index": 2,
+            "band_state": "present",
+            "confidence": "high"
+          },
+          {
+            "row_index": 1,
+            "target": "p53",
+            "lane_index": 3,
+            "band_state": "present",
+            "confidence": "high"
+          },
+          {
+            "row_index": 1,
+            "target": "p53",
+            "lane_index": 4,
+            "band_state": "present",
+            "confidence": "high"
+          },
+          {
+            "row_index": 1,
+            "target": "p53",
+            "lane_index": 5,
+            "band_state": "present",
+            "confidence": "high"
+          },
+          {
+            "row_index": 1,
+            "target": "p53",
+            "lane_index": 6,
+            "band_state": "present",
+            "confidence": "high"
+          },
+          {
+            "row_index": 2,
+            "target": "Vinculin",
+            "lane_index": 1,
+            "band_state": "present",
+            "confidence": "high"
+          },
+          {
+            "row_index": 2,
+            "target": "Vinculin",
+            "lane_index": 2,
+            "band_state": "present",
+            "confidence": "high"
+          },
+          {
+            "row_index": 2,
+            "target": "Vinculin",
+            "lane_index": 3,
+            "band_state": "present",
+            "confidence": "high"
+          },
+          {
+            "row_index": 2,
+            "target": "Vinculin",
+            "lane_index": 4,
+            "band_state": "present",
+            "confidence": "high"
+          },
+          {
+            "row_index": 2,
+            "target": "Vinculin",
+            "lane_index": 5,
+            "band_state": "present",
+            "confidence": "high"
+          },
+          {
+            "row_index": 2,
+            "target": "Vinculin",
+            "lane_index": 6,
+            "band_state": "present",
+            "confidence": "high"
+          }
+        ],
+        "warnings": []
+      },
+      {
+        "panel_label": "E",
+        "panel_title": "H1975 (R273H)",
+        "treatment_context": "treated with cycloheximide with and without bortezomib",
+        "targets_top_to_bottom": [
+          {
+            "row_index": 1,
+            "target": "p53",
+            "is_loading_control": false,
+            "confidence": "high"
+          },
+          {
+            "row_index": 2,
+            "target": "GAPDH",
+            "is_loading_control": true,
+            "confidence": "high"
+          }
+        ],
+        "lanes_left_to_right": [
+          {
+            "lane_index": 1,
+            "condition": "0 hours; CHX",
+            "confidence": "high"
+          },
+          {
+            "lane_index": 2,
+            "condition": "2 hours; CHX",
+            "confidence": "high"
+          },
+          {
+            "lane_index": 3,
+            "condition": "4 hours; CHX",
+            "confidence": "high"
+          },
+          {
+            "lane_index": 4,
+            "condition": "7 hours; CHX",
+            "confidence": "high"
+          },
+          {
+            "lane_index": 5,
+            "condition": "0 hours; CHX + Bortezomib",
+            "confidence": "high"
+          },
+          {
+            "lane_index": 6,
+            "condition": "2 hours; CHX + Bortezomib",
+            "confidence": "high"
+          },
+          {
+            "lane_index": 7,
+            "condition": "4 hours; CHX + Bortezomib",
+            "confidence": "high"
+          },
+          {
+            "lane_index": 8,
+            "condition": "7 hours; CHX + Bortezomib",
+            "confidence": "high"
+          }
+        ],
+        "bands": [
+          {
+            "row_index": 1,
+            "target": "p53",
+            "lane_index": 1,
+            "band_state": "present",
+            "confidence": "high"
+          },
+          {
+            "row_index": 1,
+            "target": "p53",
+            "lane_index": 2,
+            "band_state": "present",
+            "confidence": "high"
+          },
+          {
+            "row_index": 1,
+            "target": "p53",
+            "lane_index": 3,
+            "band_state": "present",
+            "confidence": "high"
+          },
+          {
+            "row_index": 1,
+            "target": "p53",
+            "lane_index": 4,
+            "band_state": "present",
+            "confidence": "high"
+          },
+          {
+            "row_index": 1,
+            "target": "p53",
+            "lane_index": 5,
+            "band_state": "present",
+            "confidence": "high"
+          },
+          {
+            "row_index": 1,
+            "target": "p53",
+            "lane_index": 6,
+            "band_state": "present",
+            "confidence": "high"
+          },
+          {
+            "row_index": 1,
+            "target": "p53",
+            "lane_index": 7,
+            "band_state": "present",
+            "confidence": "high"
+          },
+          {
+            "row_index": 1,
+            "target": "p53",
+            "lane_index": 8,
+            "band_state": "present",
+            "confidence": "high"
+          },
+          {
+            "row_index": 2,
+            "target": "GAPDH",
+            "lane_index": 1,
+            "band_state": "present",
+            "confidence": "high"
+          },
+          {
+            "row_index": 2,
+            "target": "GAPDH",
+            "lane_index": 2,
+            "band_state": "present",
+            "confidence": "high"
+          },
+          {
+            "row_index": 2,
+            "target": "GAPDH",
+            "lane_index": 3,
+            "band_state": "present",
+            "confidence": "high"
+          },
+          {
+            "row_index": 2,
+            "target": "GAPDH",
+            "lane_index": 4,
+            "band_state": "present",
+            "confidence": "high"
+          },
+          {
+            "row_index": 2,
+            "target": "GAPDH",
+            "lane_index": 5,
+            "band_state": "present",
+            "confidence": "high"
+          },
+          {
+            "row_index": 2,
+            "target": "GAPDH",
+            "lane_index": 6,
+            "band_state": "present",
+            "confidence": "high"
+          },
+          {
+            "row_index": 2,
+            "target": "GAPDH",
+            "lane_index": 7,
+            "band_state": "present",
+            "confidence": "high"
+          },
+          {
+            "row_index": 2,
+            "target": "GAPDH",
+            "lane_index": 8,
+            "band_state": "present",
+            "confidence": "high"
+          }
+        ],
+        "warnings": []
+      }
+    ],
+    "warnings": []
+  }
+}

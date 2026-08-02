@@ -3,82 +3,462 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>HiveBlot Local</title>
+  <meta name="description" content="A local index of extracted western blot evidence.">
+  <title>HiveBlot — Local evidence index</title>
   <style>
-    :root { color-scheme: dark; --bg:#0b0f0e; --panel:#121816; --line:#26332f;
-      --text:#e7f0ed; --muted:#91a39d; --accent:#4fd7b1; --error:#ff8c8c; }
+    :root {
+      color-scheme: light;
+      --paper: #f4f3ee;
+      --ink: #171815;
+      --muted: #676a63;
+      --rule: #cdcec6;
+      --soft: #e8e7e0;
+      --positive: #285f48;
+      --negative: #9a413b;
+      --uncertain: #8a6825;
+    }
+
     * { box-sizing: border-box; }
-    body { margin:0; background:var(--bg); color:var(--text); font:15px/1.5 system-ui,sans-serif; }
-    main { width:min(1200px, calc(100% - 32px)); margin:0 auto; padding:48px 0 72px; }
-    header { display:flex; align-items:flex-start; justify-content:space-between; gap:24px; margin-bottom:32px; }
-    h1 { margin:0; font-size:clamp(28px,5vw,46px); letter-spacing:-1.5px; }
-    .subtitle { color:var(--muted); margin:8px 0 0; }
-    .status { border:1px solid var(--line); border-radius:999px; padding:7px 12px;
-      color:var(--muted); white-space:nowrap; font:12px ui-monospace,monospace; }
-    .status.ready { color:var(--accent); border-color:#2b735f; }
-    .status.error { color:var(--error); border-color:#743c3c; }
-    form { display:flex; gap:10px; margin-bottom:14px; }
-    input { width:100%; border:1px solid var(--line); border-radius:9px; background:var(--panel);
-      color:var(--text); padding:14px 16px; font:inherit; outline:none; }
-    input:focus { border-color:var(--accent); }
-    button { border:0; border-radius:9px; background:var(--accent); color:#07110e;
-      padding:0 22px; font-weight:700; cursor:pointer; }
-    button:disabled { opacity:.5; cursor:wait; }
-    .meta { min-height:32px; display:flex; gap:8px; flex-wrap:wrap; align-items:center;
-      color:var(--muted); margin-bottom:16px; }
-    .tag { padding:3px 8px; border:1px solid var(--line); border-radius:999px; font-size:12px; }
-    .message { padding:28px; border:1px solid var(--line); border-radius:10px;
-      background:var(--panel); color:var(--muted); text-align:center; }
-    .message.error { color:var(--error); }
-    .table-wrap { overflow:auto; border:1px solid var(--line); border-radius:10px; }
-    table { border-collapse:collapse; width:100%; min-width:980px; background:var(--panel); }
-    th,td { padding:12px 14px; border-bottom:1px solid var(--line); text-align:left; vertical-align:top; }
-    th { position:sticky; top:0; background:#17201d; color:var(--muted); font-size:11px;
-      text-transform:uppercase; letter-spacing:.7px; }
-    tr:last-child td { border-bottom:0; }
-    td.target { color:var(--accent); font-weight:700; }
-    .state { font:12px ui-monospace,monospace; text-transform:uppercase; }
-    .state.present { color:var(--accent); }
-    .state.absent { color:var(--error); }
-    .state.uncertain { color:#f5c878; }
-    footer { margin-top:20px; color:var(--muted); font-size:12px; }
-    code { color:#c7d7d2; }
-    @media (max-width:640px) { header { flex-direction:column; } form { flex-direction:column; }
-      button { padding:13px; } main { padding-top:28px; } }
+
+    html { background: var(--paper); }
+
+    body {
+      margin: 0;
+      background: var(--paper);
+      color: var(--ink);
+      font: 15px/1.45 Arial, Helvetica, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    button,
+    input { font: inherit; }
+
+    main {
+      width: min(1480px, calc(100% - 64px));
+      min-height: 100vh;
+      margin: 0 auto;
+      padding: 24px 0 36px;
+    }
+
+    .site-header {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: 24px;
+      padding-bottom: 18px;
+      border-bottom: 1px solid var(--ink);
+    }
+
+    .brand {
+      color: var(--ink);
+      font: 600 20px/1 Georgia, "Times New Roman", serif;
+      text-decoration: none;
+      letter-spacing: -.4px;
+    }
+
+    .header-label {
+      justify-self: end;
+      margin: 0;
+      color: var(--muted);
+      font-size: 11px;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(260px, 390px);
+      gap: 48px;
+      align-items: end;
+      padding: clamp(64px, 9vw, 132px) 0 clamp(68px, 9vw, 128px);
+    }
+
+    .eyebrow {
+      margin: 0 0 24px;
+      color: var(--muted);
+      font-size: 11px;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      max-width: 1000px;
+      margin: 0;
+      font: 400 clamp(54px, 8vw, 122px)/.88 Georgia, "Times New Roman", serif;
+      letter-spacing: -.065em;
+    }
+
+    .lede {
+      max-width: 34ch;
+      margin: 0 0 7px;
+      color: var(--muted);
+      font-size: clamp(17px, 1.5vw, 21px);
+      line-height: 1.45;
+    }
+
+    .explorer { border-top: 1px solid var(--ink); }
+
+    .section-heading {
+      display: flex;
+      justify-content: space-between;
+      gap: 24px;
+      padding: 13px 0 28px;
+      color: var(--muted);
+      font-size: 11px;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+    }
+
+    form {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      border-bottom: 1px solid var(--ink);
+    }
+
+    input {
+      min-width: 0;
+      border: 0;
+      border-radius: 0;
+      outline: 0;
+      background: transparent;
+      color: var(--ink);
+      padding: 22px 24px 22px 0;
+      font: 400 clamp(20px, 2.2vw, 32px)/1.2 Georgia, "Times New Roman", serif;
+    }
+
+    input::placeholder { color: #8d8f88; opacity: 1; }
+
+    input:focus-visible { box-shadow: inset 0 -3px var(--ink); }
+
+    button {
+      align-self: stretch;
+      min-width: 140px;
+      border: 0;
+      border-radius: 0;
+      background: var(--ink);
+      color: var(--paper);
+      padding: 0 30px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: .09em;
+      text-transform: uppercase;
+    }
+
+    button:hover { background: #343630; }
+    button:focus-visible { outline: 3px solid var(--paper); outline-offset: -6px; }
+    button:disabled { cursor: wait; opacity: .55; }
+
+    .meta {
+      min-height: 69px;
+      display: flex;
+      align-items: center;
+      gap: 10px 20px;
+      flex-wrap: wrap;
+      border-bottom: 1px solid var(--rule);
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .tag::before { content: "— "; }
+
+    .message {
+      padding: 72px 0;
+      border-bottom: 1px solid var(--rule);
+      color: var(--muted);
+      font: 400 clamp(20px, 2.4vw, 32px)/1.25 Georgia, "Times New Roman", serif;
+    }
+
+    .message.error { color: var(--negative); }
+
+    .table-wrap {
+      overflow-x: auto;
+      border-bottom: 1px solid var(--ink);
+    }
+
+    table {
+      width: 100%;
+      min-width: 1040px;
+      border-collapse: collapse;
+      background: transparent;
+    }
+
+    th,
+    td {
+      padding: 15px 18px 15px 0;
+      border-bottom: 1px solid var(--rule);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th:last-child,
+    td:last-child { padding-right: 0; }
+
+    th {
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 400;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+    }
+
+    tbody tr:last-child td { border-bottom: 0; }
+    .record-row { cursor: pointer; }
+    .record-row:hover { background: rgba(23, 24, 21, .05); }
+    .record-row:focus-visible {
+      outline: 2px solid var(--ink);
+      outline-offset: -2px;
+      background: rgba(23, 24, 21, .05);
+    }
+    td.target { font-family: Georgia, "Times New Roman", serif; font-size: 17px; }
+
+    .state {
+      font-size: 11px;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+    }
+
+    .state.present { color: var(--positive); }
+    .state.absent { color: var(--negative); }
+    .state.uncertain { color: var(--uncertain); }
+
+    footer {
+      display: flex;
+      justify-content: space-between;
+      gap: 24px;
+      padding-top: 16px;
+      color: var(--muted);
+      font-size: 11px;
+      letter-spacing: .04em;
+    }
+
+    code {
+      color: var(--ink);
+      font: inherit;
+    }
+
+    .record-dialog {
+      width: min(1280px, calc(100% - 40px));
+      height: min(880px, calc(100% - 40px));
+      max-width: none;
+      max-height: none;
+      margin: auto;
+      padding: 0;
+      border: 1px solid var(--ink);
+      background: var(--paper);
+      color: var(--ink);
+    }
+
+    .record-dialog::backdrop { background: rgba(23, 24, 21, .52); }
+
+    .dialog-shell {
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr);
+      height: 100%;
+    }
+
+    .dialog-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 24px;
+      padding: 18px 22px;
+      border-bottom: 1px solid var(--ink);
+    }
+
+    .dialog-kicker {
+      margin: 0 0 4px;
+      color: var(--muted);
+      font-size: 10px;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+    }
+
+    .dialog-header h2 {
+      margin: 0;
+      font: 400 clamp(21px, 2.2vw, 32px)/1.1 Georgia, "Times New Roman", serif;
+      letter-spacing: -.025em;
+    }
+
+    .dialog-close {
+      align-self: auto;
+      min-width: 0;
+      min-height: 0;
+      border: 1px solid var(--ink);
+      background: transparent;
+      color: var(--ink);
+      padding: 9px 12px;
+      font-size: 10px;
+    }
+
+    .dialog-close:hover { background: var(--ink); color: var(--paper); }
+    .dialog-close:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+
+    .detail-content { overflow: auto; }
+
+    .detail-loading {
+      padding: 64px 24px;
+      color: var(--muted);
+      font: 400 24px/1.2 Georgia, "Times New Roman", serif;
+    }
+
+    .detail-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.55fr) minmax(320px, .75fr);
+      min-height: 100%;
+    }
+
+    .detail-media {
+      display: grid;
+      place-items: center;
+      min-width: 0;
+      padding: 24px;
+      border-right: 1px solid var(--rule);
+      background: #fff;
+    }
+
+    .detail-media img {
+      display: block;
+      max-width: 100%;
+      max-height: calc(100vh - 150px);
+      object-fit: contain;
+    }
+
+    .detail-copy { min-width: 0; padding: 24px; }
+
+    .detail-meta {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px 20px;
+      margin: 0;
+      padding: 0 0 26px;
+      border-bottom: 1px solid var(--rule);
+    }
+
+    .detail-meta div { min-width: 0; }
+    .detail-meta dt,
+    .detail-section h3 {
+      margin: 0 0 5px;
+      color: var(--muted);
+      font-size: 9px;
+      font-weight: 400;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+    }
+
+    .detail-meta dd {
+      margin: 0;
+      overflow-wrap: anywhere;
+      font-size: 13px;
+    }
+
+    .detail-section { padding: 24px 0; border-bottom: 1px solid var(--rule); }
+    .detail-section:last-child { border-bottom: 0; }
+    .detail-section p {
+      margin: 0;
+      color: #454741;
+      font: 400 15px/1.55 Georgia, "Times New Roman", serif;
+      white-space: pre-line;
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    @media (max-width: 760px) {
+      main { width: min(100% - 32px, 1480px); padding-top: 18px; }
+      .site-header { grid-template-columns: 1fr auto; }
+      .header-label { display: none; }
+      .hero { grid-template-columns: 1fr; gap: 30px; padding: 68px 0 74px; }
+      h1 { font-size: clamp(51px, 16vw, 86px); }
+      .lede { max-width: 30ch; }
+      form { grid-template-columns: 1fr; }
+      input { padding: 18px 0; }
+      button { min-height: 52px; }
+      .section-heading span:last-child { display: none; }
+      footer { flex-direction: column; gap: 6px; }
+      .record-dialog { width: calc(100% - 16px); height: calc(100% - 16px); }
+      .detail-grid { grid-template-columns: 1fr; }
+      .detail-media { border-right: 0; border-bottom: 1px solid var(--rule); }
+      .detail-media img { max-height: 62vh; }
+    }
   </style>
 </head>
 <body>
   <main>
-    <header>
-      <div>
-        <h1>HiveBlot Local</h1>
-        <p class="subtitle">Search western blot evidence extracted on this machine.</p>
-      </div>
-      <div id="status" class="status">CHECKING SERVICES</div>
+    <header class="site-header">
+      <a class="brand" href="/">HiveBlot</a>
+      <p class="header-label">Local western blot index</p>
     </header>
-    <form id="search-form">
-      <input id="query" name="query" maxlength="1000" autocomplete="off"
-        placeholder="e.g. p53 in A549 cells treated with Nutlin-3">
-      <button id="search-button" type="submit">Search</button>
-    </form>
-    <div id="meta" class="meta"></div>
-    <section id="content" aria-live="polite">
-      <div class="message">Loading local records…</div>
+
+    <section class="hero" aria-labelledby="page-title">
+      <div>
+        <p class="eyebrow">Evidence index / local</p>
+        <h1 id="page-title">Western blot evidence, made searchable.</h1>
+      </div>
+      <p class="lede">Explore targets, samples, conditions, and band states extracted from papers on this machine.</p>
     </section>
-    <footer>Ingest a paper with <code>make ingest PDF=paper.pdf</code>.</footer>
+
+    <section class="explorer" aria-labelledby="explorer-title">
+      <div class="section-heading">
+        <span id="explorer-title">Evidence explorer</span>
+        <span>Natural-language search</span>
+      </div>
+      <form id="search-form">
+        <label class="sr-only" for="query">Search extracted evidence</label>
+        <input id="query" name="query" maxlength="1000" autocomplete="off"
+          placeholder="Try “p53 in A549 cells treated with bortezomib”">
+        <button id="search-button" type="submit">Search</button>
+      </form>
+      <div id="meta" class="meta"></div>
+      <div id="content" aria-live="polite" aria-busy="true">
+        <div class="message">Loading local records…</div>
+      </div>
+    </section>
+
+    <footer>
+      <span>Data and inference stay on this machine.</span>
+      <span>Ingest a paper with <code>make ingest PDF=paper.pdf</code></span>
+    </footer>
   </main>
+
+  <dialog id="record-dialog" class="record-dialog" aria-labelledby="detail-title">
+    <div class="dialog-shell">
+      <header class="dialog-header">
+        <div>
+          <p class="dialog-kicker">Source record</p>
+          <h2 id="detail-title">Record detail</h2>
+        </div>
+        <button id="dialog-close" class="dialog-close" type="button">Close</button>
+      </header>
+      <div id="detail-content" class="detail-content"></div>
+    </div>
+  </dialog>
+
   <script>
-    const statusEl = document.querySelector('#status');
     const form = document.querySelector('#search-form');
     const input = document.querySelector('#query');
     const button = document.querySelector('#search-button');
     const meta = document.querySelector('#meta');
     const content = document.querySelector('#content');
+    const dialog = document.querySelector('#record-dialog');
+    const dialogClose = document.querySelector('#dialog-close');
+    const detailTitle = document.querySelector('#detail-title');
+    const detailContent = document.querySelector('#detail-content');
     const columns = [
       ['paper_id', 'Paper'], ['page', 'Page'], ['target', 'Target'],
       ['sample', 'Sample'], ['organism', 'Organism'], ['condition', 'Condition'],
       ['band_state', 'Band'], ['confidence', 'Confidence'],
     ];
+
     function cell(value, key) {
       const td = document.createElement('td');
       if (key === 'target') td.className = 'target';
@@ -87,13 +467,19 @@
       td.textContent = value === null || value === undefined || value === '' ? '—' : String(value);
       return td;
     }
+
     function render(data) {
+      content.setAttribute('aria-busy', 'false');
       meta.replaceChildren();
       const count = document.createElement('span');
       count.textContent = `${data.count} record${data.count === 1 ? '' : 's'}`;
       meta.append(count);
+      const hint = document.createElement('span');
+      hint.className = 'tag';
+      hint.textContent = 'Select a record to inspect its source';
+      meta.append(hint);
       Object.entries(data.filters || {}).forEach(([key, value]) => {
-        if (!value) return;
+        if (key === 'schema_version' || !value) return;
         const tag = document.createElement('span');
         tag.className = 'tag';
         tag.textContent = `${key}: ${value}`;
@@ -106,52 +492,171 @@
         content.replaceChildren(empty);
         return;
       }
-      const wrap = document.createElement('div'); wrap.className = 'table-wrap';
+      const wrap = document.createElement('div');
+      wrap.className = 'table-wrap';
       const table = document.createElement('table');
-      const head = document.createElement('thead'); const headerRow = document.createElement('tr');
+      const head = document.createElement('thead');
+      const headerRow = document.createElement('tr');
       columns.forEach(([, label]) => {
-        const th = document.createElement('th'); th.textContent = label; headerRow.append(th);
+        const th = document.createElement('th');
+        th.textContent = label;
+        headerRow.append(th);
       });
-      head.append(headerRow); table.append(head);
+      head.append(headerRow);
+      table.append(head);
       const body = document.createElement('tbody');
       data.results.forEach(record => {
         const row = document.createElement('tr');
+        row.className = 'record-row';
+        row.tabIndex = 0;
+        row.setAttribute('role', 'button');
+        row.setAttribute(
+          'aria-label',
+          `View source for ${record.target || 'record'} on page ${record.page || 'unknown'}`,
+        );
         columns.forEach(([key]) => row.append(cell(record[key], key)));
+        row.addEventListener('click', () => openRecord(record));
+        row.addEventListener('keydown', event => {
+          if (event.key !== 'Enter' && event.key !== ' ') return;
+          event.preventDefault();
+          openRecord(record);
+        });
         body.append(row);
       });
-      table.append(body); wrap.append(table); content.replaceChildren(wrap);
+      table.append(body);
+      wrap.append(table);
+      content.replaceChildren(wrap);
     }
+
     function showError(message) {
-      const error = document.createElement('div'); error.className = 'message error';
-      error.textContent = message; content.replaceChildren(error);
+      content.setAttribute('aria-busy', 'false');
+      const error = document.createElement('div');
+      error.className = 'message error';
+      error.textContent = message;
+      content.replaceChildren(error);
     }
+
     async function request(url, options) {
-      const response = await fetch(url, options); const data = await response.json();
+      const response = await fetch(url, options);
+      const data = await response.json();
       if (!response.ok) throw new Error(data.detail || `Request failed (${response.status})`);
       return data;
     }
-    async function checkHealth() {
+
+    function addDetailField(list, label, value) {
+      const wrapper = document.createElement('div');
+      const term = document.createElement('dt');
+      const description = document.createElement('dd');
+      term.textContent = label;
+      description.textContent = value === null || value === undefined || value === '' ? '—' : String(value);
+      wrapper.append(term, description);
+      list.append(wrapper);
+    }
+
+    function detailSection(label, text) {
+      if (!text) return null;
+      const section = document.createElement('section');
+      section.className = 'detail-section';
+      const heading = document.createElement('h3');
+      const copy = document.createElement('p');
+      heading.textContent = label;
+      copy.textContent = text;
+      section.append(heading, copy);
+      return section;
+    }
+
+    function renderDetail(data) {
+      const record = data.record;
+      detailTitle.textContent = [record.target, record.figure_label, record.panel_label]
+        .filter(Boolean)
+        .join(' · ');
+
+      const grid = document.createElement('div');
+      grid.className = 'detail-grid';
+      const media = document.createElement('div');
+      media.className = 'detail-media';
+      if (data.image_url) {
+        const image = document.createElement('img');
+        image.src = data.image_url;
+        image.alt = `${record.figure_label || 'Figure'} source image from page ${record.page}`;
+        media.append(image);
+      } else {
+        const unavailable = document.createElement('div');
+        unavailable.className = 'detail-loading';
+        unavailable.textContent = 'Source image unavailable.';
+        media.append(unavailable);
+      }
+
+      const copy = document.createElement('div');
+      copy.className = 'detail-copy';
+      const details = document.createElement('dl');
+      details.className = 'detail-meta';
+      addDetailField(details, 'Paper', record.paper_id);
+      addDetailField(details, 'Page', record.page);
+      addDetailField(details, 'Figure / panel', [record.figure_label, record.panel_label].filter(Boolean).join(' / '));
+      addDetailField(details, 'Target', record.target);
+      addDetailField(details, 'Sample', record.sample);
+      addDetailField(details, 'Organism', record.organism);
+      addDetailField(details, 'Condition', record.condition);
+      addDetailField(details, 'Band', record.band_state);
+      addDetailField(
+        details,
+        'Confidence',
+        typeof record.confidence === 'number' ? `${Math.round(record.confidence * 100)}%` : record.confidence,
+      );
+      copy.append(details);
+      [
+        detailSection('Treatment context', record.treatment_context),
+        detailSection('Figure caption', data.figure_caption),
+        detailSection('Relevant paper context', data.paper_context),
+      ].filter(Boolean).forEach(section => copy.append(section));
+
+      grid.append(media, copy);
+      detailContent.replaceChildren(grid);
+    }
+
+    async function openRecord(record) {
+      detailTitle.textContent = `${record.target || 'Record'} · page ${record.page}`;
+      const loading = document.createElement('div');
+      loading.className = 'detail-loading';
+      loading.textContent = 'Loading source image and paper context…';
+      detailContent.replaceChildren(loading);
+      if (!dialog.open) dialog.showModal();
       try {
-        const response = await fetch('/health'); const health = await response.json();
-        statusEl.className = `status ${response.ok ? 'ready' : 'error'}`;
-        statusEl.textContent = response.ok ? 'LOCAL STACK READY' :
-          `DB ${health.database} · MODEL ${health.model}`.toUpperCase();
-      } catch (_) {
-        statusEl.className = 'status error'; statusEl.textContent = 'APP UNAVAILABLE';
+        renderDetail(await request(`/api/records/${record.id}`));
+      } catch (error) {
+        const message = document.createElement('div');
+        message.className = 'detail-loading';
+        message.textContent = error.message;
+        detailContent.replaceChildren(message);
       }
     }
+
     form.addEventListener('submit', async event => {
-      event.preventDefault(); const query = input.value.trim(); if (!query) return;
-      button.disabled = true; button.textContent = 'Searching…';
+      event.preventDefault();
+      const query = input.value.trim();
+      if (!query) return;
+      content.setAttribute('aria-busy', 'true');
+      button.disabled = true;
+      button.textContent = 'Searching…';
       try {
         render(await request('/api/search', {
-          method: 'POST', headers: {'Content-Type': 'application/json'},
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
           body: JSON.stringify({query, limit: 100}),
         }));
-      } catch (error) { showError(error.message); }
-      finally { button.disabled = false; button.textContent = 'Search'; }
+      } catch (error) {
+        showError(error.message);
+      } finally {
+        button.disabled = false;
+        button.textContent = 'Search';
+      }
     });
-    checkHealth();
+
+    dialogClose.addEventListener('click', () => dialog.close());
+    dialog.addEventListener('click', event => {
+      if (event.target === dialog) dialog.close();
+    });
     request('/api/records?limit=100').then(render).catch(error => showError(error.message));
   </script>
 </body>

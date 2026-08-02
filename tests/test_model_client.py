@@ -23,7 +23,12 @@ def settings() -> Settings:
 def test_parse_filters_content_normalizes_empty_values() -> None:
     filters = parse_filters_content('{"target":" p53 ","sample":"","condition":null}')
 
-    assert filters.model_dump() == {"target": "p53", "sample": None, "condition": None}
+    assert filters.model_dump() == {
+        "schema_version": "1.0",
+        "target": "p53",
+        "sample": None,
+        "condition": None,
+    }
 
 
 def test_parse_filters_content_rejects_unexpected_fields() -> None:
@@ -40,6 +45,7 @@ async def test_local_model_client_health_and_search() -> None:
         assert request.headers["authorization"] == "Bearer local"
         payload = __import__("json").loads(request.content)
         assert payload["response_format"]["type"] == "json_schema"
+        assert payload["chat_template_kwargs"] == {"enable_thinking": False}
         return httpx.Response(
             200,
             json={
@@ -57,6 +63,7 @@ async def test_local_model_client_health_and_search() -> None:
 
     assert await client.health() is True
     assert (await client.parse_search("p53 in A549 with Nutlin-3")).model_dump() == {
+        "schema_version": "1.0",
         "target": "p53",
         "sample": "A549",
         "condition": "Nutlin-3",

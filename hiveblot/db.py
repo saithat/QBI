@@ -1,13 +1,41 @@
 from __future__ import annotations
 
+import re
 from collections.abc import Sequence
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import psycopg
 from psycopg.rows import dict_row
 
-from .model_client import SearchFilters
+from .domain import RecordSearchCriteria
+from .persistence_models import (
+    WesternBlotRecordDetailRow,
+    WesternBlotRecordListRow,
+    WesternBlotRecordWrite,
+)
+
+SAMPLE_SEARCH_STOPWORDS = {
+    "cell",
+    "cells",
+    "line",
+    "sample",
+    "samples",
+    "tissue",
+}
+CONDITION_SEARCH_STOPWORDS = {
+    "after",
+    "before",
+    "condition",
+    "conditions",
+    "during",
+    "exposed",
+    "exposure",
+    "treated",
+    "treatment",
+    "under",
+    "with",
+}
 
 UPSERT_SQL = """
 INSERT INTO western_blot_records (
@@ -36,6 +64,14 @@ ON CONFLICT ON CONSTRAINT western_blot_records_identity_key DO UPDATE SET
     updated_at = now()
 """
 
+RECORD_SELECT = """
+SELECT id, paper_id, source_pdf, candidate_path, page, figure_label,
+       panel_label, row_index, lane_index, target, is_loading_control,
+       western_blot_type, sample, organism, treatment_context, condition,
+       band_state, confidence, updated_at
+FROM western_blot_records
+"""
+
 
 def initialize(database_url: str) -> None:
     schema = Path(__file__).with_name("schema.sql").read_text(encoding="utf-8")
@@ -52,7 +88,7 @@ def health(database_url: str) -> bool:
         return False
 
 
-def upsert_records(database_url: str, records: Sequence[dict[str, Any]]) -> int:
+def upsert_records(database_url: str, records: Sequence[WesternBlotRecordWrite]) -> int:
     if not records:
         return 0
     with psycopg.connect(database_url) as connection, connection.cursor() as cursor:
@@ -61,7 +97,7 @@ def upsert_records(database_url: str, records: Sequence[dict[str, Any]]) -> int:
 
 
 def build_record_query(
-    filters: SearchFilters,
+    filters: RecordSearchCriteria,
     *,
     broad_query: str | None = None,
     limit: int = 100,
@@ -74,13 +110,15 @@ def build_record_query(
         clauses.append("target ILIKE %s")
         params.append(f"%{filters.target}%")
     if filters.sample:
-        clauses.append("(sample ILIKE %s OR organism ILIKE %s)")
-        term = f"%{filters.sample}%"
-        params.extend((term, term))
+        for value in _search_terms(filters.sample, SAMPLE_SEARCH_STOPWORDS):
+            clauses.append("(sample ILIKE %s OR organism ILIKE %s)")
+            term = f"%{value}%"
+            params.extend((term, term))
     if filters.condition:
-        clauses.append("(condition ILIKE %s OR treatment_context ILIKE %s)")
-        term = f"%{filters.condition}%"
-        params.extend((term, term))
+        for value in _search_terms(filters.condition, CONDITION_SEARCH_STOPWORDS):
+            clauses.append("(condition ILIKE %s OR treatment_context ILIKE %s)")
+            term = f"%{value}%"
+            params.extend((term, term))
     if not clauses and broad_query:
         clauses.append(
             "(target ILIKE %s OR sample ILIKE %s OR organism ILIKE %s "
@@ -101,14 +139,20 @@ def build_record_query(
     return query, params
 
 
+def _search_terms(value: str, stopwords: set[str]) -> list[str]:
+    terms = re.findall(r"[A-Za-z0-9][A-Za-z0-9_.+-]*", value)
+    meaningful = [term for term in terms if term.casefold() not in stopwords]
+    return meaningful or [value.strip()]
+
+
 def list_records(
     database_url: str,
-    filters: SearchFilters,
+    filters: RecordSearchCriteria,
     *,
     broad_query: str | None = None,
     limit: int = 100,
     offset: int = 0,
-) -> list[dict[str, Any]]:
+) -> list[WesternBlotRecordListRow]:
     query, params = build_record_query(
         filters,
         broad_query=broad_query,
@@ -116,4 +160,14 @@ def list_records(
         offset=offset,
     )
     with psycopg.connect(database_url, row_factory=dict_row) as connection:
-        return list(connection.execute(query, params).fetchall())
+        rows = connection.execute(query, params).fetchall()
+        return cast(list[WesternBlotRecordListRow], list(rows))
+
+
+def get_record(database_url: str, record_id: int) -> WesternBlotRecordDetailRow | None:
+    with psycopg.connect(database_url, row_factory=dict_row) as connection:
+        row = connection.execute(
+            f"{RECORD_SELECT} WHERE id = %s",
+            (record_id,),
+        ).fetchone()
+        return cast(WesternBlotRecordDetailRow | None, row)

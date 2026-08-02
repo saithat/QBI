@@ -1,47 +1,69 @@
-# HiveBlot Local
+# HiveBlot
 
-HiveBlot extracts western blot evidence from scientific PDFs and makes the resulting
-band-level records searchable. The complete stack runs locally: PostgreSQL stores records,
-Qwen3-VL runs through vLLM on an NVIDIA GPU, and FastAPI serves both the API and a minimal
-viewer.
+HiveBlot turns western blot evidence from scientific papers into structured, searchable,
+reviewable observations. This repository is currently at **PRD-001: platform foundation**.
+The useful local hackathon extraction path remains operational while strict contracts,
+configuration, test fixtures, and repository boundaries are established around it.
 
-## What runs
+## Current data flow
 
 ```text
-PDF -> page rendering and CV crop selection -> Qwen3-VL extraction
-    -> validated band records -> PostgreSQL -> FastAPI viewer/search
+PDF -> page rendering -> CV crop selection -> local Qwen3-VL extraction
+    -> legacy normalization -> PostgreSQL -> FastAPI -> local evidence viewer
 ```
 
-The repository has no cloud-service dependency and requires no external service credentials.
+PRD-001 does not add artifact upload, S3/MinIO, evaluation UI, Kubernetes, crawling,
+densitometry, authentication, or distributed execution.
 
-## Requirements
+## Repository boundaries
 
-- Linux with an NVIDIA GPU and a working `nvidia-smi`
+```text
+apps/api/                  FastAPI entry point and HTTP-only schemas
+workers/extraction/        stable worker entry point around retained extraction code
+packages/contracts/        strict shared Pydantic v2 contracts and JSON Schemas
+hiveblot/                  retained domain, persistence, model, and extraction modules
+services/                  future long-lived service boundary (no PRD-001 service)
+infra/                     deployment documentation; root Compose files stay compatible
+tests/baseline/            historic extraction behavior without GPU/network/database
+tests/unit/                contract and configuration tests
+tests/integration/         boundary smoke tests
+docs/                      audit, ADR, architecture, development, and PR notes
+```
+
+The canonical ASGI import is `apps.api.main:app`. The canonical ingestion executable is
+`hiveblot-ingest`; the old `hiveblot.api:app` import remains as a compatibility facade.
+
+## Fast development setup
+
+The quality suite needs Python 3.12 and [uv](https://docs.astral.sh/uv/), but no GPU or
+running services:
+
+```bash
+make setup
+make check
+```
+
+`make check` verifies formatting, lint, static types, JSON Schema snapshots, the API smoke
+boundary, and all tests. Regenerate schemas intentionally with `make schemas`.
+
+## Run the complete local prototype
+
+Requirements:
+
+- Linux with an NVIDIA GPU and working `nvidia-smi`
 - Docker Engine, Docker Compose, and NVIDIA Container Toolkit/CDI
-- `Qwen/Qwen3-VL-8B-Instruct` in the host Hugging Face cache
-- About 17 GiB of VRAM for the model; the checked-in defaults target a 24 GiB RTX 3090
-
-The tested host cache is `/home/saithat/.cache/huggingface`. Set `HF_CACHE_DIR` in `.env`
-if yours is elsewhere.
-
-## Start the stack
+- `Qwen/Qwen3-VL-8B-Instruct` present in a host Hugging Face cache
+- About 17 GiB VRAM; defaults target a 24 GiB GPU
 
 ```bash
 cp .env.example .env
+# Set HF_CACHE_DIR in .env to the real host cache path.
 make up
 docker compose ps
-```
-
-The first vLLM start takes roughly a minute to load and profile the model. Once the services
-are healthy, open <http://localhost:8080>. The database is initially empty.
-
-Useful diagnostics:
-
-```bash
-make logs
 curl http://localhost:8080/health
-curl http://localhost:8000/v1/models
 ```
+
+Open <http://localhost:8080> after the services become healthy.
 
 ## Ingest a PDF
 
@@ -51,55 +73,28 @@ Place a paper under `data/input/`, then run:
 make ingest PDF=paper.pdf
 ```
 
-The pipeline:
-
-1. Extracts a DOI when available and renders the PDF.
-2. Scores candidate western blot crops with computer vision.
-3. Sends qualifying crops and nearby paper text to local Qwen3-VL.
-4. Validates structured output and preserves present, absent, and uncertain bands.
-5. Upserts band-level rows into PostgreSQL.
-6. Writes resumable manifests under `data/runs/<paper-id>/`.
-
-Successful VLM results are cached. Re-running the same command queries only missing or failed
-candidates and safely upserts all cached records. Use the lower-level command with
-`--no-cache` only when a complete re-extraction is intentional:
-
-```bash
-docker compose run --rm app python -m hiveblot.pipeline /data/input/paper.pdf --no-cache
-```
+The retained pipeline extracts a DOI, renders pages, identifies candidate crops, calls the
+local model with schema-constrained output, preserves present/absent/uncertain bands, upserts
+records, and writes resumable manifests under `data/runs/<paper-id>/`. Reuse of successful
+model output remains enabled by default.
 
 ## API
 
 - `GET /health` checks PostgreSQL and vLLM readiness.
 - `GET /api/records` accepts `target`, `sample`, `condition`, `limit`, and `offset`.
-- `POST /api/search` accepts a natural-language query and uses Qwen to extract safe filters.
+- `GET /api/records/{id}` exposes one record with locally available source context.
+- `POST /api/search` accepts a natural-language query and maps model output to safe filters.
 
-Example:
+Public JSON bodies now carry `schema_version: "1.0"` and reject unknown request fields. The
+model never generates executable SQL; domain criteria are mapped to parameterized queries.
 
-```bash
-curl -X POST http://localhost:8080/api/search \
-  -H 'Content-Type: application/json' \
-  -d '{"query":"p53 in A549 cells treated with Nutlin-3","limit":50}'
-```
+## Preserved baseline
 
-The model never generates executable SQL. It returns a JSON object containing `target`,
-`sample`, and `condition`; the application maps those values into parameterized queries.
+The committed Oduah 2024 fixture captures one real historic model response and all 40 records
+produced by its legacy normalizer. Source bytes are not committed; their SHA-256 values are in
+`tests/fixtures/baseline/manifest.json`. This makes useful behavior reproducible in CI without
+a GPU, source publication, model service, or database.
 
-## Development
-
-```bash
-make lint
-make test
-docker compose config
-```
-
-Generated PDFs, images, run output, databases, model weights, and `.env` files are ignored by
-Git. Stop services with `make down`; add `-v` to `docker compose down` only when you explicitly
-want to delete the local PostgreSQL volume.
-
-## Current constraints
-
-- vLLM is configured for one concurrent request so the BF16 model fits comfortably on 24 GiB.
-- Viewer searches queue behind active PDF extraction requests on the single GPU.
-- Ingestion is a CLI workflow; the viewer intentionally does not accept file uploads.
-- Extraction quality still needs scientific review against the source image and paper.
+See [the repository audit](docs/architecture/repository-audit.md),
+[the foundation ADR](docs/adr/0001-platform-foundation.md), and
+[development setup](docs/development/setup.md) for details.

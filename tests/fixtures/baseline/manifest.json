@@ -1,0 +1,34 @@
+{
+  "schema_version": "1.0",
+  "fixture_id": "oduah-2024-page-4-hackathon-baseline",
+  "captured_at": "2026-08-02T00:00:00Z",
+  "source_revision": "8b38694",
+  "source_document": {
+    "doi": "10.3389/fonc.2024.1363543",
+    "filename": "oduah-2024-p53-bortezomib.pdf",
+    "sha256": "2462eb1fed9115f330812a8edc56ae4390e2ec192cb1b5a336ad9d7717526eb1",
+    "included": false,
+    "reason": "The publication PDF remains an ignored local input."
+  },
+  "candidate_image": {
+    "page": 4,
+    "filename": "page_004_cand_0034.png",
+    "sha256": "b925f6d7135c821098e4ccd1a9a176344f4ed4a2584a9e54393ccc796780a5b9",
+    "included": false,
+    "reason": "The publication-derived crop remains an ignored local run artifact."
+  },
+  "model": {
+    "name": "Qwen/Qwen3-VL-8B-Instruct",
+    "structured_output": true,
+    "temperature": 0
+  },
+  "raw_output": {
+    "path": "oduah_2024_page_4_model_output.json",
+    "sha256": "d049c87bdd8caa7403982a4691ec29be27306942b931037f5814f46ec11dc9e3"
+  },
+  "normalized_output": {
+    "path": "oduah_2024_page_4_normalized_records.json",
+    "sha256": "cbfe686edb83201eee08273acd512299761885bdd2c8400dbcf09b85f52fdb9a",
+    "record_count": 40
+  }
+}

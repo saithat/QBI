@@ -1,11 +1,38 @@
 import json
 
+from PIL import Image
+
 from hiveblot.vlm_extract import (
+    OpenAICompatibleVLM,
     _merge_split_extractions,
     _should_retry_extraction,
     parse_json,
     run_vlm_extraction,
 )
+
+
+def test_vlm_disables_thinking_for_structured_output(tmp_path, monkeypatch) -> None:
+    candidate_path = tmp_path / "candidate.png"
+    Image.new("RGB", (20, 20), "white").save(candidate_path)
+    captured = {}
+
+    class Response:
+        def raise_for_status(self) -> None:
+            pass
+
+        def json(self) -> dict:
+            return {"choices": [{"message": {"content": '{"is_western_blot": false}'}}]}
+
+    def post(*args, **kwargs):
+        captured.update(kwargs["json"])
+        return Response()
+
+    monkeypatch.setattr("requests.post", post)
+
+    result = OpenAICompatibleVLM().extract_candidate(candidate_path, "")
+
+    assert result == {"is_western_blot": False}
+    assert captured["chat_template_kwargs"] == {"enable_thinking": False}
 
 
 def test_parse_json_handles_thinking_and_fences() -> None:
