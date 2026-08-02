@@ -1,0 +1,699 @@
+{
+  "$defs": {
+    "ArtifactReference": {
+      "additionalProperties": false,
+      "description": "Stable metadata needed to identify immutable bytes without embedding them.",
+      "properties": {
+        "artifact_id": {
+          "format": "uuid",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "byte_size": {
+          "minimum": 0,
+          "title": "Byte Size",
+          "type": "integer"
+        },
+        "media_type": {
+          "$ref": "#/$defs/MediaType"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/SchemaVersion",
+          "default": "1.0"
+        },
+        "sha256": {
+          "$ref": "#/$defs/Sha256Digest"
+        }
+      },
+      "required": [
+        "artifact_id",
+        "sha256",
+        "media_type",
+        "byte_size"
+      ],
+      "title": "ArtifactReference",
+      "type": "object"
+    },
+    "BoundingRegion": {
+      "additionalProperties": false,
+      "description": "A rectangle expressed in immutable source-image pixel coordinates.",
+      "properties": {
+        "canvas_height": {
+          "exclusiveMinimum": 0,
+          "title": "Canvas Height",
+          "type": "integer"
+        },
+        "canvas_width": {
+          "exclusiveMinimum": 0,
+          "title": "Canvas Width",
+          "type": "integer"
+        },
+        "coordinate_space": {
+          "const": "source_pixels",
+          "default": "source_pixels",
+          "title": "Coordinate Space",
+          "type": "string"
+        },
+        "height": {
+          "exclusiveMinimum": 0,
+          "title": "Height",
+          "type": "number"
+        },
+        "page_number": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Page Number"
+        },
+        "region_id": {
+          "format": "uuid",
+          "title": "Region Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/SchemaVersion",
+          "default": "1.0"
+        },
+        "source_artifact_id": {
+          "format": "uuid",
+          "title": "Source Artifact Id",
+          "type": "string"
+        },
+        "width": {
+          "exclusiveMinimum": 0,
+          "title": "Width",
+          "type": "number"
+        },
+        "x": {
+          "minimum": 0,
+          "title": "X",
+          "type": "number"
+        },
+        "y": {
+          "minimum": 0,
+          "title": "Y",
+          "type": "number"
+        }
+      },
+      "required": [
+        "region_id",
+        "source_artifact_id",
+        "x",
+        "y",
+        "width",
+        "height",
+        "canvas_width",
+        "canvas_height"
+      ],
+      "title": "BoundingRegion",
+      "type": "object"
+    },
+    "Identifier": {
+      "maxLength": 200,
+      "minLength": 1,
+      "type": "string"
+    },
+    "MediaType": {
+      "pattern": "^[a-z0-9][a-z0-9!#$&^_.+-]*/[a-z0-9][a-z0-9!#$&^_.+-]*$",
+      "type": "string"
+    },
+    "ModelBandState": {
+      "enum": [
+        "present",
+        "absent",
+        "uncertain"
+      ],
+      "title": "ModelBandState",
+      "type": "string"
+    },
+    "ModelConfidence": {
+      "enum": [
+        "low",
+        "medium",
+        "high"
+      ],
+      "title": "ModelConfidence",
+      "type": "string"
+    },
+    "ModelIdentifier": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "model",
+          "default": "model",
+          "title": "Kind",
+          "type": "string"
+        },
+        "name": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "provider": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/SchemaVersion",
+          "default": "1.0"
+        },
+        "version": {
+          "$ref": "#/$defs/Identifier"
+        }
+      },
+      "required": [
+        "provider",
+        "name",
+        "version"
+      ],
+      "title": "ModelIdentifier",
+      "type": "object"
+    },
+    "SchemaVersion": {
+      "const": "1.0",
+      "type": "string"
+    },
+    "Sha256Digest": {
+      "pattern": "^[a-f0-9]{64}$",
+      "type": "string"
+    },
+    "ToolIdentifier": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "tool",
+          "default": "tool",
+          "title": "Kind",
+          "type": "string"
+        },
+        "name": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/SchemaVersion",
+          "default": "1.0"
+        },
+        "version": {
+          "$ref": "#/$defs/Identifier"
+        }
+      },
+      "required": [
+        "name",
+        "version"
+      ],
+      "title": "ToolIdentifier",
+      "type": "object"
+    },
+    "WesternBlotBandPrediction": {
+      "additionalProperties": false,
+      "properties": {
+        "band_id": {
+          "format": "uuid",
+          "title": "Band Id",
+          "type": "string"
+        },
+        "band_state": {
+          "$ref": "#/$defs/ModelBandState"
+        },
+        "confidence": {
+          "$ref": "#/$defs/ModelConfidence"
+        },
+        "lane_index": {
+          "minimum": 1,
+          "title": "Lane Index",
+          "type": "integer"
+        },
+        "row_index": {
+          "minimum": 1,
+          "title": "Row Index",
+          "type": "integer"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/SchemaVersion",
+          "default": "1.0"
+        },
+        "target": {
+          "maxLength": 1000,
+          "minLength": 1,
+          "title": "Target",
+          "type": "string"
+        }
+      },
+      "required": [
+        "band_id",
+        "row_index",
+        "target",
+        "lane_index",
+        "band_state",
+        "confidence"
+      ],
+      "title": "WesternBlotBandPrediction",
+      "type": "object"
+    },
+    "WesternBlotCandidatePrediction": {
+      "additionalProperties": false,
+      "properties": {
+        "biological_sample": {
+          "anyOf": [
+            {
+              "maxLength": 4000,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Biological Sample"
+        },
+        "candidate_id": {
+          "format": "uuid",
+          "title": "Candidate Id",
+          "type": "string"
+        },
+        "cell_line_tissue": {
+          "anyOf": [
+            {
+              "maxLength": 4000,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Cell Line Tissue"
+        },
+        "figure_caption": {
+          "anyOf": [
+            {
+              "maxLength": 20000,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Figure Caption"
+        },
+        "figure_label": {
+          "anyOf": [
+            {
+              "maxLength": 1000,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Figure Label"
+        },
+        "is_western_blot": {
+          "title": "Is Western Blot",
+          "type": "boolean"
+        },
+        "organism": {
+          "anyOf": [
+            {
+              "maxLength": 1000,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Organism"
+        },
+        "panels": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/WesternBlotPanelPrediction"
+          },
+          "title": "Panels",
+          "type": "array"
+        },
+        "raw_response_sha256": {
+          "$ref": "#/$defs/Sha256Digest"
+        },
+        "reason": {
+          "anyOf": [
+            {
+              "maxLength": 4000,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reason"
+        },
+        "sample_type": {
+          "anyOf": [
+            {
+              "maxLength": 1000,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Sample Type"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/SchemaVersion",
+          "default": "1.0"
+        },
+        "warnings": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Warnings",
+          "type": "array"
+        }
+      },
+      "required": [
+        "candidate_id",
+        "is_western_blot",
+        "raw_response_sha256"
+      ],
+      "title": "WesternBlotCandidatePrediction",
+      "type": "object"
+    },
+    "WesternBlotFigureCandidate": {
+      "additionalProperties": false,
+      "properties": {
+        "candidate_id": {
+          "format": "uuid",
+          "title": "Candidate Id",
+          "type": "string"
+        },
+        "detector_score": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Detector Score",
+          "type": "number"
+        },
+        "region": {
+          "$ref": "#/$defs/BoundingRegion"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/SchemaVersion",
+          "default": "1.0"
+        },
+        "source_artifact": {
+          "$ref": "#/$defs/ArtifactReference"
+        },
+        "tight_region": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/BoundingRegion"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "candidate_id",
+        "source_artifact",
+        "region",
+        "detector_score"
+      ],
+      "title": "WesternBlotFigureCandidate",
+      "type": "object"
+    },
+    "WesternBlotFigureCandidateSet": {
+      "additionalProperties": false,
+      "properties": {
+        "candidates": {
+          "items": {
+            "$ref": "#/$defs/WesternBlotFigureCandidate"
+          },
+          "title": "Candidates",
+          "type": "array"
+        },
+        "detector": {
+          "$ref": "#/$defs/ToolIdentifier"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/SchemaVersion",
+          "default": "1.0"
+        },
+        "source_artifact": {
+          "$ref": "#/$defs/ArtifactReference"
+        },
+        "source_kind": {
+          "$ref": "#/$defs/WesternBlotSourceKind"
+        }
+      },
+      "required": [
+        "source_artifact",
+        "source_kind",
+        "detector",
+        "candidates"
+      ],
+      "title": "WesternBlotFigureCandidateSet",
+      "type": "object"
+    },
+    "WesternBlotLanePrediction": {
+      "additionalProperties": false,
+      "properties": {
+        "condition": {
+          "anyOf": [
+            {
+              "maxLength": 2000,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Condition"
+        },
+        "confidence": {
+          "$ref": "#/$defs/ModelConfidence"
+        },
+        "lane_id": {
+          "format": "uuid",
+          "title": "Lane Id",
+          "type": "string"
+        },
+        "lane_index": {
+          "minimum": 1,
+          "title": "Lane Index",
+          "type": "integer"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/SchemaVersion",
+          "default": "1.0"
+        }
+      },
+      "required": [
+        "lane_id",
+        "lane_index",
+        "confidence"
+      ],
+      "title": "WesternBlotLanePrediction",
+      "type": "object"
+    },
+    "WesternBlotPanelPrediction": {
+      "additionalProperties": false,
+      "properties": {
+        "bands": {
+          "items": {
+            "$ref": "#/$defs/WesternBlotBandPrediction"
+          },
+          "minItems": 1,
+          "title": "Bands",
+          "type": "array"
+        },
+        "lanes": {
+          "items": {
+            "$ref": "#/$defs/WesternBlotLanePrediction"
+          },
+          "minItems": 1,
+          "title": "Lanes",
+          "type": "array"
+        },
+        "panel_id": {
+          "format": "uuid",
+          "title": "Panel Id",
+          "type": "string"
+        },
+        "panel_label": {
+          "anyOf": [
+            {
+              "maxLength": 500,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Panel Label"
+        },
+        "panel_title": {
+          "anyOf": [
+            {
+              "maxLength": 1000,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Panel Title"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/SchemaVersion",
+          "default": "1.0"
+        },
+        "targets": {
+          "items": {
+            "$ref": "#/$defs/WesternBlotTargetPrediction"
+          },
+          "minItems": 1,
+          "title": "Targets",
+          "type": "array"
+        },
+        "treatment_context": {
+          "anyOf": [
+            {
+              "maxLength": 4000,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Treatment Context"
+        },
+        "warnings": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Warnings",
+          "type": "array"
+        }
+      },
+      "required": [
+        "panel_id",
+        "targets",
+        "lanes",
+        "bands"
+      ],
+      "title": "WesternBlotPanelPrediction",
+      "type": "object"
+    },
+    "WesternBlotSourceKind": {
+      "enum": [
+        "pdf",
+        "image"
+      ],
+      "title": "WesternBlotSourceKind",
+      "type": "string"
+    },
+    "WesternBlotTargetPrediction": {
+      "additionalProperties": false,
+      "properties": {
+        "confidence": {
+          "$ref": "#/$defs/ModelConfidence"
+        },
+        "is_loading_control": {
+          "title": "Is Loading Control",
+          "type": "boolean"
+        },
+        "row_index": {
+          "minimum": 1,
+          "title": "Row Index",
+          "type": "integer"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/SchemaVersion",
+          "default": "1.0"
+        },
+        "target": {
+          "maxLength": 1000,
+          "minLength": 1,
+          "title": "Target",
+          "type": "string"
+        },
+        "target_id": {
+          "format": "uuid",
+          "title": "Target Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "target_id",
+        "row_index",
+        "target",
+        "is_loading_control",
+        "confidence"
+      ],
+      "title": "WesternBlotTargetPrediction",
+      "type": "object"
+    }
+  },
+  "$id": "urn:hiveblot:schema:v1:western-blot-candidate-prediction-set",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "figure_candidates": {
+      "$ref": "#/$defs/WesternBlotFigureCandidateSet"
+    },
+    "model": {
+      "$ref": "#/$defs/ModelIdentifier"
+    },
+    "predictions": {
+      "items": {
+        "$ref": "#/$defs/WesternBlotCandidatePrediction"
+      },
+      "title": "Predictions",
+      "type": "array"
+    },
+    "prompt_version": {
+      "$ref": "#/$defs/Identifier"
+    },
+    "schema_version": {
+      "$ref": "#/$defs/SchemaVersion",
+      "default": "1.0"
+    }
+  },
+  "required": [
+    "figure_candidates",
+    "model",
+    "prompt_version",
+    "predictions"
+  ],
+  "title": "WesternBlotCandidatePredictionSet",
+  "type": "object"
+}

@@ -21,6 +21,7 @@ from hiveblot_contracts import (
     SpatialAnnotationType,
     SpatialEditorRelationship,
     SpatialRelationshipType,
+    WesternBlotExtractionResult,
 )
 from pydantic import ValidationError
 
@@ -184,6 +185,19 @@ class SpatialAnnotationService:
         prediction = self._evaluation.get_prediction(prediction_id)
         if prediction.case_id != case_id:
             raise InvalidEvaluationState("prediction must belong to the evaluation case")
+        if (
+            prediction.prediction_schema == "western-blot-extraction-result"
+            and prediction.normalized_output_json is not None
+        ):
+            try:
+                result = WesternBlotExtractionResult.model_validate_json(
+                    prediction.normalized_output_json
+                )
+            except ValidationError as exc:
+                raise InvalidEvaluationState(
+                    "prediction normalized output is not a western-blot extraction result"
+                ) from exc
+            return prediction, result.spatial_annotation_set
         annotations: dict[UUID, SpatialAnnotation] = {}
         for evidence in prediction.evidence:
             if evidence.region is None:

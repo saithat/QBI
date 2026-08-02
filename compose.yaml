@@ -82,6 +82,7 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-hiveblot}:${POSTGRES_PASSWORD:-hiveblot}@postgres:5432/${POSTGRES_DB:-hiveblot}
       VLLM_BASE_URL: http://vllm:8000/v1
       VLLM_MODEL: Qwen/Qwen3-VL-8B-Instruct
+      VLLM_MODEL_REVISION: ${VLLM_MODEL_REVISION:-local-cache-unpinned}
       VLLM_API_KEY: local
       VLLM_TIMEOUT_SECONDS: ${VLLM_TIMEOUT_SECONDS:-300}
       VLLM_MAX_TOKENS: ${VLLM_MAX_TOKENS:-4096}

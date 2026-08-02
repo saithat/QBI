@@ -252,7 +252,25 @@ class OpenAICompatibleVLM:
         candidate_path: str | Path,
         text_context: str,
         max_tokens: int = DEFAULT_MAX_TOKENS,
+        image_max_side: int | None = None,
     ) -> Any:
+        _, extraction = self.extract_candidate_with_raw(
+            candidate_path,
+            text_context,
+            max_tokens=max_tokens,
+            image_max_side=image_max_side,
+        )
+        return extraction
+
+    def extract_candidate_with_raw(
+        self,
+        candidate_path: str | Path,
+        text_context: str,
+        max_tokens: int = DEFAULT_MAX_TOKENS,
+        image_max_side: int | None = None,
+    ) -> tuple[str, Any]:
+        """Return exact response text alongside the permissively parsed legacy value."""
+
         try:
             import requests
         except ImportError as exc:  # pragma: no cover - depends on local env
@@ -269,7 +287,7 @@ class OpenAICompatibleVLM:
                             "image_url": {
                                 "url": image_data_url(
                                     candidate_path,
-                                    max_side=self.image_max_side,
+                                    max_side=image_max_side or self.image_max_side,
                                 )
                             },
                         },
@@ -303,12 +321,14 @@ class OpenAICompatibleVLM:
         response.raise_for_status()
         data = response.json()
         raw = data["choices"][0]["message"]["content"]
+        if not isinstance(raw, str):
+            raise ValueError("vision model response content must be a string")
         extraction = parse_json(raw)
         if not isinstance(extraction, dict) or not isinstance(
             extraction.get("is_western_blot"), bool
         ):
-            return {"error": "invalid_extraction", "raw": raw[:1200]}
-        return extraction
+            return raw, {"error": "invalid_extraction", "raw": raw[:1200]}
+        return raw, extraction
 
 
 def image_data_url(path: str | Path, max_side: int = DEFAULT_IMAGE_MAX_SIDE) -> str:

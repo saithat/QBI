@@ -24,6 +24,7 @@ from hiveblot_contracts import (
     SemanticDiffStatus,
     StructuredAnnotationComparison,
     TreatmentAnnotation,
+    WesternBlotExtractionResult,
     WesternBlotStructuredAnnotation,
 )
 from pydantic import ValidationError
@@ -252,9 +253,14 @@ class StructuredAnnotationService:
         if prediction.normalized_output_json is None:
             raise InvalidEvaluationState("prediction has no normalized structured output")
         try:
-            annotation = WesternBlotStructuredAnnotation.model_validate_json(
-                prediction.normalized_output_json
-            )
+            if prediction.prediction_schema == "western-blot-extraction-result":
+                annotation = WesternBlotExtractionResult.model_validate_json(
+                    prediction.normalized_output_json
+                ).structured_annotation
+            else:
+                annotation = WesternBlotStructuredAnnotation.model_validate_json(
+                    prediction.normalized_output_json
+                )
         except ValidationError as exc:
             raise InvalidEvaluationState(
                 "prediction normalized output is not a western-blot structured annotation"

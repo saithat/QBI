@@ -82,6 +82,9 @@ class EvaluationService:
             raise EvaluationNotFound(f"evaluation case {case_id} does not exist")
         return record
 
+    def get_case_by_key(self, case_key: str) -> EvaluationCaseRecord | None:
+        return self._repository.get_case_by_key(case_key)
+
     def update_case_status(
         self,
         case_id: UUID,

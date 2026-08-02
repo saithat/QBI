@@ -1,3 +1,5 @@
+import base64
+import io
 import json
 
 from PIL import Image
@@ -13,15 +15,16 @@ from hiveblot.vlm_extract import (
 
 def test_vlm_disables_thinking_for_structured_output(tmp_path, monkeypatch) -> None:
     candidate_path = tmp_path / "candidate.png"
-    Image.new("RGB", (20, 20), "white").save(candidate_path)
+    Image.new("RGB", (40, 20), "white").save(candidate_path)
     captured = {}
+    raw_response = '{"is_western_blot": false}'
 
     class Response:
         def raise_for_status(self) -> None:
             pass
 
         def json(self) -> dict:
-            return {"choices": [{"message": {"content": '{"is_western_blot": false}'}}]}
+            return {"choices": [{"message": {"content": raw_response}}]}
 
     def post(*args, **kwargs):
         captured.update(kwargs["json"])
@@ -29,10 +32,19 @@ def test_vlm_disables_thinking_for_structured_output(tmp_path, monkeypatch) -> N
 
     monkeypatch.setattr("requests.post", post)
 
-    result = OpenAICompatibleVLM().extract_candidate(candidate_path, "")
+    raw, result = OpenAICompatibleVLM().extract_candidate_with_raw(
+        candidate_path,
+        "",
+        image_max_side=10,
+    )
 
+    assert raw == raw_response
     assert result == {"is_western_blot": False}
     assert captured["chat_template_kwargs"] == {"enable_thinking": False}
+    data_url = captured["messages"][0]["content"][0]["image_url"]["url"]
+    encoded = data_url.partition(",")[2]
+    with Image.open(io.BytesIO(base64.b64decode(encoded))) as image:
+        assert image.size == (10, 5)
 
 
 def test_parse_json_handles_thinking_and_fences() -> None:

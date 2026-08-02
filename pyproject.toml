@@ -42,6 +42,7 @@ packages = [
   "hiveblot",
   "packages/contracts/src/hiveblot_contracts",
   "packages/evaluation/src/hiveblot_evaluation",
+  "packages/extraction/src/hiveblot_extraction",
   "packages/storage/src/hiveblot_storage",
   "workers",
 ]
@@ -56,6 +57,7 @@ pythonpath = [
   ".",
   "packages/contracts/src",
   "packages/evaluation/src",
+  "packages/extraction/src",
   "packages/storage/src",
 ]
 
@@ -78,4 +80,4 @@ warn_unreachable = true
 warn_unused_configs = true
 warn_unused_ignores = true
 exclude = ["data/", "tests/fixtures/"]
-mypy_path = "packages/contracts/src:packages/evaluation/src:packages/storage/src"
+mypy_path = "packages/contracts/src:packages/evaluation/src:packages/extraction/src:packages/storage/src"

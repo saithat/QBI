@@ -16,5 +16,10 @@ PRD-008 adds immutable pipeline DAG, run, invocation/result, evidence, replay, a
 contracts. A terminal attempt retains raw and normalized representations separately; publication
 values name their producing invocation and JSON Pointer.
 
+PRD-011 adds stored PDF/image western-blot extraction inputs, figure candidates, strict model
+prediction grids, review-ready structured/spatial results, run records, and replay records. The
+raw provider response remains outside the normalized contract and is preserved by pipeline and
+evaluation records before normalization.
+
 Generate snapshots with `uv run hiveblot-schemas`. Verify committed snapshots with
 `uv run hiveblot-schemas --check`.

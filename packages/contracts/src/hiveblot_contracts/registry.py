@@ -57,6 +57,14 @@ from .structured_annotations import (
     StructuredAnnotationComparison,
     WesternBlotStructuredAnnotation,
 )
+from .western_blot_extraction import (
+    WesternBlotCandidatePredictionSet,
+    WesternBlotComponentReplayRecord,
+    WesternBlotExtractionInput,
+    WesternBlotExtractionResult,
+    WesternBlotExtractionRunRecord,
+    WesternBlotFigureCandidateSet,
+)
 
 JSON_SCHEMA_DIALECT = "https://json-schema.org/draft/2020-12/schema"
 SCHEMA_ID_PREFIX = "urn:hiveblot:schema:v1:"
@@ -109,6 +117,12 @@ CONTRACT_REGISTRY: Mapping[str, Any] = {
     "tool-identifier": ToolIdentifier,
     "validation-issue": ValidationIssue,
     "western-blot-structured-annotation": WesternBlotStructuredAnnotation,
+    "western-blot-candidate-prediction-set": WesternBlotCandidatePredictionSet,
+    "western-blot-component-replay-record": WesternBlotComponentReplayRecord,
+    "western-blot-extraction-input": WesternBlotExtractionInput,
+    "western-blot-extraction-result": WesternBlotExtractionResult,
+    "western-blot-extraction-run-record": WesternBlotExtractionRunRecord,
+    "western-blot-figure-candidate-set": WesternBlotFigureCandidateSet,
 }
 
 

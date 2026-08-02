@@ -25,6 +25,8 @@ class EvaluationRepository(Protocol):
 
     def get_case(self, case_id: UUID) -> EvaluationCaseRecord | None: ...
 
+    def get_case_by_key(self, case_key: str) -> EvaluationCaseRecord | None: ...
+
     def update_case_status(
         self,
         case_id: UUID,

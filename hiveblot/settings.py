@@ -50,6 +50,11 @@ class Settings(BaseSettings):
         validation_alias="VLLM_MODEL",
         min_length=1,
     )
+    vllm_model_revision: str = Field(
+        default="local-cache-unpinned",
+        validation_alias="VLLM_MODEL_REVISION",
+        min_length=1,
+    )
     vllm_api_key: SecretStr = Field(
         default=SecretStr("local"),
         validation_alias="VLLM_API_KEY",
@@ -159,6 +164,7 @@ class Settings(BaseSettings):
             "database_url",
             "vllm_base_url",
             "vllm_model",
+            "vllm_model_revision",
             "vllm_api_key",
             "s3_endpoint_url",
             "s3_bucket",

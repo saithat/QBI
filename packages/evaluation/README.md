@@ -22,3 +22,7 @@ forward rather than treating one editor as the owner of an entire review snapsho
 invocations, validates normalized output against canonical schemas, records invalid attempts as
 failures, appends selective replays, and publishes only values traceable to successful invocations.
 It owns scientific run provenance, not container scheduling or worker lifecycle.
+
+PRD-011 projections allow the structured and spatial editors to read their respective nested
+documents from a `western-blot-extraction-result` prediction. They do not alter the extraction
+record or relax support for the original standalone annotation prediction schemas.

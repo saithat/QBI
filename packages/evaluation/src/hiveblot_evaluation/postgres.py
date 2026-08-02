@@ -101,6 +101,14 @@ class PostgresEvaluationRepository:
         with psycopg.connect(self._database_url, row_factory=dict_row) as connection:
             return self._get_case(connection, case_id)
 
+    def get_case_by_key(self, case_key: str) -> EvaluationCaseRecord | None:
+        with psycopg.connect(self._database_url, row_factory=dict_row) as connection:
+            row = connection.execute(
+                "SELECT case_id FROM evaluation_cases WHERE case_key = %s",
+                (case_key,),
+            ).fetchone()
+            return self._get_case(connection, row["case_id"]) if row is not None else None
+
     def _get_case(self, connection: Any, case_id: UUID) -> EvaluationCaseRecord | None:
         row = connection.execute(
             "SELECT * FROM evaluation_cases WHERE case_id = %s",

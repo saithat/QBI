@@ -22,7 +22,8 @@ lint:
 
 typecheck:
 	uv run mypy apps hiveblot packages/contracts/src/hiveblot_contracts \
-		packages/evaluation/src/hiveblot_evaluation packages/storage/src/hiveblot_storage workers
+		packages/evaluation/src/hiveblot_evaluation \
+		packages/extraction/src/hiveblot_extraction packages/storage/src/hiveblot_storage workers
 
 schemas:
 	uv run hiveblot-schemas

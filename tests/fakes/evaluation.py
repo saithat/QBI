@@ -57,6 +57,9 @@ class InMemoryEvaluationRepository:
     def get_case(self, case_id: UUID) -> EvaluationCaseRecord | None:
         return self.cases.get(case_id)
 
+    def get_case_by_key(self, case_key: str) -> EvaluationCaseRecord | None:
+        return next((item for item in self.cases.values() if item.case_key == case_key), None)
+
     def update_case_status(
         self,
         case_id: UUID,

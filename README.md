@@ -37,10 +37,14 @@ frozen references + versioned pipeline submission -> deterministic stage/end-to-
 
 reviewed cases -> versioned golden-dataset draft -> leakage-safe promotion
     -> content-addressed snapshot -> deterministic JSONL + manifest exports
+
+published PDF/image artifact -> verified bytes -> detection -> versioned model normalization
+    -> structured/spatial case assembly -> immutable prediction + publication
 ```
 
 Kubernetes, crawling, densitometry, authentication, and distributed execution remain out of scope.
-Legacy extraction adopts artifact IDs and the structured/spatial prediction contracts in PRD-011.
+The retained extractor now runs through stored artifacts and versioned scientific stages; the
+filesystem ingestion CLI remains available as a compatibility path.
 
 ## Repository boundaries
 
@@ -50,6 +54,7 @@ apps/web/                  dependency-free review queue, workbench, and annotati
 workers/extraction/        stable worker entry point around retained extraction code
 packages/contracts/        strict shared Pydantic v2 contracts and JSON Schemas
 packages/evaluation/       cases, predictions, reviews, assignments, and adjudication
+packages/extraction/       versioned western-blot normalization and pipeline orchestration
 packages/storage/          immutable publication, S3, and PostgreSQL storage boundaries
 hiveblot/                  retained domain, persistence, model, and extraction modules
 services/                  future long-lived service boundary
@@ -159,6 +164,8 @@ model output remains enabled by default.
 - `hiveblot-evaluate` reproduces a canonical metric-run document from a strict scoring-input file.
 - Golden-dataset routes manage optimistic drafts, exact-revision promotion, paper/content leakage
   checks, immutable snapshots, transition history, and content-addressed JSONL/manifest exports.
+- Western-blot extraction routes list pinned implementations, run stored PDF/image artifacts
+  through detection/model/assembly stages, and selectively replay immutable component attempts.
 
 Public JSON bodies now carry `schema_version: "1.0"` and reject unknown request fields. The
 model never generates executable SQL; domain criteria are mapped to parameterized queries.
@@ -178,4 +185,5 @@ See [the repository audit](docs/architecture/repository-audit.md),
 [the pipeline provenance ADR](docs/adr/0008-immutable-pipeline-runs-and-replay.md), and
 [the evaluation metrics ADR](docs/adr/0009-versioned-evaluation-metrics.md), and
 [the golden dataset ADR](docs/adr/0010-content-addressed-golden-datasets.md), and
+[the western-blot extraction ADR](docs/adr/0011-versioned-western-blot-extraction.md), and
 [development setup](docs/development/setup.md) for details.
