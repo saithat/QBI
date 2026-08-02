@@ -35,7 +35,14 @@ from .golden_datasets import (
     GoldenDatasetSnapshot,
 )
 from .identifiers import ModelIdentifier, PipelineIdentifier, ToolIdentifier
-from .jobs import JobResult, JobSpecification
+from .jobs import (
+    JobAttemptRecord,
+    JobLease,
+    JobLogRecord,
+    JobRecord,
+    JobResult,
+    JobSpecification,
+)
 from .metrics import (
     CalibrationSlice,
     EvaluationDatasetSnapshot,
@@ -105,6 +112,10 @@ CONTRACT_REGISTRY: Mapping[str, Any] = {
     "golden-dataset-record": GoldenDatasetRecord,
     "golden-dataset-snapshot": GoldenDatasetSnapshot,
     "job-result": JobResult,
+    "job-attempt-record": JobAttemptRecord,
+    "job-lease": JobLease,
+    "job-log-record": JobLogRecord,
+    "job-record": JobRecord,
     "job-specification": JobSpecification,
     "model-identifier": ModelIdentifier,
     "pipeline-identifier": PipelineIdentifier,

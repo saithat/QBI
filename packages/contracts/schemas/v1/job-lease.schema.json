@@ -122,6 +122,127 @@
       "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
       "type": "string"
     },
+    "JobSpecification": {
+      "additionalProperties": false,
+      "properties": {
+        "container": {
+          "$ref": "#/$defs/ContainerSpecification"
+        },
+        "expected_outputs": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/ExpectedJobOutput"
+          },
+          "title": "Expected Outputs",
+          "type": "array"
+        },
+        "idempotency_key": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "inputs": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/NamedArtifactReference"
+          },
+          "title": "Inputs",
+          "type": "array"
+        },
+        "job_id": {
+          "format": "uuid",
+          "title": "Job Id",
+          "type": "string"
+        },
+        "job_type": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "max_attempts": {
+          "default": 1,
+          "maximum": 100,
+          "minimum": 1,
+          "title": "Max Attempts",
+          "type": "integer"
+        },
+        "message_type": {
+          "const": "job_specification",
+          "default": "job_specification",
+          "title": "Message Type",
+          "type": "string"
+        },
+        "parent_job_id": {
+          "anyOf": [
+            {
+              "format": "uuid",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Parent Job Id"
+        },
+        "pipeline": {
+          "$ref": "#/$defs/PipelineIdentifier"
+        },
+        "resources": {
+          "$ref": "#/$defs/ResourceRequirements"
+        },
+        "retry_backoff_multiplier": {
+          "default": 2.0,
+          "maximum": 100,
+          "minimum": 1,
+          "title": "Retry Backoff Multiplier",
+          "type": "number"
+        },
+        "retry_initial_backoff_seconds": {
+          "default": 5,
+          "maximum": 86400,
+          "minimum": 0,
+          "title": "Retry Initial Backoff Seconds",
+          "type": "integer"
+        },
+        "retry_max_backoff_seconds": {
+          "default": 300,
+          "maximum": 604800,
+          "minimum": 0,
+          "title": "Retry Max Backoff Seconds",
+          "type": "integer"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/SchemaVersion",
+          "default": "1.0"
+        },
+        "submitted_at": {
+          "format": "date-time",
+          "title": "Submitted At",
+          "type": "string"
+        },
+        "timeout_seconds": {
+          "exclusiveMinimum": 0,
+          "maximum": 604800,
+          "title": "Timeout Seconds",
+          "type": "integer"
+        },
+        "trace_id": {
+          "format": "uuid",
+          "title": "Trace Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "job_id",
+        "job_type",
+        "idempotency_key",
+        "pipeline",
+        "container",
+        "resources",
+        "trace_id",
+        "submitted_at",
+        "timeout_seconds"
+      ],
+      "title": "JobSpecification",
+      "type": "object"
+    },
     "MediaType": {
       "pattern": "^[a-z0-9][a-z0-9!#$&^_.+-]*/[a-z0-9][a-z0-9!#$&^_.+-]*$",
       "type": "string"
@@ -216,125 +337,67 @@
       "type": "string"
     }
   },
-  "$id": "urn:hiveblot:schema:v1:job-specification",
+  "$id": "urn:hiveblot:schema:v1:job-lease",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
   "properties": {
-    "container": {
-      "$ref": "#/$defs/ContainerSpecification"
+    "attempt": {
+      "minimum": 1,
+      "title": "Attempt",
+      "type": "integer"
     },
-    "expected_outputs": {
-      "default": [],
-      "items": {
-        "$ref": "#/$defs/ExpectedJobOutput"
-      },
-      "title": "Expected Outputs",
-      "type": "array"
+    "attempt_id": {
+      "format": "uuid",
+      "title": "Attempt Id",
+      "type": "string"
     },
-    "idempotency_key": {
-      "$ref": "#/$defs/Identifier"
-    },
-    "inputs": {
-      "default": [],
-      "items": {
-        "$ref": "#/$defs/NamedArtifactReference"
-      },
-      "title": "Inputs",
-      "type": "array"
+    "expires_at": {
+      "format": "date-time",
+      "title": "Expires At",
+      "type": "string"
     },
     "job_id": {
       "format": "uuid",
       "title": "Job Id",
       "type": "string"
     },
-    "job_type": {
-      "$ref": "#/$defs/Identifier"
-    },
-    "max_attempts": {
-      "default": 1,
-      "maximum": 100,
-      "minimum": 1,
-      "title": "Max Attempts",
-      "type": "integer"
-    },
-    "message_type": {
-      "const": "job_specification",
-      "default": "job_specification",
-      "title": "Message Type",
+    "lease_token": {
+      "format": "uuid",
+      "title": "Lease Token",
       "type": "string"
     },
-    "parent_job_id": {
-      "anyOf": [
-        {
-          "format": "uuid",
-          "type": "string"
-        },
-        {
-          "type": "null"
-        }
-      ],
-      "default": null,
-      "title": "Parent Job Id"
+    "leased_at": {
+      "format": "date-time",
+      "title": "Leased At",
+      "type": "string"
     },
-    "pipeline": {
-      "$ref": "#/$defs/PipelineIdentifier"
-    },
-    "resources": {
-      "$ref": "#/$defs/ResourceRequirements"
-    },
-    "retry_backoff_multiplier": {
-      "default": 2.0,
-      "maximum": 100,
-      "minimum": 1,
-      "title": "Retry Backoff Multiplier",
-      "type": "number"
-    },
-    "retry_initial_backoff_seconds": {
-      "default": 5,
-      "maximum": 86400,
-      "minimum": 0,
-      "title": "Retry Initial Backoff Seconds",
-      "type": "integer"
-    },
-    "retry_max_backoff_seconds": {
-      "default": 300,
-      "maximum": 604800,
-      "minimum": 0,
-      "title": "Retry Max Backoff Seconds",
-      "type": "integer"
+    "message_type": {
+      "const": "job_lease",
+      "default": "job_lease",
+      "title": "Message Type",
+      "type": "string"
     },
     "schema_version": {
       "$ref": "#/$defs/SchemaVersion",
       "default": "1.0"
     },
-    "submitted_at": {
-      "format": "date-time",
-      "title": "Submitted At",
-      "type": "string"
+    "specification": {
+      "$ref": "#/$defs/JobSpecification"
     },
-    "timeout_seconds": {
-      "exclusiveMinimum": 0,
-      "maximum": 604800,
-      "title": "Timeout Seconds",
-      "type": "integer"
-    },
-    "trace_id": {
-      "format": "uuid",
-      "title": "Trace Id",
-      "type": "string"
+    "worker_id": {
+      "$ref": "#/$defs/Identifier"
     }
   },
   "required": [
+    "lease_token",
     "job_id",
-    "job_type",
-    "idempotency_key",
-    "pipeline",
-    "container",
-    "resources",
-    "trace_id",
-    "submitted_at",
-    "timeout_seconds"
+    "attempt_id",
+    "attempt",
+    "worker_id",
+    "specification",
+    "leased_at",
+    "expires_at"
   ],
-  "title": "JobSpecification",
+  "title": "JobLease",
   "type": "object"
 }

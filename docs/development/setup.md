@@ -64,13 +64,15 @@ HIVEBLOT_RUN_LIVE_PIPELINE=1 \
   uv run pytest tests/integration/test_pipeline_registry_live.py
 HIVEBLOT_RUN_LIVE_METRICS=1 \
   uv run pytest tests/integration/test_metrics_live.py
+HIVEBLOT_RUN_LIVE_JOBS=1 \
+  uv run pytest tests/integration/test_job_service_live.py
 ```
 
 See `docs/development/artifact-storage.md` for the multipart API flow and
 `docs/development/review-queue.md`, `docs/development/source-workbench.md`, and
 `docs/development/structured-annotation.md`, `docs/development/spatial-annotation.md`, and
-`docs/development/pipeline-registry.md`, and `docs/development/evaluation-metrics.md` for browser
-verification.
+`docs/development/pipeline-registry.md`, `docs/development/evaluation-metrics.md`, and
+`docs/development/job-service.md` for browser and worker verification.
 
 ## Baseline verification
 

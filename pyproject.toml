@@ -35,6 +35,8 @@ dev = [
 hiveblot-ingest = "workers.extraction.entrypoint:main"
 hiveblot-schemas = "hiveblot_contracts.schema_cli:main"
 hiveblot-evaluate = "hiveblot_evaluation.metrics_cli:main"
+hiveblot-job-operation = "workers.jobs.operations:main"
+hiveblot-job-worker = "workers.jobs.entrypoint:main"
 
 [tool.hatch.build.targets.wheel]
 packages = [
@@ -45,6 +47,7 @@ packages = [
   "packages/evaluation/src/hiveblot_evaluation",
   "packages/extraction/src/hiveblot_extraction",
   "packages/storage/src/hiveblot_storage",
+  "services/job-service/src/hiveblot_job_service",
   "workers",
 ]
 
@@ -61,6 +64,7 @@ pythonpath = [
   "packages/evaluation/src",
   "packages/extraction/src",
   "packages/storage/src",
+  "services/job-service/src",
 ]
 
 [tool.ruff]
@@ -82,4 +86,4 @@ warn_unreachable = true
 warn_unused_configs = true
 warn_unused_ignores = true
 exclude = ["data/", "tests/fixtures/"]
-mypy_path = "packages/contracts/src:packages/densitometry/src:packages/evaluation/src:packages/extraction/src:packages/storage/src"
+mypy_path = "packages/contracts/src:packages/densitometry/src:packages/evaluation/src:packages/extraction/src:packages/storage/src:services/job-service/src"

@@ -1,11 +1,11 @@
 # HiveBlot
 
 HiveBlot turns western blot evidence from scientific papers into structured, searchable,
-reviewable observations. Milestones A through C are implemented, and the evaluation UI includes a
-server-paginated review queue, a source evidence workbench, and a typed western-blot annotation
-editor with source-pixel spatial review and deterministic densitometry. The useful local hackathon
-extraction path remains operational while new scientific state enters through strict, versioned
-contracts.
+reviewable observations. Milestones A through C and the local half of Milestone D are implemented.
+The evaluation UI includes a server-paginated review queue, source evidence workbench, typed
+western-blot annotation editor, source-pixel spatial review, and deterministic densitometry. The
+useful local hackathon extraction path remains operational while new scientific state enters through
+strict, versioned contracts and finite work can run through durable local container jobs.
 
 ## Current data flow
 
@@ -44,9 +44,13 @@ published PDF/image artifact -> verified bytes -> detection -> versioned model n
 
 immutable raster + exact geometry revision -> deterministic pixel measurement + QC
     -> content-addressed overlay -> immutable result/publication + exact replay
+
+strict finite job + immutable inputs -> durable PostgreSQL lease + heartbeat
+    -> restricted local container -> queryable logs + provenance-linked immutable outputs
 ```
 
-Kubernetes, crawling, authentication, and distributed execution remain out of scope.
+Kubernetes, crawling, authentication, and distributed execution remain out of scope. Finite local
+container execution is now durable; Kubernetes is the next executor rather than the state store.
 The retained extractor now runs through stored artifacts and versioned scientific stages; the
 filesystem ingestion CLI remains available as a compatibility path.
 
@@ -61,6 +65,8 @@ packages/evaluation/       cases, predictions, reviews, assignments, and adjudic
 packages/extraction/       versioned western-blot normalization and pipeline orchestration
 packages/densitometry/     deterministic pixel measurement, QC, and provenance orchestration
 packages/storage/          immutable publication, S3, and PostgreSQL storage boundaries
+services/job-service/      domain-independent jobs, leases, attempts, logs, and Docker execution
+workers/jobs/              bounded domain operations and the local long-lived worker entry point
 hiveblot/                  retained domain, persistence, model, and extraction modules
 services/                  future long-lived service boundary
 infra/                     deployment documentation; root Compose files stay compatible
@@ -176,6 +182,8 @@ model output remains enabled by default.
   through detection/model/assembly stages, and selectively replay immutable component attempts.
 - Densitometry routes list complete geometry revisions, run exact deterministic measurements,
   expose signed source/overlay access, and append exact-input replay attempts.
+- Generic job routes submit strict finite workloads, inspect status and attempt history, cancel work,
+  and query bounded stdout/stderr/system logs.
 
 Public JSON bodies now carry `schema_version: "1.0"` and reject unknown request fields. The
 model never generates executable SQL; domain criteria are mapped to parameterized queries.
@@ -197,4 +205,5 @@ See [the repository audit](docs/architecture/repository-audit.md),
 [the golden dataset ADR](docs/adr/0010-content-addressed-golden-datasets.md), and
 [the western-blot extraction ADR](docs/adr/0011-versioned-western-blot-extraction.md), and
 [the deterministic densitometry ADR](docs/adr/0012-deterministic-densitometry.md), and
+[the generic job-service ADR](docs/adr/0013-durable-generic-job-service.md), and
 [development setup](docs/development/setup.md) for details.

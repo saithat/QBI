@@ -23,6 +23,7 @@ from .densitometry import router as densitometry_router
 from .evaluation import router as evaluation_router
 from .extraction import router as extraction_router
 from .golden import router as golden_router
+from .jobs import router as job_router
 from .metrics import router as metrics_router
 from .pipeline import router as pipeline_router
 from .review_queue import router as review_queue_router
@@ -54,6 +55,7 @@ app.include_router(densitometry_router)
 app.include_router(evaluation_router)
 app.include_router(extraction_router)
 app.include_router(golden_router)
+app.include_router(job_router)
 app.include_router(metrics_router)
 app.include_router(pipeline_router)
 app.include_router(review_queue_router)

@@ -115,6 +115,41 @@ class Settings(BaseSettings):
         validation_alias="ARTIFACT_MAX_BYTES",
         ge=1,
     )
+    job_lease_seconds: int = Field(
+        default=60,
+        validation_alias="JOB_LEASE_SECONDS",
+        ge=5,
+        le=3600,
+    )
+    job_worker_poll_seconds: float = Field(
+        default=1.0,
+        validation_alias="JOB_WORKER_POLL_SECONDS",
+        gt=0,
+        le=60,
+    )
+    job_worker_id: str = Field(
+        default="local-worker",
+        validation_alias="JOB_WORKER_ID",
+        min_length=1,
+        max_length=200,
+    )
+    job_docker_binary: str = Field(
+        default="docker",
+        validation_alias="JOB_DOCKER_BINARY",
+        min_length=1,
+        max_length=1000,
+    )
+    job_max_log_bytes: int = Field(
+        default=262_144,
+        validation_alias="JOB_MAX_LOG_BYTES",
+        ge=1024,
+        le=16_777_216,
+    )
+    job_max_output_bytes: int = Field(
+        default=1_073_741_824,
+        validation_alias="JOB_MAX_OUTPUT_BYTES",
+        ge=1,
+    )
     source_ingest_allowed_hosts: Annotated[tuple[str, ...], NoDecode] = Field(
         default=(),
         validation_alias="SOURCE_INGEST_ALLOWED_HOSTS",

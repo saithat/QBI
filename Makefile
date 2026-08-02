@@ -24,7 +24,8 @@ typecheck:
 	uv run mypy apps hiveblot packages/contracts/src/hiveblot_contracts \
 		packages/densitometry/src/hiveblot_densitometry \
 		packages/evaluation/src/hiveblot_evaluation \
-		packages/extraction/src/hiveblot_extraction packages/storage/src/hiveblot_storage workers
+		packages/extraction/src/hiveblot_extraction packages/storage/src/hiveblot_storage \
+		services/job-service/src/hiveblot_job_service workers
 
 schemas:
 	uv run hiveblot-schemas

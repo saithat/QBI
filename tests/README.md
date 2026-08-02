@@ -10,7 +10,9 @@
   suite verifies a direct signed MinIO image download; the structured and spatial editor suites
   check strict graph round-trips, optimistic conflicts, and append-only restore behavior. The
   pipeline suite persists output-validation failure, replay, publication, and repository reload
-  across PostgreSQL and MinIO.
+  across PostgreSQL and MinIO. Set `HIVEBLOT_RUN_LIVE_JOBS=1` for durable job leases, retries,
+  cancellation, logs, and idempotency; also set `HIVEBLOT_RUN_DOCKER_JOBS=1` after building the
+  configured test image to run the preserved normalization operation in a restricted container.
 - root `test_*.py`: retained prototype tests, to be migrated when their owning PRD changes code.
 - `fixtures/`: committed, deterministic inputs and expected outputs.
 

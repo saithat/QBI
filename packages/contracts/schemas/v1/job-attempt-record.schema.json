@@ -218,6 +218,18 @@
       "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
       "type": "string"
     },
+    "JobAttemptStatus": {
+      "enum": [
+        "leased",
+        "running",
+        "succeeded",
+        "failed",
+        "cancelled",
+        "lease_expired"
+      ],
+      "title": "JobAttemptStatus",
+      "type": "string"
+    },
     "JobError": {
       "additionalProperties": false,
       "properties": {
@@ -246,6 +258,27 @@
       ],
       "title": "JobError",
       "type": "object"
+    },
+    "JobResult": {
+      "discriminator": {
+        "mapping": {
+          "cancelled": "#/$defs/CancelledJobResult",
+          "failed": "#/$defs/FailedJobResult",
+          "succeeded": "#/$defs/SucceededJobResult"
+        },
+        "propertyName": "status"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/SucceededJobResult"
+        },
+        {
+          "$ref": "#/$defs/FailedJobResult"
+        },
+        {
+          "$ref": "#/$defs/CancelledJobResult"
+        }
+      ]
     },
     "MediaType": {
       "pattern": "^[a-z0-9][a-z0-9!#$&^_.+-]*/[a-z0-9][a-z0-9!#$&^_.+-]*$",
@@ -429,25 +462,96 @@
       "type": "string"
     }
   },
-  "$id": "urn:hiveblot:schema:v1:job-result",
+  "$id": "urn:hiveblot:schema:v1:job-attempt-record",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "discriminator": {
-    "mapping": {
-      "cancelled": "#/$defs/CancelledJobResult",
-      "failed": "#/$defs/FailedJobResult",
-      "succeeded": "#/$defs/SucceededJobResult"
+  "additionalProperties": false,
+  "properties": {
+    "attempt": {
+      "minimum": 1,
+      "title": "Attempt",
+      "type": "integer"
     },
-    "propertyName": "status"
-  },
-  "oneOf": [
-    {
-      "$ref": "#/$defs/SucceededJobResult"
+    "attempt_id": {
+      "format": "uuid",
+      "title": "Attempt Id",
+      "type": "string"
     },
-    {
-      "$ref": "#/$defs/FailedJobResult"
+    "completed_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Completed At"
     },
-    {
-      "$ref": "#/$defs/CancelledJobResult"
+    "executor_name": {
+      "$ref": "#/$defs/Identifier"
+    },
+    "job_id": {
+      "format": "uuid",
+      "title": "Job Id",
+      "type": "string"
+    },
+    "lease_expires_at": {
+      "format": "date-time",
+      "title": "Lease Expires At",
+      "type": "string"
+    },
+    "leased_at": {
+      "format": "date-time",
+      "title": "Leased At",
+      "type": "string"
+    },
+    "result": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/JobResult"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "schema_version": {
+      "$ref": "#/$defs/SchemaVersion",
+      "default": "1.0"
+    },
+    "started_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Started At"
+    },
+    "status": {
+      "$ref": "#/$defs/JobAttemptStatus"
+    },
+    "worker_id": {
+      "$ref": "#/$defs/Identifier"
     }
-  ]
+  },
+  "required": [
+    "attempt_id",
+    "job_id",
+    "attempt",
+    "worker_id",
+    "status",
+    "executor_name",
+    "leased_at",
+    "lease_expires_at"
+  ],
+  "title": "JobAttemptRecord",
+  "type": "object"
 }

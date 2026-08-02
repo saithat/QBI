@@ -16,6 +16,7 @@ COPY pyproject.toml uv.lock README.md ./
 COPY apps ./apps
 COPY hiveblot ./hiveblot
 COPY packages ./packages
+COPY services ./services
 COPY workers ./workers
 RUN pip install --no-cache-dir "uv==${UV_VERSION}" \
     && uv sync --locked --all-extras --no-editable \

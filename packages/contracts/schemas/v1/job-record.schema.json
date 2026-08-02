@@ -123,6 +123,85 @@
       "title": "CancelledJobResult",
       "type": "object"
     },
+    "ContainerSpecification": {
+      "additionalProperties": false,
+      "properties": {
+        "allowed_environment_variables": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/EnvironmentVariableName"
+          },
+          "title": "Allowed Environment Variables",
+          "type": "array"
+        },
+        "arguments": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Arguments",
+          "type": "array"
+        },
+        "command": {
+          "items": {
+            "$ref": "#/$defs/Identifier"
+          },
+          "minItems": 1,
+          "title": "Command",
+          "type": "array"
+        },
+        "image": {
+          "maxLength": 1000,
+          "minLength": 1,
+          "title": "Image",
+          "type": "string"
+        },
+        "network_policy": {
+          "$ref": "#/$defs/NetworkPolicy",
+          "default": "deny"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/SchemaVersion",
+          "default": "1.0"
+        }
+      },
+      "required": [
+        "image",
+        "command"
+      ],
+      "title": "ContainerSpecification",
+      "type": "object"
+    },
+    "EnvironmentVariableName": {
+      "pattern": "^[A-Z_][A-Z0-9_]{0,127}$",
+      "type": "string"
+    },
+    "ExpectedJobOutput": {
+      "additionalProperties": false,
+      "properties": {
+        "media_type": {
+          "$ref": "#/$defs/MediaType"
+        },
+        "name": {
+          "$ref": "#/$defs/JobArtifactName"
+        },
+        "required": {
+          "default": true,
+          "title": "Required",
+          "type": "boolean"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/SchemaVersion",
+          "default": "1.0"
+        }
+      },
+      "required": [
+        "name",
+        "media_type"
+      ],
+      "title": "ExpectedJobOutput",
+      "type": "object"
+    },
     "FailedJobResult": {
       "additionalProperties": false,
       "properties": {
@@ -247,6 +326,161 @@
       "title": "JobError",
       "type": "object"
     },
+    "JobResult": {
+      "discriminator": {
+        "mapping": {
+          "cancelled": "#/$defs/CancelledJobResult",
+          "failed": "#/$defs/FailedJobResult",
+          "succeeded": "#/$defs/SucceededJobResult"
+        },
+        "propertyName": "status"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/SucceededJobResult"
+        },
+        {
+          "$ref": "#/$defs/FailedJobResult"
+        },
+        {
+          "$ref": "#/$defs/CancelledJobResult"
+        }
+      ]
+    },
+    "JobSpecification": {
+      "additionalProperties": false,
+      "properties": {
+        "container": {
+          "$ref": "#/$defs/ContainerSpecification"
+        },
+        "expected_outputs": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/ExpectedJobOutput"
+          },
+          "title": "Expected Outputs",
+          "type": "array"
+        },
+        "idempotency_key": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "inputs": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/NamedArtifactReference"
+          },
+          "title": "Inputs",
+          "type": "array"
+        },
+        "job_id": {
+          "format": "uuid",
+          "title": "Job Id",
+          "type": "string"
+        },
+        "job_type": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "max_attempts": {
+          "default": 1,
+          "maximum": 100,
+          "minimum": 1,
+          "title": "Max Attempts",
+          "type": "integer"
+        },
+        "message_type": {
+          "const": "job_specification",
+          "default": "job_specification",
+          "title": "Message Type",
+          "type": "string"
+        },
+        "parent_job_id": {
+          "anyOf": [
+            {
+              "format": "uuid",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Parent Job Id"
+        },
+        "pipeline": {
+          "$ref": "#/$defs/PipelineIdentifier"
+        },
+        "resources": {
+          "$ref": "#/$defs/ResourceRequirements"
+        },
+        "retry_backoff_multiplier": {
+          "default": 2.0,
+          "maximum": 100,
+          "minimum": 1,
+          "title": "Retry Backoff Multiplier",
+          "type": "number"
+        },
+        "retry_initial_backoff_seconds": {
+          "default": 5,
+          "maximum": 86400,
+          "minimum": 0,
+          "title": "Retry Initial Backoff Seconds",
+          "type": "integer"
+        },
+        "retry_max_backoff_seconds": {
+          "default": 300,
+          "maximum": 604800,
+          "minimum": 0,
+          "title": "Retry Max Backoff Seconds",
+          "type": "integer"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/SchemaVersion",
+          "default": "1.0"
+        },
+        "submitted_at": {
+          "format": "date-time",
+          "title": "Submitted At",
+          "type": "string"
+        },
+        "timeout_seconds": {
+          "exclusiveMinimum": 0,
+          "maximum": 604800,
+          "title": "Timeout Seconds",
+          "type": "integer"
+        },
+        "trace_id": {
+          "format": "uuid",
+          "title": "Trace Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "job_id",
+        "job_type",
+        "idempotency_key",
+        "pipeline",
+        "container",
+        "resources",
+        "trace_id",
+        "submitted_at",
+        "timeout_seconds"
+      ],
+      "title": "JobSpecification",
+      "type": "object"
+    },
+    "JobStatus": {
+      "enum": [
+        "pending",
+        "leased",
+        "running",
+        "succeeded",
+        "failed",
+        "cancelled",
+        "dead_letter"
+      ],
+      "title": "JobStatus",
+      "type": "string"
+    },
     "MediaType": {
       "pattern": "^[a-z0-9][a-z0-9!#$&^_.+-]*/[a-z0-9][a-z0-9!#$&^_.+-]*$",
       "type": "string"
@@ -270,6 +504,66 @@
         "artifact"
       ],
       "title": "NamedArtifactReference",
+      "type": "object"
+    },
+    "NetworkPolicy": {
+      "enum": [
+        "deny",
+        "allow"
+      ],
+      "title": "NetworkPolicy",
+      "type": "string"
+    },
+    "PipelineIdentifier": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/SchemaVersion",
+          "default": "1.0"
+        },
+        "version": {
+          "$ref": "#/$defs/Identifier"
+        }
+      },
+      "required": [
+        "name",
+        "version"
+      ],
+      "title": "PipelineIdentifier",
+      "type": "object"
+    },
+    "ResourceRequirements": {
+      "additionalProperties": false,
+      "properties": {
+        "cpu_millicores": {
+          "exclusiveMinimum": 0,
+          "title": "Cpu Millicores",
+          "type": "integer"
+        },
+        "gpu_count": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Gpu Count",
+          "type": "integer"
+        },
+        "memory_mib": {
+          "exclusiveMinimum": 0,
+          "title": "Memory Mib",
+          "type": "integer"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/SchemaVersion",
+          "default": "1.0"
+        }
+      },
+      "required": [
+        "cpu_millicores",
+        "memory_mib"
+      ],
+      "title": "ResourceRequirements",
       "type": "object"
     },
     "SchemaVersion": {
@@ -429,25 +723,119 @@
       "type": "string"
     }
   },
-  "$id": "urn:hiveblot:schema:v1:job-result",
+  "$id": "urn:hiveblot:schema:v1:job-record",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "discriminator": {
-    "mapping": {
-      "cancelled": "#/$defs/CancelledJobResult",
-      "failed": "#/$defs/FailedJobResult",
-      "succeeded": "#/$defs/SucceededJobResult"
+  "additionalProperties": false,
+  "properties": {
+    "attempt_count": {
+      "minimum": 0,
+      "title": "Attempt Count",
+      "type": "integer"
     },
-    "propertyName": "status"
-  },
-  "oneOf": [
-    {
-      "$ref": "#/$defs/SucceededJobResult"
+    "cancel_requested": {
+      "title": "Cancel Requested",
+      "type": "boolean"
     },
-    {
-      "$ref": "#/$defs/FailedJobResult"
+    "cancellation_reason": {
+      "anyOf": [
+        {
+          "maxLength": 4000,
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Cancellation Reason"
     },
-    {
-      "$ref": "#/$defs/CancelledJobResult"
+    "completed_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Completed At"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "current_worker_id": {
+      "anyOf": [
+        {
+          "maxLength": 200,
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Current Worker Id"
+    },
+    "job_id": {
+      "format": "uuid",
+      "title": "Job Id",
+      "type": "string"
+    },
+    "lease_expires_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Lease Expires At"
+    },
+    "result": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/JobResult"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "schema_version": {
+      "$ref": "#/$defs/SchemaVersion",
+      "default": "1.0"
+    },
+    "specification": {
+      "$ref": "#/$defs/JobSpecification"
+    },
+    "status": {
+      "$ref": "#/$defs/JobStatus"
+    },
+    "updated_at": {
+      "format": "date-time",
+      "title": "Updated At",
+      "type": "string"
     }
-  ]
+  },
+  "required": [
+    "job_id",
+    "specification",
+    "status",
+    "attempt_count",
+    "cancel_requested",
+    "created_at",
+    "updated_at"
+  ],
+  "title": "JobRecord",
+  "type": "object"
 }
