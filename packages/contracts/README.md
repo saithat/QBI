@@ -12,5 +12,9 @@ PRD-007 adds `SpatialAnnotationSet` and `SpatialAnnotationComparison`. The graph
 western-blot-review focused, stores geometry in immutable source pixels, validates relationship
 semantics, and remains distinct from API and persistence representations.
 
+PRD-008 adds immutable pipeline DAG, run, invocation/result, evidence, replay, and publication
+contracts. A terminal attempt retains raw and normalized representations separately; publication
+values name their producing invocation and JSON Pointer.
+
 Generate snapshots with `uv run hiveblot-schemas`. Verify committed snapshots with
 `uv run hiveblot-schemas --check`.

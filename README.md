@@ -28,6 +28,9 @@ structured prediction -> typed western-blot review -> optimistic autosave revisi
 
 prediction/source regions -> source-pixel graph editor -> validated spatial relationships
     -> semantic geometry diff + immutable reviewer revisions
+
+pipeline DAG -> parent-linked component invocations -> strict output validation
+    -> immutable failure/replay history -> explicit producer-linked publication
 ```
 
 Kubernetes, crawling, densitometry, authentication, and distributed execution remain out of scope.
@@ -139,6 +142,10 @@ model output remains enabled by default.
   head, revision summaries, error codes, and a stable-ID geometry diff.
 - Spatial save, prediction-acceptance, and restore routes validate complete source-pixel graphs and
   append revisions without reverting current non-spatial annotations.
+- Pipeline definition/run routes register versioned component graphs and expose immutable invocation
+  history per evaluation case.
+- Component result routes preserve raw and normalized output separately; selective replay appends a
+  new attempt, and publication validates every final value against its producing invocation.
 
 Public JSON bodies now carry `schema_version: "1.0"` and reject unknown request fields. The
 model never generates executable SQL; domain criteria are mapped to parameterized queries.
@@ -155,4 +162,5 @@ See [the repository audit](docs/architecture/repository-audit.md),
 [the artifact storage ADR](docs/adr/0002-content-addressed-artifact-storage.md), and
 [the structured annotation ADR](docs/adr/0006-structured-annotation-revisions.md), and
 [the spatial review ADR](docs/adr/0007-source-pixel-spatial-review.md), and
+[the pipeline provenance ADR](docs/adr/0008-immutable-pipeline-runs-and-replay.md), and
 [development setup](docs/development/setup.md) for details.

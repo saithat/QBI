@@ -107,8 +107,11 @@ async def test_workbench_api_exposes_sources_context_and_browser_assets() -> Non
         assert page.status_code == 200
         assert "Source evidence" in page.text
         assert "Edit geometry" in page.text
+        assert "Loading invocation history" in page.text
         assert script.status_code == 200
         assert "requestFullscreen" in script.text
+        assert "pipeline-runs" in script.text
+        assert "Raw output" in script.text
         assert missing.status_code == 404
     finally:
         app.dependency_overrides.pop(get_workbench_service, None)

@@ -13,6 +13,7 @@ const loadStatus = document.querySelector("#load-status");
 
 const state = {
   workbench: null,
+  pipelineRuns: [],
   sourceIndex: -1,
   selectedField: null,
   transforms: new Map(),
@@ -44,6 +45,7 @@ viewer.addEventListener("dblclick", resetView);
 window.addEventListener("resize", applyTransform);
 
 loadWorkbench();
+loadPipelineHistory();
 
 async function loadWorkbench() {
   sourceList.setAttribute("aria-busy", "true");
@@ -62,6 +64,113 @@ async function loadWorkbench() {
     sourceList.setAttribute("aria-busy", "false");
   }
 }
+
+async function loadPipelineHistory() {
+  const container = document.querySelector("#pipeline-run-list");
+  container.setAttribute("aria-busy", "true");
+  try {
+    const response = await fetch(`/api/v1/evaluation-cases/${caseId}/pipeline-runs`);
+    if (!response.ok) throw new Error(await responseMessage(response));
+    const payload = await response.json();
+    state.pipelineRuns = payload.runs;
+    renderPipelineHistory();
+  } catch (error) {
+    container.textContent = error.message || "Invocation history could not be loaded.";
+    container.classList.add("error");
+  } finally {
+    container.setAttribute("aria-busy", "false");
+  }
+}
+
+function renderPipelineHistory() {
+  const container = document.querySelector("#pipeline-run-list");
+  container.replaceChildren();
+  container.classList.remove("error");
+  if (!state.pipelineRuns.length) {
+    container.textContent = "No pipeline runs have been recorded for this case.";
+    return;
+  }
+  [...state.pipelineRuns].reverse().forEach((detail) => {
+    const run = document.createElement("article");
+    run.className = "pipeline-run-card";
+    const heading = document.createElement("div");
+    heading.className = "pipeline-run-heading";
+    const title = document.createElement("strong");
+    title.textContent = `${detail.run.pipeline_name} · ${detail.run.pipeline_version}`;
+    heading.append(title, statusBadge(detail.run.status));
+    const meta = document.createElement("p");
+    meta.className = "pipeline-meta";
+    meta.textContent = `${formatDate(detail.run.created_at)} · trace ${shortId(detail.run.trace_id)}`;
+    run.append(heading, meta);
+    detail.invocations.forEach((invocation) => run.append(invocationCard(invocation)));
+    if (detail.publications.length) {
+      const published = document.createElement("p");
+      published.className = "pipeline-publication";
+      published.textContent = `${detail.publications.length} published snapshot${detail.publications.length === 1 ? "" : "s"}`;
+      run.append(published);
+    }
+    container.append(run);
+  });
+}
+
+function invocationCard(invocation) {
+  const card = document.createElement("div");
+  card.className = "invocation-card";
+  const heading = document.createElement("div");
+  heading.className = "invocation-heading";
+  const title = document.createElement("strong");
+  title.textContent = invocation.component.component_key;
+  heading.append(title, statusBadge(invocation.status));
+  const producer = document.createElement("p");
+  producer.className = "pipeline-meta";
+  producer.textContent = `${humanize(invocation.component.component_type)} · ${invocation.component.producer_name}@${invocation.component.producer_version}`;
+  card.append(heading, producer);
+  if (invocation.replay_of_invocation_id) {
+    const replay = document.createElement("p");
+    replay.className = "replay-label";
+    replay.textContent = `Replay of ${shortId(invocation.replay_of_invocation_id)}`;
+    card.append(replay);
+  }
+  if (invocation.result) {
+    const metrics = document.createElement("p");
+    metrics.className = "pipeline-meta";
+    metrics.textContent = `${invocation.result.latency_ms} ms · $${(invocation.result.cost_microusd / 1000000).toFixed(6)} · ${invocation.result.validation_issues.length} warnings`;
+    card.append(metrics);
+    if (invocation.result.error_message) {
+      const error = document.createElement("p");
+      error.className = "invocation-error";
+      error.textContent = invocation.result.error_message;
+      card.append(error);
+    }
+    if (invocation.result.raw_output_json) card.append(outputDetails("Raw output", invocation.result.raw_output_json));
+    if (invocation.result.normalized_output_json) card.append(outputDetails("Normalized output", invocation.result.normalized_output_json));
+  }
+  return card;
+}
+
+function statusBadge(status) {
+  const badge = document.createElement("span");
+  badge.className = `status-badge status-${status}`;
+  badge.textContent = humanize(status);
+  return badge;
+}
+
+function outputDetails(label, value) {
+  const details = document.createElement("details");
+  const summary = document.createElement("summary");
+  summary.textContent = label;
+  const pre = document.createElement("pre");
+  pre.textContent = prettyJson(value);
+  details.append(summary, pre);
+  return details;
+}
+
+function prettyJson(value) {
+  try { return JSON.stringify(JSON.parse(value), null, 2); }
+  catch (_) { return value; }
+}
+
+function shortId(value) { return value.slice(0, 8); }
 
 function renderSources() {
   sourceList.replaceChildren();

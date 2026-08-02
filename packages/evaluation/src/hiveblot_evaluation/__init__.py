@@ -7,6 +7,13 @@ from .errors import (
     EvaluationNotFound,
     InvalidEvaluationState,
 )
+from .pipeline import (
+    OutputSchemaRegistry,
+    PipelineArtifactLookup,
+    PipelineRegistryService,
+)
+from .pipeline_postgres import PostgresPipelineRunRepository
+from .pipeline_repository import PipelineRunRepository
 from .postgres import PostgresEvaluationRepository
 from .repository import EvaluationRepository
 from .review_queue import ReviewQueueRepository, ReviewQueueService
@@ -27,7 +34,12 @@ __all__ = [
     "EvaluationService",
     "EvidenceWorkbenchService",
     "InvalidEvaluationState",
+    "OutputSchemaRegistry",
+    "PipelineArtifactLookup",
+    "PipelineRegistryService",
+    "PipelineRunRepository",
     "PostgresEvaluationRepository",
+    "PostgresPipelineRunRepository",
     "PostgresReviewQueueRepository",
     "PostgresSourceContextRepository",
     "ReviewQueueRepository",

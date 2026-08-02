@@ -4,4 +4,6 @@
 from canonical domain contracts, model output, persistence rows, and queue messages. Feature routes
 and their HTTP adapters are split by artifact, evaluation, queue, workbench, and structured-editor
 boundaries. The spatial-editor adapter composes strict source-pixel graph contracts over the same
-immutable annotation service. `hiveblot.api` is only a compatibility facade.
+immutable annotation service. The pipeline-registry adapter maps explicit HTTP schemas to immutable
+definition, invocation, replay, and publication contracts; it does not execute containers.
+`hiveblot.api` is only a compatibility facade.

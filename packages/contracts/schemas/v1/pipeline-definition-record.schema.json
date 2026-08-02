@@ -1,0 +1,281 @@
+{
+  "$defs": {
+    "Identifier": {
+      "maxLength": 200,
+      "minLength": 1,
+      "type": "string"
+    },
+    "ModelIdentifier": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "model",
+          "default": "model",
+          "title": "Kind",
+          "type": "string"
+        },
+        "name": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "provider": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/SchemaVersion",
+          "default": "1.0"
+        },
+        "version": {
+          "$ref": "#/$defs/Identifier"
+        }
+      },
+      "required": [
+        "provider",
+        "name",
+        "version"
+      ],
+      "title": "ModelIdentifier",
+      "type": "object"
+    },
+    "ModelPipelineComponent": {
+      "additionalProperties": false,
+      "properties": {
+        "component_key": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "component_type": {
+          "const": "model",
+          "default": "model",
+          "title": "Component Type",
+          "type": "string"
+        },
+        "configuration_json": {
+          "default": "{}",
+          "minLength": 2,
+          "title": "Configuration Json",
+          "type": "string"
+        },
+        "depends_on": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/Identifier"
+          },
+          "title": "Depends On",
+          "type": "array"
+        },
+        "model": {
+          "$ref": "#/$defs/ModelIdentifier"
+        },
+        "output_schema": {
+          "$ref": "#/$defs/OutputSchemaIdentifier"
+        },
+        "prompt_version": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/SchemaVersion",
+          "default": "1.0"
+        }
+      },
+      "required": [
+        "component_key",
+        "output_schema",
+        "model",
+        "prompt_version"
+      ],
+      "title": "ModelPipelineComponent",
+      "type": "object"
+    },
+    "OutputSchemaIdentifier": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/SchemaVersion",
+          "default": "1.0"
+        },
+        "version": {
+          "$ref": "#/$defs/Identifier"
+        }
+      },
+      "required": [
+        "name",
+        "version"
+      ],
+      "title": "OutputSchemaIdentifier",
+      "type": "object"
+    },
+    "PipelineComponentDefinition": {
+      "discriminator": {
+        "mapping": {
+          "model": "#/$defs/ModelPipelineComponent",
+          "tool": "#/$defs/ToolPipelineComponent"
+        },
+        "propertyName": "component_type"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/ModelPipelineComponent"
+        },
+        {
+          "$ref": "#/$defs/ToolPipelineComponent"
+        }
+      ]
+    },
+    "PipelineIdentifier": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/SchemaVersion",
+          "default": "1.0"
+        },
+        "version": {
+          "$ref": "#/$defs/Identifier"
+        }
+      },
+      "required": [
+        "name",
+        "version"
+      ],
+      "title": "PipelineIdentifier",
+      "type": "object"
+    },
+    "SchemaVersion": {
+      "const": "1.0",
+      "type": "string"
+    },
+    "ToolIdentifier": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "tool",
+          "default": "tool",
+          "title": "Kind",
+          "type": "string"
+        },
+        "name": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/SchemaVersion",
+          "default": "1.0"
+        },
+        "version": {
+          "$ref": "#/$defs/Identifier"
+        }
+      },
+      "required": [
+        "name",
+        "version"
+      ],
+      "title": "ToolIdentifier",
+      "type": "object"
+    },
+    "ToolPipelineComponent": {
+      "additionalProperties": false,
+      "properties": {
+        "component_key": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "component_type": {
+          "const": "tool",
+          "default": "tool",
+          "title": "Component Type",
+          "type": "string"
+        },
+        "configuration_json": {
+          "default": "{}",
+          "minLength": 2,
+          "title": "Configuration Json",
+          "type": "string"
+        },
+        "depends_on": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/Identifier"
+          },
+          "title": "Depends On",
+          "type": "array"
+        },
+        "output_schema": {
+          "$ref": "#/$defs/OutputSchemaIdentifier"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/SchemaVersion",
+          "default": "1.0"
+        },
+        "tool": {
+          "$ref": "#/$defs/ToolIdentifier"
+        }
+      },
+      "required": [
+        "component_key",
+        "output_schema",
+        "tool"
+      ],
+      "title": "ToolPipelineComponent",
+      "type": "object"
+    }
+  },
+  "$id": "urn:hiveblot:schema:v1:pipeline-definition-record",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "components": {
+      "items": {
+        "$ref": "#/$defs/PipelineComponentDefinition"
+      },
+      "minItems": 1,
+      "title": "Components",
+      "type": "array"
+    },
+    "configuration_json": {
+      "default": "{}",
+      "minLength": 2,
+      "title": "Configuration Json",
+      "type": "string"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "definition_id": {
+      "format": "uuid",
+      "title": "Definition Id",
+      "type": "string"
+    },
+    "description": {
+      "anyOf": [
+        {
+          "maxLength": 4000,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Description"
+    },
+    "pipeline": {
+      "$ref": "#/$defs/PipelineIdentifier"
+    },
+    "schema_version": {
+      "$ref": "#/$defs/SchemaVersion",
+      "default": "1.0"
+    }
+  },
+  "required": [
+    "definition_id",
+    "pipeline",
+    "components",
+    "created_at"
+  ],
+  "title": "PipelineDefinitionRecord",
+  "type": "object"
+}

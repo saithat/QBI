@@ -17,3 +17,8 @@ It does not mutate historic predictions or revisions.
 validates complete source-pixel graphs, computes stable-ID geometry diffs, and appends spatial saves
 or surface-scoped restores. It carries current structured/field data and unrelated relationships
 forward rather than treating one editor as the owner of an entire review snapshot.
+
+`PipelineRegistryService` registers versioned model/tool DAGs, materializes parent-linked
+invocations, validates normalized output against canonical schemas, records invalid attempts as
+failures, appends selective replays, and publishes only values traceable to successful invocations.
+It owns scientific run provenance, not container scheduling or worker lifecycle.

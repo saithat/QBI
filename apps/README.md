@@ -9,3 +9,5 @@ the same application boundary while source aggregation remains a strict backend 
 adds the typed western-blot editor at `/annotate/{case_id}`; its HTTP inputs are distinct adapters
 around the canonical annotation contracts. PRD-007 adds `/spatial/{case_id}` for validated
 source-pixel graph editing while continuing to stream source bytes directly from object storage.
+PRD-008 adds immutable pipeline-run inspection to the source workbench while mutation stays behind
+strict API adapters.

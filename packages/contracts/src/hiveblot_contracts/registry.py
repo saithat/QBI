@@ -22,6 +22,14 @@ from .evaluation import EvaluationCaseReference, ValidationIssue
 from .evidence import CaseSourceContext, EvidenceOverlay, SourceEvidenceWorkbench
 from .identifiers import ModelIdentifier, PipelineIdentifier, ToolIdentifier
 from .jobs import JobResult, JobSpecification
+from .pipeline_runs import (
+    ComponentInvocationRecord,
+    ComponentResult,
+    PipelineDefinitionRecord,
+    PipelinePublicationRecord,
+    PipelineRunDetail,
+    PipelineRunRecord,
+)
 from .review_queue import (
     ReviewQueueCaseSummary,
     ReviewQueueFilters,
@@ -48,6 +56,8 @@ CONTRACT_REGISTRY: Mapping[str, Any] = {
     "bounding-region": BoundingRegion,
     "canonical-entity-reference": CanonicalEntityReference,
     "case-source-context": CaseSourceContext,
+    "component-invocation-record": ComponentInvocationRecord,
+    "component-result": ComponentResult,
     "evaluation-case-reference": EvaluationCaseReference,
     "evaluation-case-record": EvaluationCaseRecord,
     "evidence-overlay": EvidenceOverlay,
@@ -55,6 +65,10 @@ CONTRACT_REGISTRY: Mapping[str, Any] = {
     "job-specification": JobSpecification,
     "model-identifier": ModelIdentifier,
     "pipeline-identifier": PipelineIdentifier,
+    "pipeline-definition-record": PipelineDefinitionRecord,
+    "pipeline-publication-record": PipelinePublicationRecord,
+    "pipeline-run-detail": PipelineRunDetail,
+    "pipeline-run-record": PipelineRunRecord,
     "prediction-document": PredictionDocument,
     "reviewer-assignment": ReviewerAssignment,
     "review-queue-case-summary": ReviewQueueCaseSummary,

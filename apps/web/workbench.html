@@ -84,6 +84,7 @@
       <div class="tabs" role="tablist">
         <button class="tab active" data-tab="context" role="tab" aria-selected="true">Context</button>
         <button class="tab" data-tab="fields" role="tab" aria-selected="false">Fields</button>
+        <button class="tab" data-tab="runs" role="tab" aria-selected="false">Runs</button>
         <button class="tab" data-tab="provenance" role="tab" aria-selected="false">Provenance</button>
       </div>
 
@@ -101,6 +102,13 @@
       <section id="tab-fields" class="tab-panel" role="tabpanel">
         <p class="help">Choose a field to highlight every linked source region.</p>
         <div id="field-list" class="field-list"></div>
+      </section>
+
+      <section id="tab-runs" class="tab-panel" role="tabpanel">
+        <p class="help">Immutable component attempts, replays, and published results.</p>
+        <div id="pipeline-run-list" class="pipeline-run-list" aria-busy="true">
+          Loading invocation history…
+        </div>
       </section>
 
       <section id="tab-provenance" class="tab-panel" role="tabpanel">
