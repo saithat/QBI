@@ -1,0 +1,19 @@
+DROP TABLE IF EXISTS adjudication_considered_revisions;
+ALTER TABLE IF EXISTS adjudication_records
+    DROP CONSTRAINT IF EXISTS adjudication_selected_considered_fk;
+DROP TABLE IF EXISTS adjudication_records;
+DROP TABLE IF EXISTS reviewer_assignments;
+DROP TABLE IF EXISTS annotation_revision_error_codes;
+DROP TABLE IF EXISTS annotation_relationships;
+DROP TABLE IF EXISTS field_annotation_evidence;
+DROP TABLE IF EXISTS field_annotations;
+DROP TABLE IF EXISTS spatial_annotations;
+ALTER TABLE IF EXISTS annotation_documents
+    DROP CONSTRAINT IF EXISTS annotation_document_head_fk;
+DROP TABLE IF EXISTS annotation_revisions;
+DROP TABLE IF EXISTS annotation_documents;
+DROP TABLE IF EXISTS annotation_error_codes;
+DROP TABLE IF EXISTS prediction_documents;
+DROP TABLE IF EXISTS evaluation_case_artifacts;
+DROP TABLE IF EXISTS evaluation_cases;
+DELETE FROM schema_migrations WHERE version = '0003_evaluation_annotations';

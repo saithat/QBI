@@ -1,0 +1,362 @@
+{
+  "$defs": {
+    "Identifier": {
+      "maxLength": 200,
+      "minLength": 1,
+      "type": "string"
+    },
+    "ModelIdentifier": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "model",
+          "default": "model",
+          "title": "Kind",
+          "type": "string"
+        },
+        "name": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "provider": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/SchemaVersion",
+          "default": "1.0"
+        },
+        "version": {
+          "$ref": "#/$defs/Identifier"
+        }
+      },
+      "required": [
+        "provider",
+        "name",
+        "version"
+      ],
+      "title": "ModelIdentifier",
+      "type": "object"
+    },
+    "PipelineIdentifier": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/SchemaVersion",
+          "default": "1.0"
+        },
+        "version": {
+          "$ref": "#/$defs/Identifier"
+        }
+      },
+      "required": [
+        "name",
+        "version"
+      ],
+      "title": "PipelineIdentifier",
+      "type": "object"
+    },
+    "PredictionEvidence": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "format": "uuid",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "maxLength": 2000,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "field_path": {
+          "anyOf": [
+            {
+              "maxLength": 1000,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Field Path"
+        },
+        "region_id": {
+          "anyOf": [
+            {
+              "format": "uuid",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Region Id"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/SchemaVersion",
+          "default": "1.0"
+        }
+      },
+      "required": [
+        "artifact_id"
+      ],
+      "title": "PredictionEvidence",
+      "type": "object"
+    },
+    "ProducerIdentifier": {
+      "discriminator": {
+        "mapping": {
+          "model": "#/$defs/ModelIdentifier",
+          "tool": "#/$defs/ToolIdentifier"
+        },
+        "propertyName": "kind"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/ModelIdentifier"
+        },
+        {
+          "$ref": "#/$defs/ToolIdentifier"
+        }
+      ]
+    },
+    "SchemaVersion": {
+      "const": "1.0",
+      "type": "string"
+    },
+    "ToolIdentifier": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "tool",
+          "default": "tool",
+          "title": "Kind",
+          "type": "string"
+        },
+        "name": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/SchemaVersion",
+          "default": "1.0"
+        },
+        "version": {
+          "$ref": "#/$defs/Identifier"
+        }
+      },
+      "required": [
+        "name",
+        "version"
+      ],
+      "title": "ToolIdentifier",
+      "type": "object"
+    },
+    "ValidationIssue": {
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "evidence_artifact_ids": {
+          "default": [],
+          "items": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "title": "Evidence Artifact Ids",
+          "type": "array"
+        },
+        "field_path": {
+          "anyOf": [
+            {
+              "maxLength": 1000,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Field Path"
+        },
+        "issue_id": {
+          "format": "uuid",
+          "title": "Issue Id",
+          "type": "string"
+        },
+        "message": {
+          "maxLength": 4000,
+          "minLength": 1,
+          "title": "Message",
+          "type": "string"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/SchemaVersion",
+          "default": "1.0"
+        },
+        "severity": {
+          "$ref": "#/$defs/ValidationSeverity"
+        }
+      },
+      "required": [
+        "issue_id",
+        "severity",
+        "code",
+        "message"
+      ],
+      "title": "ValidationIssue",
+      "type": "object"
+    },
+    "ValidationSeverity": {
+      "enum": [
+        "info",
+        "warning",
+        "error"
+      ],
+      "title": "ValidationSeverity",
+      "type": "string"
+    }
+  },
+  "$id": "urn:hiveblot:schema:v1:prediction-document",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "case_id": {
+      "format": "uuid",
+      "title": "Case Id",
+      "type": "string"
+    },
+    "confidence": {
+      "anyOf": [
+        {
+          "maximum": 1,
+          "minimum": 0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Confidence"
+    },
+    "configuration_json": {
+      "minLength": 2,
+      "title": "Configuration Json",
+      "type": "string"
+    },
+    "cost_microusd": {
+      "minimum": 0,
+      "title": "Cost Microusd",
+      "type": "integer"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "evidence": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/PredictionEvidence"
+      },
+      "title": "Evidence",
+      "type": "array"
+    },
+    "latency_ms": {
+      "minimum": 0,
+      "title": "Latency Ms",
+      "type": "integer"
+    },
+    "normalized_output_json": {
+      "anyOf": [
+        {
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Normalized Output Json"
+    },
+    "pipeline": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/PipelineIdentifier"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "prediction_id": {
+      "format": "uuid",
+      "title": "Prediction Id",
+      "type": "string"
+    },
+    "prediction_schema": {
+      "$ref": "#/$defs/Identifier"
+    },
+    "prediction_schema_version": {
+      "$ref": "#/$defs/Identifier"
+    },
+    "producer": {
+      "$ref": "#/$defs/ProducerIdentifier"
+    },
+    "raw_output_json": {
+      "minLength": 1,
+      "title": "Raw Output Json",
+      "type": "string"
+    },
+    "schema_version": {
+      "$ref": "#/$defs/SchemaVersion",
+      "default": "1.0"
+    },
+    "trace_id": {
+      "format": "uuid",
+      "title": "Trace Id",
+      "type": "string"
+    },
+    "validation_issues": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/ValidationIssue"
+      },
+      "title": "Validation Issues",
+      "type": "array"
+    }
+  },
+  "required": [
+    "prediction_id",
+    "case_id",
+    "prediction_schema",
+    "prediction_schema_version",
+    "producer",
+    "raw_output_json",
+    "configuration_json",
+    "trace_id",
+    "latency_ms",
+    "cost_microusd",
+    "created_at"
+  ],
+  "title": "PredictionDocument",
+  "type": "object"
+}

@@ -1,0 +1,63 @@
+{
+  "$defs": {
+    "SchemaVersion": {
+      "const": "1.0",
+      "type": "string"
+    }
+  },
+  "$id": "urn:hiveblot:schema:v1:annotation-document",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "annotation_id": {
+      "format": "uuid",
+      "title": "Annotation Id",
+      "type": "string"
+    },
+    "case_id": {
+      "format": "uuid",
+      "title": "Case Id",
+      "type": "string"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "head_revision_id": {
+      "format": "uuid",
+      "title": "Head Revision Id",
+      "type": "string"
+    },
+    "reviewer_id": {
+      "format": "uuid",
+      "title": "Reviewer Id",
+      "type": "string"
+    },
+    "revision_count": {
+      "minimum": 1,
+      "title": "Revision Count",
+      "type": "integer"
+    },
+    "schema_version": {
+      "$ref": "#/$defs/SchemaVersion",
+      "default": "1.0"
+    },
+    "updated_at": {
+      "format": "date-time",
+      "title": "Updated At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "annotation_id",
+    "case_id",
+    "reviewer_id",
+    "head_revision_id",
+    "revision_count",
+    "created_at",
+    "updated_at"
+  ],
+  "title": "AnnotationDocumentRecord",
+  "type": "object"
+}

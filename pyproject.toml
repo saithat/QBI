@@ -40,6 +40,7 @@ packages = [
   "apps",
   "hiveblot",
   "packages/contracts/src/hiveblot_contracts",
+  "packages/evaluation/src/hiveblot_evaluation",
   "packages/storage/src/hiveblot_storage",
   "workers",
 ]
@@ -50,7 +51,12 @@ packages = [
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-ra"
-pythonpath = [".", "packages/contracts/src", "packages/storage/src"]
+pythonpath = [
+  ".",
+  "packages/contracts/src",
+  "packages/evaluation/src",
+  "packages/storage/src",
+]
 
 [tool.ruff]
 target-version = "py312"
@@ -71,4 +77,4 @@ warn_unreachable = true
 warn_unused_configs = true
 warn_unused_ignores = true
 exclude = ["data/", "tests/fixtures/"]
-mypy_path = "packages/contracts/src:packages/storage/src"
+mypy_path = "packages/contracts/src:packages/evaluation/src:packages/storage/src"

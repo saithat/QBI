@@ -1,9 +1,10 @@
 # HiveBlot
 
 HiveBlot turns western blot evidence from scientific papers into structured, searchable,
-reviewable observations. The PRD-001 platform foundation and PRD-002 immutable artifact storage
-are implemented. The useful local hackathon extraction path remains operational while new storage
-enters through strict contracts rather than mutable file paths.
+reviewable observations. Milestone A is implemented: the PRD-001 platform foundation, PRD-002
+immutable artifact storage, and PRD-003 evaluation/annotation persistence. The useful local
+hackathon extraction path remains operational while new scientific state enters through strict,
+versioned contracts.
 
 ## Current data flow
 
@@ -13,6 +14,9 @@ PDF -> page rendering -> CV crop selection -> local Qwen3-VL extraction
 
 user multipart upload / allowlisted source adapter -> S3 staging -> hash + MIME validation
     -> content-addressed S3 object + PostgreSQL metadata/events -> expiring download URL
+
+immutable artifact -> evaluation case -> immutable predictions + independent reviewer revisions
+    -> explicit adjudication references
 ```
 
 Evaluation UI, Kubernetes, crawling, densitometry, authentication, and distributed execution remain
@@ -24,6 +28,7 @@ out of scope. Legacy extraction adopts artifact IDs in PRD-011.
 apps/api/                  FastAPI entry point and HTTP-only schemas
 workers/extraction/        stable worker entry point around retained extraction code
 packages/contracts/        strict shared Pydantic v2 contracts and JSON Schemas
+packages/evaluation/       cases, predictions, reviews, assignments, and adjudication
 packages/storage/          immutable publication, S3, and PostgreSQL storage boundaries
 hiveblot/                  retained domain, persistence, model, and extraction modules
 services/                  future long-lived service boundary
@@ -102,6 +107,9 @@ model output remains enabled by default.
 - `GET /api/v1/artifacts/{id}` returns metadata without downloading bytes.
 - `POST /api/v1/artifacts/{id}/download-url` records access and returns an expiring S3 URL.
 - `POST /api/v1/artifacts/source-ingestions` uses an explicitly allowlisted source adapter.
+- `POST /api/v1/evaluation-cases` anchors review state to immutable artifacts.
+- Case prediction routes preserve raw and normalized outputs as distinct immutable documents.
+- Annotation revision routes append snapshots and return `409` for stale expected-head UUIDs.
 
 Public JSON bodies now carry `schema_version: "1.0"` and reject unknown request fields. The
 model never generates executable SQL; domain criteria are mapped to parameterized queries.

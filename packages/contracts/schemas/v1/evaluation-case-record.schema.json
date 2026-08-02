@@ -1,0 +1,143 @@
+{
+  "$defs": {
+    "CaseArtifactRole": {
+      "enum": [
+        "source_document",
+        "figure",
+        "raw_source",
+        "supplementary",
+        "context"
+      ],
+      "title": "CaseArtifactRole",
+      "type": "string"
+    },
+    "CaseSourceArtifact": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "format": "uuid",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "page_number": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Page Number"
+        },
+        "role": {
+          "$ref": "#/$defs/CaseArtifactRole"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/SchemaVersion",
+          "default": "1.0"
+        }
+      },
+      "required": [
+        "artifact_id",
+        "role"
+      ],
+      "title": "CaseSourceArtifact",
+      "type": "object"
+    },
+    "Identifier": {
+      "maxLength": 200,
+      "minLength": 1,
+      "type": "string"
+    },
+    "ReviewStatus": {
+      "enum": [
+        "unreviewed",
+        "in_review",
+        "reviewed",
+        "needs_adjudication",
+        "adjudicated"
+      ],
+      "title": "ReviewStatus",
+      "type": "string"
+    },
+    "SchemaVersion": {
+      "const": "1.0",
+      "type": "string"
+    }
+  },
+  "$id": "urn:hiveblot:schema:v1:evaluation-case-record",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "assay_type": {
+      "const": "western_blot",
+      "default": "western_blot",
+      "title": "Assay Type",
+      "type": "string"
+    },
+    "case_id": {
+      "format": "uuid",
+      "title": "Case Id",
+      "type": "string"
+    },
+    "case_key": {
+      "$ref": "#/$defs/Identifier"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "dataset_id": {
+      "anyOf": [
+        {
+          "format": "uuid",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Dataset Id"
+    },
+    "review_status": {
+      "$ref": "#/$defs/ReviewStatus"
+    },
+    "schema_version": {
+      "$ref": "#/$defs/SchemaVersion",
+      "default": "1.0"
+    },
+    "source_artifacts": {
+      "items": {
+        "$ref": "#/$defs/CaseSourceArtifact"
+      },
+      "title": "Source Artifacts",
+      "type": "array"
+    },
+    "updated_at": {
+      "format": "date-time",
+      "title": "Updated At",
+      "type": "string"
+    },
+    "version": {
+      "minimum": 1,
+      "title": "Version",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "case_id",
+    "case_key",
+    "review_status",
+    "version",
+    "source_artifacts",
+    "created_at",
+    "updated_at"
+  ],
+  "title": "EvaluationCaseRecord",
+  "type": "object"
+}
