@@ -75,6 +75,9 @@ See `docs/development/artifact-storage.md` for the multipart API flow and
 `docs/development/pipeline-registry.md`, `docs/development/evaluation-metrics.md`, and
 `docs/development/job-service.md` for browser and worker verification.
 
+For the local Kubernetes runtime and the full artifact-to-Kubernetes-Job acceptance smoke, see
+`docs/development/kubernetes.md`.
+
 The tracked `.env.example`, `.env.test.example`, and `.env.deployed.example` files intentionally
 contain no credential values. Do not copy production credentials into a tracked template. If a
 generated local credential has been used anywhere beyond the loopback-only development stack,

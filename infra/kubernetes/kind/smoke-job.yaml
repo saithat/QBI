@@ -1,0 +1,54 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: hiveblot-runtime-smoke
+  namespace: hiveblot
+  labels:
+    app.kubernetes.io/name: hiveblot-runtime-smoke
+    app.kubernetes.io/component: acceptance-test
+    hiveblot.io/network-access: allow
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 240
+  ttlSecondsAfterFinished: 3600
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: hiveblot-runtime-smoke
+        app.kubernetes.io/component: acceptance-test
+        hiveblot.io/network-access: allow
+    spec:
+      serviceAccountName: hiveblot-job-runner
+      automountServiceAccountToken: false
+      restartPolicy: Never
+      enableServiceLinks: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: smoke
+          image: hiveblot:prd-014
+          imagePullPolicy: IfNotPresent
+          command: ["hiveblot-kubernetes-smoke"]
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir:
+            sizeLimit: 128Mi

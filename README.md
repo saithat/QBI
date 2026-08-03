@@ -1,11 +1,12 @@
 # HiveBlot
 
 HiveBlot turns western blot evidence from scientific papers into structured, searchable,
-reviewable observations. Milestones A through C and the local half of Milestone D are implemented.
+reviewable observations. Milestones A through D are implemented.
 The evaluation UI includes a server-paginated review queue, source evidence workbench, typed
 western-blot annotation editor, source-pixel spatial review, and deterministic densitometry. The
 useful local hackathon extraction path remains operational while new scientific state enters through
-strict, versioned contracts and finite work can run through durable local container jobs.
+strict, versioned contracts and finite work can run through durable local Docker or Kubernetes
+jobs.
 
 ## Current data flow
 
@@ -47,12 +48,15 @@ immutable raster + exact geometry revision -> deterministic pixel measurement + 
 
 strict finite job + immutable inputs -> durable PostgreSQL lease + heartbeat
     -> restricted local container -> queryable logs + provenance-linked immutable outputs
+
+strict finite job + immutable inputs -> Kubernetes scheduler worker -> bounded Job
+    -> queryable logs + the same durable provenance-linked output publication
 ```
 
-Kubernetes, crawling, authentication, and distributed execution remain out of scope. Finite local
-container execution is now durable; Kubernetes is the next executor rather than the state store.
-The retained extractor now runs through stored artifacts and versioned scientific stages; the
-filesystem ingestion CLI remains available as a compatibility path.
+Crawling, authentication, and queue-driven autoscaling remain out of scope. Kubernetes is the
+deployed placement layer rather than the state store; PostgreSQL, object storage, and Temporal stay
+externally managed. The retained extractor runs through stored artifacts and versioned scientific
+stages; the filesystem ingestion CLI remains available as a compatibility path.
 
 ## Repository boundaries
 
@@ -65,11 +69,12 @@ packages/evaluation/       cases, predictions, reviews, assignments, and adjudic
 packages/extraction/       versioned western-blot normalization and pipeline orchestration
 packages/densitometry/     deterministic pixel measurement, QC, and provenance orchestration
 packages/storage/          immutable publication, S3, and PostgreSQL storage boundaries
-services/job-service/      domain-independent jobs, leases, attempts, logs, and Docker execution
-workers/jobs/              bounded domain operations and the local long-lived worker entry point
+services/job-service/      domain-independent jobs, leases, attempts, logs, and execution
+workers/jobs/              bounded operations plus local-Docker/Kubernetes worker entry points
+workers/workflow/          external Temporal workflow-worker entry point
 hiveblot/                  retained domain, persistence, model, and extraction modules
 services/                  future long-lived service boundary
-infra/                     deployment documentation; root Compose files stay compatible
+infra/kubernetes/          Kustomize base, kind overlay, and runtime acceptance smoke
 tests/baseline/            historic extraction behavior without GPU/network/database
 tests/unit/                contract and configuration tests
 tests/integration/         boundary smoke tests
@@ -127,6 +132,22 @@ docker compose up --build -d postgres minio
 MinIO exposes its S3 API at <http://localhost:9000> and local console at
 <http://localhost:9001>. See [artifact storage setup](docs/development/artifact-storage.md).
 
+## Run the local Kubernetes runtime
+
+With Docker, kind, and kubectl installed:
+
+```bash
+make local-env
+make kind-up
+make kind-smoke
+make kind-down
+```
+
+This keeps PostgreSQL and MinIO in Compose, runs application/worker Deployments in kind, and proves
+that a strict generic job can execute as a Kubernetes Job and publish the preserved 40-record output.
+The kind web/API endpoint is <http://127.0.0.1:18080>. See
+[Kubernetes development](docs/development/kubernetes.md).
+
 ## Ingest a PDF
 
 Place a paper under `data/input/`, then run:
@@ -142,7 +163,8 @@ model output remains enabled by default.
 
 ## API
 
-- `GET /health` checks PostgreSQL and vLLM readiness.
+- `GET /health` checks PostgreSQL and vLLM readiness; `/health/startup`, `/health/live`, and
+  `/health/ready` expose Kubernetes-specific process and readiness checks.
 - `GET /api/records` accepts `target`, `sample`, `condition`, `limit`, and `offset`.
 - `GET /api/records/{id}` exposes one record with locally available source context.
 - `POST /api/search` accepts a natural-language query and maps model output to safe filters.
@@ -206,4 +228,5 @@ See [the repository audit](docs/architecture/repository-audit.md),
 [the western-blot extraction ADR](docs/adr/0011-versioned-western-blot-extraction.md), and
 [the deterministic densitometry ADR](docs/adr/0012-deterministic-densitometry.md), and
 [the generic job-service ADR](docs/adr/0013-durable-generic-job-service.md), and
+[the Kubernetes runtime ADR](docs/adr/0014-kubernetes-runtime.md), and
 [development setup](docs/development/setup.md) for details.

@@ -31,6 +31,7 @@ from .schemas import (
     HealthResponse,
     RecordDetailResponse,
     RecordListResponse,
+    RuntimeProbeResponse,
     SearchFiltersResponse,
     SearchRequest,
     SearchResponse,
@@ -65,6 +66,26 @@ app.include_router(workbench_router)
 INDEX = Path(hiveblot.__file__).with_name("static") / "index.html"
 REVIEW_WEB = Path(__file__).resolve().parents[1] / "web"
 app.mount("/review/assets", StaticFiles(directory=REVIEW_WEB / "assets"), name="review-assets")
+
+
+@app.get("/health/live", response_model=RuntimeProbeResponse)
+def liveness() -> RuntimeProbeResponse:
+    return RuntimeProbeResponse(status="alive")
+
+
+@app.get("/health/startup", response_model=RuntimeProbeResponse)
+def startup() -> RuntimeProbeResponse:
+    return RuntimeProbeResponse(status="started")
+
+
+@app.get("/health/ready", response_model=RuntimeProbeResponse)
+def readiness() -> JSONResponse:
+    ready = db.health(get_settings().database_url)
+    response = RuntimeProbeResponse(status="ready" if ready else "not_ready")
+    return JSONResponse(
+        response.model_dump(mode="json"),
+        status_code=200 if ready else 503,
+    )
 
 
 @app.get("/", include_in_schema=False)

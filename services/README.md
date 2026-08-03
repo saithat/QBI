@@ -6,4 +6,6 @@ Long-lived domain-independent or domain service processes live here.
   attempts, and result publication. It knows artifacts and container resources but no western-blot
   concepts.
 
-The crawler, durable workflow service, and search service remain deferred to their owning PRDs.
+The job service now supports local Docker and Kubernetes Job executors behind one protocol. Temporal
+workflow workers live in `workers/workflow` and connect to an externally managed Temporal service.
+The crawler and search service remain deferred to their owning PRDs.

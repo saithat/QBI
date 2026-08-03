@@ -35,6 +35,19 @@ def test_settings_parse_an_explicit_test_environment(monkeypatch, tmp_path) -> N
     assert model_api_key not in repr(settings)
 
 
+def test_empty_optional_kubernetes_placement_values_are_unset() -> None:
+    settings = Settings(
+        kubernetes_gpu_node_selector_key="",
+        kubernetes_gpu_node_selector_value="",
+        kubernetes_gpu_toleration_key="",
+        _env_file=None,
+    )
+
+    assert settings.kubernetes_gpu_node_selector_key is None
+    assert settings.kubernetes_gpu_node_selector_value is None
+    assert settings.kubernetes_gpu_toleration_key is None
+
+
 def test_deployed_settings_require_explicit_non_local_values(monkeypatch) -> None:
     for name in (
         "HIVEBLOT_ENV",
@@ -47,6 +60,9 @@ def test_deployed_settings_require_explicit_non_local_values(monkeypatch) -> Non
         "S3_BUCKET",
         "S3_ACCESS_KEY_ID",
         "S3_SECRET_ACCESS_KEY",
+        "TEMPORAL_ADDRESS",
+        "TEMPORAL_NAMESPACE",
+        "TEMPORAL_TASK_QUEUE",
     ):
         monkeypatch.delenv(name, raising=False)
 
@@ -65,5 +81,8 @@ def test_deployed_settings_require_explicit_non_local_values(monkeypatch) -> Non
             s3_bucket="hiveblot-production",
             s3_access_key_id="",
             s3_secret_access_key="",
+            temporal_address="temporal.example:7233",
+            temporal_namespace="hiveblot",
+            temporal_task_queue="hiveblot-platform-v1",
             _env_file=None,
         )

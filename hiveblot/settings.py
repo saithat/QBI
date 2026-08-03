@@ -17,6 +17,11 @@ class RuntimeEnvironment(StrEnum):
     DEPLOYED = "deployed"
 
 
+class JobExecutorKind(StrEnum):
+    LOCAL_DOCKER = "local-docker"
+    KUBERNETES_JOB = "kubernetes-job"
+
+
 class Settings(BaseSettings):
     """HiveBlot settings loaded from environment variables or a local `.env` file."""
 
@@ -133,6 +138,10 @@ class Settings(BaseSettings):
         min_length=1,
         max_length=200,
     )
+    job_executor: JobExecutorKind = Field(
+        default=JobExecutorKind.LOCAL_DOCKER,
+        validation_alias="JOB_EXECUTOR",
+    )
     job_docker_binary: str = Field(
         default="docker",
         validation_alias="JOB_DOCKER_BINARY",
@@ -149,6 +158,95 @@ class Settings(BaseSettings):
         default=1_073_741_824,
         validation_alias="JOB_MAX_OUTPUT_BYTES",
         ge=1,
+    )
+    kubernetes_job_namespace: str = Field(
+        default="hiveblot",
+        validation_alias="KUBERNETES_JOB_NAMESPACE",
+        min_length=1,
+        max_length=63,
+        pattern=r"^[a-z0-9](?:[-a-z0-9]*[a-z0-9])?$",
+    )
+    kubernetes_workspace_pvc: str = Field(
+        default="hiveblot-job-workspaces",
+        validation_alias="KUBERNETES_WORKSPACE_PVC",
+        min_length=1,
+        max_length=253,
+        pattern=r"^[a-z0-9](?:[-a-z0-9.]*[a-z0-9])?$",
+    )
+    kubernetes_workspace_root: Path = Field(
+        default=Path("/var/lib/hiveblot/jobs"),
+        validation_alias="KUBERNETES_WORKSPACE_ROOT",
+    )
+    kubernetes_job_service_account: str = Field(
+        default="hiveblot-job-runner",
+        validation_alias="KUBERNETES_JOB_SERVICE_ACCOUNT",
+        min_length=1,
+        max_length=253,
+        pattern=r"^[a-z0-9](?:[-a-z0-9.]*[a-z0-9])?$",
+    )
+    kubernetes_poll_seconds: float = Field(
+        default=1,
+        validation_alias="KUBERNETES_POLL_SECONDS",
+        gt=0,
+        le=60,
+    )
+    kubernetes_api_timeout_seconds: float = Field(
+        default=15,
+        validation_alias="KUBERNETES_API_TIMEOUT_SECONDS",
+        gt=0,
+        le=120,
+    )
+    kubernetes_job_ttl_seconds: int = Field(
+        default=3600,
+        validation_alias="KUBERNETES_JOB_TTL_SECONDS",
+        ge=0,
+        le=604_800,
+    )
+    kubernetes_gpu_node_selector_key: str | None = Field(
+        default=None,
+        validation_alias="KUBERNETES_GPU_NODE_SELECTOR_KEY",
+        min_length=1,
+        max_length=253,
+    )
+    kubernetes_gpu_node_selector_value: str | None = Field(
+        default=None,
+        validation_alias="KUBERNETES_GPU_NODE_SELECTOR_VALUE",
+        min_length=1,
+        max_length=63,
+    )
+    kubernetes_gpu_toleration_key: str | None = Field(
+        default=None,
+        validation_alias="KUBERNETES_GPU_TOLERATION_KEY",
+        min_length=1,
+        max_length=253,
+    )
+    kubernetes_gpu_toleration_effect: str = Field(
+        default="NoSchedule",
+        validation_alias="KUBERNETES_GPU_TOLERATION_EFFECT",
+        pattern=r"^(NoSchedule|PreferNoSchedule|NoExecute)$",
+    )
+    temporal_address: str = Field(
+        default="localhost:7233",
+        validation_alias="TEMPORAL_ADDRESS",
+        min_length=1,
+        max_length=1000,
+    )
+    temporal_namespace: str = Field(
+        default="default",
+        validation_alias="TEMPORAL_NAMESPACE",
+        min_length=1,
+        max_length=255,
+    )
+    temporal_task_queue: str = Field(
+        default="hiveblot-platform-v1",
+        validation_alias="TEMPORAL_TASK_QUEUE",
+        min_length=1,
+        max_length=255,
+    )
+    temporal_tls: bool = Field(default=False, validation_alias="TEMPORAL_TLS")
+    temporal_api_key: SecretStr = Field(
+        default=SecretStr(""),
+        validation_alias="TEMPORAL_API_KEY",
     )
     source_ingest_allowed_hosts: Annotated[tuple[str, ...], NoDecode] = Field(
         default=(),
@@ -185,7 +283,19 @@ class Settings(BaseSettings):
             return tuple(part.strip().casefold() for part in value.split(",") if part.strip())
         return value
 
-    @field_validator("data_dir")
+    @field_validator(
+        "kubernetes_gpu_node_selector_key",
+        "kubernetes_gpu_node_selector_value",
+        "kubernetes_gpu_toleration_key",
+        mode="before",
+    )
+    @classmethod
+    def empty_optional_setting_is_none(cls, value: object) -> object:
+        if isinstance(value, str) and not value.strip():
+            return None
+        return value
+
+    @field_validator("data_dir", "kubernetes_workspace_root")
     @classmethod
     def resolve_data_directory(cls, value: Path) -> Path:
         return value.expanduser().resolve()
@@ -205,6 +315,9 @@ class Settings(BaseSettings):
             "s3_bucket",
             "s3_access_key_id",
             "s3_secret_access_key",
+            "temporal_address",
+            "temporal_namespace",
+            "temporal_task_queue",
         }
         missing = sorted(required - self.model_fields_set)
         if missing:
@@ -224,6 +337,16 @@ class Settings(BaseSettings):
             raise ValueError(
                 "S3_SECRET_ACCESS_KEY must not use a local or placeholder value when deployed"
             )
+        return self
+
+    @model_validator(mode="after")
+    def kubernetes_gpu_placement_is_consistent(self) -> Self:
+        selector = (
+            self.kubernetes_gpu_node_selector_key,
+            self.kubernetes_gpu_node_selector_value,
+        )
+        if (selector[0] is None) != (selector[1] is None):
+            raise ValueError("Kubernetes GPU node selector key and value must be set together")
         return self
 
     @classmethod

@@ -80,5 +80,13 @@ multiple private organizations are rejected. Every output is content-addressed a
 - Container output publication may leave an immutable, non-canonical artifact if cancellation wins
   a final race; it never changes the job result or overwrites an earlier output.
 
-Kubernetes scheduling and the `KubernetesJobExecutor` remain PRD-014. Durable multi-operation and
-human-pause orchestration remains a separate Temporal workflow layer.
+## Kubernetes executor
+
+`KubernetesJobExecutor` implements the same domain-independent execution protocol. It maps exact job
+resources and security policy to one bounded Kubernetes Job, stages verified inputs read-only on an
+attempt workspace, heartbeats the PostgreSQL lease, captures Pod logs, validates declared outputs,
+and returns bytes to the same idempotent artifact publication transaction. Kubernetes retries are
+disabled so each retry remains a new durable HiveBlot attempt.
+
+Durable multi-operation and human-pause orchestration remains a separate Temporal workflow layer.
+See `docs/architecture/kubernetes-runtime.md`.

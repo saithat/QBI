@@ -68,3 +68,7 @@ class HealthResponse(ContractModel):
     status: Literal["ok", "not_ready"]
     database: Literal["ok", "unavailable"]
     model: Literal["ok", "unavailable"]
+
+
+class RuntimeProbeResponse(ContractModel):
+    status: Literal["alive", "started", "ready", "not_ready"]

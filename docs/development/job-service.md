@@ -21,9 +21,9 @@ uv run hiveblot-job-worker --once
 ```
 
 Run `uv run hiveblot-job-worker` without `--once` for a long-lived local worker. It intentionally
-runs on the host in PRD-013 so its temporary bind-mount paths are visible to the same Docker daemon.
-Do not mount an unrestricted Docker socket into the API container. PRD-014 adds a separate
-Kubernetes executor and worker deployment.
+runs on the host so its temporary bind-mount paths are visible to the same Docker daemon. Do not
+mount an unrestricted Docker socket into the API container. In a Pod, use
+`hiveblot-job-worker --executor kubernetes-job`; see `docs/development/kubernetes.md`.
 
 Submit canonical specifications through `POST /api/v1/jobs`. The HTTP body wraps the strict
 contract as `{"schema_version":"1.0","specification":{...}}`. Job factories owned by a scientific
@@ -66,3 +66,6 @@ HIVEBLOT_JOB_TEST_IMAGE=hiveblot:prd-013 \
 The Docker acceptance test stores the historic model-output fixture as an immutable input, leases
 the job from PostgreSQL, runs `western-blot-normalize` with no network, publishes the deterministic
 JSON output to MinIO, and verifies all 40 preserved records and captured logs.
+
+The Kubernetes acceptance path exercises the same operation through `make kind-smoke` after
+`make kind-up`.

@@ -19,6 +19,12 @@ from .executor import (
     LocalDockerExecutor,
     SubprocessDockerRunner,
 )
+from .kubernetes_executor import (
+    KubernetesApiClient,
+    KubernetesClient,
+    KubernetesJobExecutor,
+    KubernetesJobState,
+)
 from .postgres import PostgresJobRepository
 from .repository import JobRepository
 from .service import JobArtifactLookup, JobService
@@ -41,6 +47,10 @@ __all__ = [
     "JobService",
     "JobServiceError",
     "JobWorker",
+    "KubernetesApiClient",
+    "KubernetesClient",
+    "KubernetesJobExecutor",
+    "KubernetesJobState",
     "LeaseLost",
     "PostgresJobRepository",
     "LocalDockerExecutor",

@@ -1,4 +1,6 @@
-.PHONY: up down logs setup local-env format lint typecheck schemas schema-check test check docker-test ingest
+HIVEBLOT_KUBECTL_BIN ?= kubectl
+
+.PHONY: up down logs setup local-env kind-up kind-smoke kind-down format lint typecheck schemas schema-check test check docker-test ingest
 
 up:
 	docker compose up --build -d
@@ -14,6 +16,18 @@ setup:
 
 local-env:
 	uv run python scripts/bootstrap_local_env.py
+
+kind-up:
+	bash infra/kubernetes/kind/up.sh
+
+kind-smoke:
+	$(HIVEBLOT_KUBECTL_BIN) delete job hiveblot-runtime-smoke --namespace hiveblot --ignore-not-found
+	$(HIVEBLOT_KUBECTL_BIN) apply -f infra/kubernetes/kind/smoke-job.yaml
+	$(HIVEBLOT_KUBECTL_BIN) wait --for=condition=complete job/hiveblot-runtime-smoke --namespace hiveblot --timeout=240s
+	$(HIVEBLOT_KUBECTL_BIN) logs job/hiveblot-runtime-smoke --namespace hiveblot
+
+kind-down:
+	bash infra/kubernetes/kind/down.sh
 
 format:
 	uv run ruff format .

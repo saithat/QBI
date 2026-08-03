@@ -1,0 +1,10 @@
+services:
+  postgres:
+    ports: !reset []
+  minio:
+    ports: !reset []
+
+networks:
+  default:
+    name: hiveblot-kind
+    external: true

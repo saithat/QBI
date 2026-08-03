@@ -1,0 +1,32 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: hiveblot-runtime
+data:
+  HIVEBLOT_ENV: deployed
+  HIVEBLOT_DATA_DIR: /tmp/hiveblot-data
+  VLLM_BASE_URL: https://models.invalid/v1
+  VLLM_MODEL: Qwen/Qwen3-VL-8B-Instruct
+  VLLM_MODEL_REVISION: replace-with-immutable-revision
+  S3_ENDPOINT_URL: https://objects.invalid
+  S3_REGION: us-east-1
+  S3_BUCKET: hiveblot-artifacts
+  JOB_EXECUTOR: kubernetes-job
+  JOB_LEASE_SECONDS: "60"
+  JOB_WORKER_POLL_SECONDS: "1"
+  KUBERNETES_JOB_NAMESPACE: hiveblot
+  KUBERNETES_WORKSPACE_PVC: hiveblot-job-workspaces
+  KUBERNETES_WORKSPACE_ROOT: /var/lib/hiveblot/jobs
+  KUBERNETES_JOB_SERVICE_ACCOUNT: hiveblot-job-runner
+  KUBERNETES_POLL_SECONDS: "1"
+  KUBERNETES_API_TIMEOUT_SECONDS: "15"
+  KUBERNETES_JOB_TTL_SECONDS: "3600"
+  KUBERNETES_GPU_NODE_SELECTOR_KEY: nvidia.com/gpu.present
+  KUBERNETES_GPU_NODE_SELECTOR_VALUE: "true"
+  KUBERNETES_GPU_TOLERATION_KEY: nvidia.com/gpu
+  KUBERNETES_GPU_TOLERATION_EFFECT: NoSchedule
+  TEMPORAL_ADDRESS: temporal.example:7233
+  TEMPORAL_NAMESPACE: hiveblot
+  TEMPORAL_TASK_QUEUE: hiveblot-platform-v1
+  TEMPORAL_TLS: "true"
+  OTEL_EXPORTER_OTLP_ENDPOINT: http://hiveblot-otel-collector:4317

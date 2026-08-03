@@ -12,11 +12,14 @@ db = _application.db
 get_settings = _application.get_settings
 health = _application.health
 index = _application.index
+liveness = _application.liveness
 lifespan = _application.lifespan
 record_detail = _application.record_detail
 record_image = _application.record_image
 records = _application.records
+readiness = _application.readiness
 search = _application.search
+startup = _application.startup
 
 _candidate_extraction = _application._candidate_extraction
 _filters_response = _application._filters_response
@@ -34,9 +37,12 @@ __all__ = [
     "get_settings",
     "health",
     "index",
+    "liveness",
     "lifespan",
     "record_detail",
     "record_image",
     "records",
+    "readiness",
     "search",
+    "startup",
 ]

@@ -20,12 +20,14 @@ dependencies = [
   "pydantic-settings>=2.10,<3",
   "PyMuPDF>=1.26,<2",
   "requests>=2.32,<3",
+  "temporalio>=1.30,<2",
   "uvicorn[standard]>=0.35,<1",
 ]
 
 [project.optional-dependencies]
 dev = [
   "mypy>=1.17,<2",
+  "PyYAML>=6,<7",
   "pytest>=8.4,<10",
   "pytest-asyncio>=1.1,<2",
   "ruff>=0.12,<1",
@@ -37,6 +39,8 @@ hiveblot-schemas = "hiveblot_contracts.schema_cli:main"
 hiveblot-evaluate = "hiveblot_evaluation.metrics_cli:main"
 hiveblot-job-operation = "workers.jobs.operations:main"
 hiveblot-job-worker = "workers.jobs.entrypoint:main"
+hiveblot-kubernetes-smoke = "workers.jobs.kubernetes_smoke:main"
+hiveblot-workflow-worker = "workers.workflow.entrypoint:main"
 
 [tool.hatch.build.targets.wheel]
 packages = [
