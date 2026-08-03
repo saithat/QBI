@@ -85,8 +85,9 @@ def test_service_accounts_are_separate_and_job_rbac_is_least_privilege() -> None
     accounts = {
         item["metadata"]["name"] for item in documents if item.get("kind") == "ServiceAccount"
     }
-    assert len(accounts) == 8
+    assert len(accounts) == 9
     assert "hiveblot-job-runner" in accounts
+    assert "hiveblot-discovery" in accounts
     role = next(item for item in documents if item.get("kind") == "Role")
     resources = {resource for rule in role["rules"] for resource in rule["resources"]}
     assert resources == {"jobs", "pods", "pods/log"}
@@ -173,3 +174,46 @@ def test_kind_smoke_job_is_restricted_and_finite() -> None:
     assert container["resources"]["limits"]
     assert container["securityContext"]["readOnlyRootFilesystem"] is True
     assert container["securityContext"]["capabilities"]["drop"] == ["ALL"]
+
+
+def test_discovery_cronjob_is_bounded_scheduled_and_tokenless() -> None:
+    documents = _documents(BASE)
+    cronjob = next(item for item in documents if item.get("kind") == "CronJob")
+    assert cronjob["metadata"]["name"] == "hiveblot-pmc-discovery"
+    spec = cronjob["spec"]
+    assert spec["concurrencyPolicy"] == "Forbid"
+    assert spec["startingDeadlineSeconds"] <= 1800
+    job = spec["jobTemplate"]["spec"]
+    assert job["backoffLimit"] == 2
+    assert job["activeDeadlineSeconds"] == 1800
+    pod = job["template"]["spec"]
+    assert pod["serviceAccountName"] == "hiveblot-discovery"
+    assert pod["automountServiceAccountToken"] is False
+    assert pod["restartPolicy"] == "Never"
+    container = pod["containers"][0]
+    assert container["command"] == ["hiveblot-discover-pmc"]
+    assert container["resources"]["requests"]
+    assert container["resources"]["limits"]
+    assert container["securityContext"]["readOnlyRootFilesystem"] is True
+    assert "envFrom" not in container
+    environment_names = {item["name"] for item in container["env"]}
+    assert environment_names == {
+        "HIVEBLOT_ENV",
+        "DATABASE_URL",
+        "S3_ENDPOINT_URL",
+        "S3_REGION",
+        "S3_BUCKET",
+        "S3_ACCESS_KEY_ID",
+        "S3_SECRET_ACCESS_KEY",
+        "ARTIFACT_MAX_BYTES",
+        "PMC_OAI_BASE_URL",
+        "DISCOVERY_USER_AGENT",
+        "DISCOVERY_HTTP_TIMEOUT_SECONDS",
+        "DISCOVERY_MAX_RESPONSE_BYTES",
+        "DISCOVERY_LOOKBACK_DAYS",
+        "DISCOVERY_MAXIMUM_PAGES",
+        "OTEL_SERVICE_NAME",
+    }
+
+    kind_patch = yaml.safe_load((KIND_OVERLAY / "discovery-patch.yaml").read_text())
+    assert kind_patch["spec"]["suspend"] is True

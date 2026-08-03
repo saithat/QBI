@@ -24,6 +24,13 @@ from .densitometry import (
     DensitometryResult,
     DensitometryRunRecord,
 )
+from .discovery import (
+    CrawlFrontierPage,
+    CrawlFrontierRecord,
+    DiscoveryBatch,
+    DiscoveryIngestionResult,
+    DiscoveryRecord,
+)
 from .evaluation import EvaluationCaseReference, ValidationIssue
 from .evidence import CaseSourceContext, EvidenceOverlay, SourceEvidenceWorkbench
 from .golden_datasets import (
@@ -99,6 +106,9 @@ CONTRACT_REGISTRY: Mapping[str, Any] = {
     "densitometry-replay-record": DensitometryReplayRecord,
     "densitometry-result": DensitometryResult,
     "densitometry-run-record": DensitometryRunRecord,
+    "discovery-batch": DiscoveryBatch,
+    "discovery-ingestion-result": DiscoveryIngestionResult,
+    "discovery-record": DiscoveryRecord,
     "evaluation-case-reference": EvaluationCaseReference,
     "evaluation-case-record": EvaluationCaseRecord,
     "evaluation-dataset-snapshot": EvaluationDatasetSnapshot,
@@ -111,6 +121,8 @@ CONTRACT_REGISTRY: Mapping[str, Any] = {
     "golden-dataset-export-record": GoldenDatasetExportRecord,
     "golden-dataset-record": GoldenDatasetRecord,
     "golden-dataset-snapshot": GoldenDatasetSnapshot,
+    "crawl-frontier-page": CrawlFrontierPage,
+    "crawl-frontier-record": CrawlFrontierRecord,
     "job-result": JobResult,
     "job-attempt-record": JobAttemptRecord,
     "job-lease": JobLease,

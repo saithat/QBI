@@ -9,7 +9,8 @@ Profiles:
 - `test`: use explicit isolated database, model, and data paths; see `.env.test.example`.
 - `deployed`: database, model, and S3 endpoint/bucket/credential values must be explicitly supplied.
   Local database credentials, placeholder model/storage keys, and localhost model endpoints are
-  rejected. Temporal address, namespace, and task queue must also be explicit.
+  rejected. Temporal address, namespace, and task queue must also be explicit. Public discovery
+  must provide an identifying `DISCOVERY_USER_AGENT` rather than the local placeholder.
 
 Artifact URL lifetimes and maximum byte size are bounded settings. HTTP source ingestion remains
 disabled until `SOURCE_INGEST_ALLOWED_HOSTS` contains an exact, comma-separated host allowlist.
@@ -31,3 +32,8 @@ TTL, and optional GPU selector/toleration. A GPU selector key and value must be 
 `TEMPORAL_API_KEY` configure the external workflow service. The Kubernetes base contains shape-only
 endpoints and references `hiveblot-runtime-secrets`; deployments must replace all example endpoint
 values and supply that Secret out of band.
+
+`PMC_OAI_BASE_URL`, `DISCOVERY_USER_AGENT`, `DISCOVERY_HTTP_TIMEOUT_SECONDS`,
+`DISCOVERY_MAX_RESPONSE_BYTES`, `DISCOVERY_LOOKBACK_DAYS`, and `DISCOVERY_MAXIMUM_PAGES` configure
+bounded API-first paper discovery. The user agent should contain a monitored contact or project URL.
+See `docs/development/public-discovery.md`; do not place credentials in a user agent.

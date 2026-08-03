@@ -5,7 +5,7 @@ from urllib.parse import urlsplit
 import pytest
 from pydantic import ValidationError
 
-from hiveblot.settings import RuntimeEnvironment, Settings
+from hiveblot.settings import DiscoverySettings, RuntimeEnvironment, Settings
 
 
 def test_local_settings_do_not_embed_fixed_credentials() -> None:
@@ -48,6 +48,26 @@ def test_empty_optional_kubernetes_placement_values_are_unset() -> None:
     assert settings.kubernetes_gpu_toleration_key is None
 
 
+def test_discovery_worker_settings_are_least_privilege_and_validate_source_url() -> None:
+    settings = DiscoverySettings(
+        database_url="postgresql://localhost:5432/discovery",
+        discovery_user_agent="HiveBlot tests (+https://example.test/contact)",
+        pmc_oai_base_url="https://example.test/oai/",
+        _env_file=None,
+    )
+    assert settings.pmc_oai_base_url == "https://example.test/oai/"
+    assert not hasattr(settings, "vllm_api_key")
+    assert not hasattr(settings, "temporal_api_key")
+    with pytest.raises(ValidationError, match="HTTP"):
+        DiscoverySettings(pmc_oai_base_url="file:///tmp/oai", _env_file=None)
+    with pytest.raises(ValidationError, match="cannot exceed"):
+        DiscoverySettings(
+            discovery_max_response_bytes=10_000,
+            artifact_max_bytes=1_000,
+            _env_file=None,
+        )
+
+
 def test_deployed_settings_require_explicit_non_local_values(monkeypatch) -> None:
     for name in (
         "HIVEBLOT_ENV",
@@ -84,5 +104,6 @@ def test_deployed_settings_require_explicit_non_local_values(monkeypatch) -> Non
             temporal_address="temporal.example:7233",
             temporal_namespace="hiveblot",
             temporal_task_queue="hiveblot-platform-v1",
+            discovery_user_agent="HiveBlot/0.1 (+https://example.test/contact)",
             _env_file=None,
         )

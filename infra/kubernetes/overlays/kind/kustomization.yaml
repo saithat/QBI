@@ -5,10 +5,11 @@ resources:
 images:
   - name: hiveblot
     newName: hiveblot
-    newTag: prd-014
+    newTag: prd-015
 patches:
   - path: runtime-config-patch.yaml
   - path: workspace-patch.yaml
   - path: replicas-patch.yaml
   - path: web-service-patch.yaml
   - path: network-policy-patch.yaml
+  - path: discovery-patch.yaml

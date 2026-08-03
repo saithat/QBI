@@ -293,6 +293,61 @@ class ArtifactService:
             self._repository.mark_failed(upload_id, str(exc), updated_at=self._clock())
             raise
 
+    def publish_source_payload(
+        self,
+        *,
+        original_filename: str,
+        declared_media_type: str,
+        content: bytes,
+        source_uri: str,
+        visibility: ArtifactVisibility,
+        organization_id: UUID | None,
+        relationships: tuple[ArtifactRelationship, ...],
+        actor_id: UUID | None,
+    ) -> PublishedArtifact:
+        """Publish bytes already obtained by a controlled source adapter."""
+
+        _validate_metadata(
+            original_filename=original_filename,
+            expected_byte_size=len(content),
+            max_bytes=self._max_bytes,
+            visibility=visibility,
+            organization_id=organization_id,
+        )
+        self._validate_relationships(relationships)
+        now = self._clock()
+        upload_id = uuid4()
+        session = UploadSession(
+            upload_id=upload_id,
+            backend_upload_id=None,
+            staging_key=f"staging/source-payloads/{upload_id}",
+            status=UploadStatus.INITIATED,
+            original_filename=original_filename.strip(),
+            declared_media_type=declared_media_type,
+            expected_byte_size=len(content),
+            source_uri=source_uri,
+            acquisition_method=ArtifactAcquisitionMethod.SOURCE_ADAPTER,
+            visibility=visibility,
+            organization_id=organization_id,
+            relationships=relationships,
+            validated_sha256=None,
+            validated_media_type=None,
+            validated_byte_size=None,
+            artifact_id=None,
+            created_at=now,
+            updated_at=now,
+            expires_at=now + timedelta(seconds=self._upload_url_seconds),
+        )
+        self._repository.create_upload(session, actor_id=actor_id)
+        try:
+            self._object_store.stage_file(session.staging_key, BytesIO(content))
+            session = self._repository.mark_validating(upload_id, updated_at=self._clock())
+            return self._validate_and_publish(session, actor_id=actor_id)
+        except Exception as exc:
+            self._object_store.delete(session.staging_key)
+            self._repository.mark_failed(upload_id, str(exc), updated_at=self._clock())
+            raise
+
     def abort_upload(self, upload_id: UUID, *, actor_id: UUID | None) -> None:
         session = self._repository.get_upload(upload_id)
         if session is None:

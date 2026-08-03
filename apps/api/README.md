@@ -11,3 +11,7 @@ definition, invocation, replay, and publication contracts; it does not execute c
 The densitometry adapter exposes complete geometry options, immutable attempt history, execution,
 and exact replay. It maps HTTP-friendly UUID/enumeration values into strict canonical contracts and
 returns expiring object-store URLs for source and overlay bytes.
+
+The public-discovery adapter accepts strict, versioned source batches, exposes filtered frontier
+inspection, and maps optimistic schedule/retry and immutable-artifact acquisition mutations. Source
+protocol parsing remains in `services/crawler`, not in FastAPI request handlers.

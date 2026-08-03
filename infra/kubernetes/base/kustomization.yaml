@@ -10,6 +10,7 @@ resources:
   - api.yaml
   - web.yaml
   - workers.yaml
+  - discovery.yaml
   - otel-collector.yaml
   - network-policies.yaml
 labels:

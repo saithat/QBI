@@ -14,6 +14,11 @@ Source adapters enter at step 3 after writing their allowlisted response to a st
 HTTP adapter follows a bounded number of redirects, validates every redirect host against an exact
 allowlist, and enforces streamed byte limits.
 
+Adapters that already hold a bounded response may publish those exact bytes through
+`publish_source_payload`; this avoids a second request while preserving the same staging, media,
+hash, deduplication, event, and immutable-publication boundary. Public discovery uses this path for
+official API responses before XML normalization.
+
 ## Integrity boundaries
 
 - Object keys are derived internally from hashes.
@@ -27,6 +32,6 @@ allowlist, and enforces streamed byte limits.
 
 ## Supported content
 
-The v1 sniffer accepts PDF, PNG, JPEG, GIF, TIFF, WebP, ZIP, gzip, tar, JSON, CSV, and TSV. A file
+The v1 sniffer accepts PDF, PNG, JPEG, GIF, TIFF, WebP, ZIP, gzip, tar, JSON, XML, CSV, and TSV. A file
 extension does not affect detection. Additional formats should be added through versioned,
 fixture-backed detectors rather than trusting caller headers.

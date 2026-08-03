@@ -5,6 +5,7 @@ from __future__ import annotations
 import csv
 import io
 import json
+import xml.etree.ElementTree as ET
 
 from .errors import InvalidArtifact
 
@@ -14,6 +15,7 @@ SUPPORTED_MEDIA_TYPES = frozenset(
         "application/gzip",
         "application/json",
         "application/pdf",
+        "application/xml",
         "application/x-tar",
         "application/zip",
         "image/gif",
@@ -30,6 +32,7 @@ MEDIA_TYPE_ALIASES = {
     "application/x-gzip": "application/gzip",
     "application/x-zip-compressed": "application/zip",
     "image/jpg": "image/jpeg",
+    "text/xml": "application/xml",
     "text/tab-separated-values": "text/tab-separated-values",
 }
 
@@ -78,6 +81,18 @@ def detect_media_type(sample: bytes, *, sample_is_complete: bool = True) -> str:
             raise InvalidArtifact("content resembles JSON but is invalid") from exc
         if isinstance(value, (dict, list)):
             return "application/json"
+
+    if stripped.startswith(("<?xml", "<")):
+        lowered = sample[:4096].lower()
+        if b"<!doctype" in lowered or b"<!entity" in lowered:
+            return "application/xml"
+        if not sample_is_complete:
+            return "application/xml"
+        try:
+            ET.fromstring(sample)
+        except ET.ParseError as exc:
+            raise InvalidArtifact("content resembles XML but is invalid") from exc
+        return "application/xml"
 
     lines = [line for line in text.splitlines() if line.strip()][:20]
     if len(lines) >= 2:

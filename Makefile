@@ -42,6 +42,7 @@ typecheck:
 		packages/densitometry/src/hiveblot_densitometry \
 		packages/evaluation/src/hiveblot_evaluation \
 		packages/extraction/src/hiveblot_extraction packages/storage/src/hiveblot_storage \
+		services/crawler/src/hiveblot_crawler \
 		services/job-service/src/hiveblot_job_service workers
 
 schemas:

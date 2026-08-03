@@ -240,6 +240,39 @@ def test_server_side_adapter_preserves_source_provenance() -> None:
     assert len(repository.artifacts) == 1
 
 
+def test_already_fetched_source_payload_is_published_exactly_and_deduplicated() -> None:
+    service, repository, store = make_service()
+    content = b'<?xml version="1.0"?><OAI-PMH><record /></OAI-PMH>'
+
+    first = service.publish_source_payload(
+        original_filename="response.xml",
+        declared_media_type="text/xml",
+        content=content,
+        source_uri="https://repository.example/oai?verb=ListIdentifiers",
+        visibility=ArtifactVisibility.PUBLIC,
+        organization_id=None,
+        relationships=(),
+        actor_id=None,
+    )
+    second = service.publish_source_payload(
+        original_filename="response-again.xml",
+        declared_media_type="application/xml",
+        content=content,
+        source_uri="https://repository.example/oai?verb=ListIdentifiers",
+        visibility=ArtifactVisibility.PUBLIC,
+        organization_id=None,
+        relationships=(),
+        actor_id=None,
+    )
+
+    assert first.artifact.acquisition_method is ArtifactAcquisitionMethod.SOURCE_ADAPTER
+    assert first.artifact.media_type == "application/xml"
+    assert second.deduplicated is True
+    assert second.artifact.artifact_id == first.artifact.artifact_id
+    canonical_key = repository.storage_keys[first.artifact.artifact_id]
+    assert b"".join(store.iter_bytes(canonical_key)) == content
+
+
 def test_tool_output_is_immutable_deduplicated_and_derived() -> None:
     service, repository, store = make_service()
     source = upload_bytes(service, repository, store, PDF_BYTES)

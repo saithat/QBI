@@ -6,6 +6,7 @@ from enum import StrEnum
 from functools import lru_cache
 from pathlib import Path
 from typing import Annotated, Any, Self
+from urllib.parse import urlsplit
 
 from pydantic import Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
@@ -20,6 +21,137 @@ class RuntimeEnvironment(StrEnum):
 class JobExecutorKind(StrEnum):
     LOCAL_DOCKER = "local-docker"
     KUBERNETES_JOB = "kubernetes-job"
+
+
+class DiscoverySettings(BaseSettings):
+    """Least-privilege settings for the bounded public-discovery worker."""
+
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        env_prefix="",
+        extra="ignore",
+        frozen=True,
+        populate_by_name=True,
+        strict=True,
+        validate_default=True,
+    )
+
+    environment: RuntimeEnvironment = Field(
+        default=RuntimeEnvironment.LOCAL,
+        validation_alias="HIVEBLOT_ENV",
+    )
+    database_url: str = Field(
+        default="postgresql://localhost:5432/hiveblot",
+        validation_alias="DATABASE_URL",
+        min_length=1,
+    )
+    s3_endpoint_url: str = Field(
+        default="http://localhost:9000",
+        validation_alias="S3_ENDPOINT_URL",
+        min_length=1,
+    )
+    s3_region: str = Field(default="us-east-1", validation_alias="S3_REGION", min_length=1)
+    s3_bucket: str = Field(
+        default="hiveblot-artifacts",
+        validation_alias="S3_BUCKET",
+        min_length=3,
+        max_length=63,
+    )
+    s3_access_key_id: SecretStr = Field(
+        default=SecretStr(""),
+        validation_alias="S3_ACCESS_KEY_ID",
+    )
+    s3_secret_access_key: SecretStr = Field(
+        default=SecretStr(""),
+        validation_alias="S3_SECRET_ACCESS_KEY",
+    )
+    artifact_max_bytes: int = Field(
+        default=1_073_741_824,
+        validation_alias="ARTIFACT_MAX_BYTES",
+        ge=1,
+    )
+    pmc_oai_base_url: str = Field(
+        default="https://pmc.ncbi.nlm.nih.gov/api/oai/v1/mh/",
+        validation_alias="PMC_OAI_BASE_URL",
+        min_length=1,
+        max_length=4096,
+    )
+    discovery_user_agent: str = Field(
+        default="HiveBlot local development (contact not configured)",
+        validation_alias="DISCOVERY_USER_AGENT",
+        min_length=10,
+        max_length=500,
+    )
+    discovery_http_timeout_seconds: float = Field(
+        default=30,
+        validation_alias="DISCOVERY_HTTP_TIMEOUT_SECONDS",
+        gt=0,
+        le=300,
+    )
+    discovery_max_response_bytes: int = Field(
+        default=5_000_000,
+        validation_alias="DISCOVERY_MAX_RESPONSE_BYTES",
+        ge=1024,
+        le=100_000_000,
+    )
+    discovery_lookback_days: int = Field(
+        default=2,
+        validation_alias="DISCOVERY_LOOKBACK_DAYS",
+        ge=0,
+        le=365,
+    )
+    discovery_maximum_pages: int = Field(
+        default=20,
+        validation_alias="DISCOVERY_MAXIMUM_PAGES",
+        ge=1,
+        le=1000,
+    )
+
+    @field_validator("pmc_oai_base_url")
+    @classmethod
+    def normalize_pmc_url(cls, value: str) -> str:
+        parsed = urlsplit(value)
+        if parsed.scheme.casefold() not in {"http", "https"} or parsed.hostname is None:
+            raise ValueError("PMC_OAI_BASE_URL must be an HTTP(S) URL with a host")
+        return value.rstrip("/") + "/"
+
+    @field_validator("s3_endpoint_url")
+    @classmethod
+    def normalize_s3_endpoint(cls, value: str) -> str:
+        return value.rstrip("/")
+
+    @model_validator(mode="after")
+    def deployed_discovery_configuration_is_explicit(self) -> Self:
+        if self.discovery_max_response_bytes > self.artifact_max_bytes:
+            raise ValueError("DISCOVERY_MAX_RESPONSE_BYTES cannot exceed ARTIFACT_MAX_BYTES")
+        if self.environment is not RuntimeEnvironment.DEPLOYED:
+            return self
+        required = {
+            "database_url",
+            "s3_endpoint_url",
+            "s3_bucket",
+            "s3_access_key_id",
+            "s3_secret_access_key",
+            "discovery_user_agent",
+        }
+        missing = sorted(required - self.model_fields_set)
+        if missing:
+            raise ValueError(
+                "deployed discovery requires explicit values for: " + ", ".join(missing)
+            )
+        if "contact not configured" in self.discovery_user_agent.casefold():
+            raise ValueError("DISCOVERY_USER_AGENT must identify an operator contact when deployed")
+        if "localhost" in self.database_url.casefold() or "127.0.0.1" in self.database_url:
+            raise ValueError("DATABASE_URL must not point at localhost when deployed")
+        if "localhost" in self.s3_endpoint_url.casefold() or "127.0.0.1" in self.s3_endpoint_url:
+            raise ValueError("S3_ENDPOINT_URL must not point at localhost when deployed")
+        storage_key = self.s3_secret_access_key.get_secret_value().strip().casefold()
+        if storage_key in {"", "minioadmin", "replace-me", "changeme"}:
+            raise ValueError(
+                "S3_SECRET_ACCESS_KEY must not use a local or placeholder value when deployed"
+            )
+        return self
 
 
 class Settings(BaseSettings):
@@ -252,6 +384,42 @@ class Settings(BaseSettings):
         default=(),
         validation_alias="SOURCE_INGEST_ALLOWED_HOSTS",
     )
+    pmc_oai_base_url: str = Field(
+        default="https://pmc.ncbi.nlm.nih.gov/api/oai/v1/mh/",
+        validation_alias="PMC_OAI_BASE_URL",
+        min_length=1,
+        max_length=4096,
+    )
+    discovery_user_agent: str = Field(
+        default="HiveBlot local development (contact not configured)",
+        validation_alias="DISCOVERY_USER_AGENT",
+        min_length=10,
+        max_length=500,
+    )
+    discovery_http_timeout_seconds: float = Field(
+        default=30,
+        validation_alias="DISCOVERY_HTTP_TIMEOUT_SECONDS",
+        gt=0,
+        le=300,
+    )
+    discovery_max_response_bytes: int = Field(
+        default=5_000_000,
+        validation_alias="DISCOVERY_MAX_RESPONSE_BYTES",
+        ge=1024,
+        le=100_000_000,
+    )
+    discovery_lookback_days: int = Field(
+        default=2,
+        validation_alias="DISCOVERY_LOOKBACK_DAYS",
+        ge=0,
+        le=365,
+    )
+    discovery_maximum_pages: int = Field(
+        default=20,
+        validation_alias="DISCOVERY_MAXIMUM_PAGES",
+        ge=1,
+        le=1000,
+    )
     pdf_dpi: int = Field(default=350, validation_alias="PDF_DPI", ge=72, le=1200)
     min_candidate_score: float = Field(
         default=0.35,
@@ -275,6 +443,14 @@ class Settings(BaseSettings):
     @classmethod
     def strip_s3_endpoint_suffix(cls, value: str) -> str:
         return value.rstrip("/")
+
+    @field_validator("pmc_oai_base_url")
+    @classmethod
+    def normalize_pmc_oai_base_url(cls, value: str) -> str:
+        parsed = urlsplit(value)
+        if parsed.scheme.casefold() not in {"http", "https"} or parsed.hostname is None:
+            raise ValueError("PMC_OAI_BASE_URL must be an HTTP(S) URL with a host")
+        return value.rstrip("/") + "/"
 
     @field_validator("source_ingest_allowed_hosts", mode="before")
     @classmethod
@@ -318,6 +494,7 @@ class Settings(BaseSettings):
             "temporal_address",
             "temporal_namespace",
             "temporal_task_queue",
+            "discovery_user_agent",
         }
         missing = sorted(required - self.model_fields_set)
         if missing:
@@ -337,6 +514,8 @@ class Settings(BaseSettings):
             raise ValueError(
                 "S3_SECRET_ACCESS_KEY must not use a local or placeholder value when deployed"
             )
+        if "contact not configured" in self.discovery_user_agent.casefold():
+            raise ValueError("DISCOVERY_USER_AGENT must identify an operator contact when deployed")
         return self
 
     @model_validator(mode="after")

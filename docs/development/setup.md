@@ -67,6 +67,8 @@ HIVEBLOT_RUN_LIVE_METRICS=1 \
   uv run pytest tests/integration/test_metrics_live.py
 HIVEBLOT_RUN_LIVE_JOBS=1 \
   uv run pytest tests/integration/test_job_service_live.py
+HIVEBLOT_RUN_LIVE_DISCOVERY=1 \
+  uv run pytest tests/integration/test_discovery_live.py
 ```
 
 See `docs/development/artifact-storage.md` for the multipart API flow and
@@ -74,6 +76,8 @@ See `docs/development/artifact-storage.md` for the multipart API flow and
 `docs/development/structured-annotation.md`, `docs/development/spatial-annotation.md`, and
 `docs/development/pipeline-registry.md`, `docs/development/evaluation-metrics.md`, and
 `docs/development/job-service.md` for browser and worker verification.
+Public-source adapter, frontier, and scheduled-discovery verification is documented in
+`docs/development/public-discovery.md`.
 
 For the local Kubernetes runtime and the full artifact-to-Kubernetes-Job acceptance smoke, see
 `docs/development/kubernetes.md`.

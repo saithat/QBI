@@ -1,0 +1,520 @@
+{
+  "$defs": {
+    "ArtifactReference": {
+      "additionalProperties": false,
+      "description": "Stable metadata needed to identify immutable bytes without embedding them.",
+      "properties": {
+        "artifact_id": {
+          "format": "uuid",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "byte_size": {
+          "minimum": 0,
+          "title": "Byte Size",
+          "type": "integer"
+        },
+        "media_type": {
+          "$ref": "#/$defs/MediaType"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/SchemaVersion",
+          "default": "1.0"
+        },
+        "sha256": {
+          "$ref": "#/$defs/Sha256Digest"
+        }
+      },
+      "required": [
+        "artifact_id",
+        "sha256",
+        "media_type",
+        "byte_size"
+      ],
+      "title": "ArtifactReference",
+      "type": "object"
+    },
+    "CanonicalSourceUrl": {
+      "maxLength": 4096,
+      "minLength": 1,
+      "type": "string"
+    },
+    "CrawlFrontierLease": {
+      "additionalProperties": false,
+      "properties": {
+        "expires_at": {
+          "format": "date-time",
+          "title": "Expires At",
+          "type": "string"
+        },
+        "owner": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/SchemaVersion",
+          "default": "1.0"
+        },
+        "token": {
+          "format": "uuid",
+          "title": "Token",
+          "type": "string"
+        }
+      },
+      "required": [
+        "owner",
+        "token",
+        "expires_at"
+      ],
+      "title": "CrawlFrontierLease",
+      "type": "object"
+    },
+    "CrawlFrontierRelationship": {
+      "additionalProperties": false,
+      "properties": {
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/DiscoveryRelationshipKind"
+        },
+        "related_frontier_id": {
+          "format": "uuid",
+          "title": "Related Frontier Id",
+          "type": "string"
+        },
+        "related_identity_key": {
+          "$ref": "#/$defs/DiscoveryIdentityKey"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/SchemaVersion",
+          "default": "1.0"
+        }
+      },
+      "required": [
+        "related_frontier_id",
+        "related_identity_key",
+        "kind",
+        "created_at"
+      ],
+      "title": "CrawlFrontierRelationship",
+      "type": "object"
+    },
+    "CrawlFrontierStatus": {
+      "enum": [
+        "pending",
+        "leased",
+        "acquired",
+        "retry_wait",
+        "prohibited",
+        "unsupported",
+        "dead_letter"
+      ],
+      "title": "CrawlFrontierStatus",
+      "type": "string"
+    },
+    "DiscoveryAccessStatus": {
+      "enum": [
+        "allowed",
+        "restricted",
+        "prohibited",
+        "unknown"
+      ],
+      "title": "DiscoveryAccessStatus",
+      "type": "string"
+    },
+    "DiscoveryAcquisitionMethod": {
+      "enum": [
+        "official_api",
+        "bulk_manifest",
+        "accession_download",
+        "open_access_archive",
+        "controlled_crawl"
+      ],
+      "title": "DiscoveryAcquisitionMethod",
+      "type": "string"
+    },
+    "DiscoveryArtifactAcquisition": {
+      "additionalProperties": false,
+      "properties": {
+        "acquired_at": {
+          "format": "date-time",
+          "title": "Acquired At",
+          "type": "string"
+        },
+        "artifact": {
+          "$ref": "#/$defs/ArtifactReference"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/SchemaVersion",
+          "default": "1.0"
+        },
+        "trace_id": {
+          "format": "uuid",
+          "title": "Trace Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact",
+        "trace_id",
+        "acquired_at"
+      ],
+      "title": "DiscoveryArtifactAcquisition",
+      "type": "object"
+    },
+    "DiscoveryEntityKind": {
+      "enum": [
+        "paper",
+        "supplementary_archive",
+        "source_data_image",
+        "metadata_record"
+      ],
+      "title": "DiscoveryEntityKind",
+      "type": "string"
+    },
+    "DiscoveryIdentityKey": {
+      "pattern": "^[a-z0-9][a-z0-9:._/-]{0,399}$",
+      "type": "string"
+    },
+    "DiscoveryLicense": {
+      "additionalProperties": false,
+      "properties": {
+        "identifier": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Identifier"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "label": {
+          "anyOf": [
+            {
+              "maxLength": 500,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Label"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/SchemaVersion",
+          "default": "1.0"
+        },
+        "statement": {
+          "anyOf": [
+            {
+              "maxLength": 4000,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Statement"
+        },
+        "status": {
+          "$ref": "#/$defs/DiscoveryLicenseStatus"
+        },
+        "uri": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CanonicalSourceUrl"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "verification_required": {
+          "default": true,
+          "title": "Verification Required",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "status"
+      ],
+      "title": "DiscoveryLicense",
+      "type": "object"
+    },
+    "DiscoveryLicenseStatus": {
+      "enum": [
+        "verified",
+        "unverified",
+        "not_applicable"
+      ],
+      "title": "DiscoveryLicenseStatus",
+      "type": "string"
+    },
+    "DiscoveryRelationshipKind": {
+      "enum": [
+        "paper_has_supplement",
+        "paper_has_source_data",
+        "describes",
+        "alternative_representation"
+      ],
+      "title": "DiscoveryRelationshipKind",
+      "type": "string"
+    },
+    "DiscoveryRobotsStatus": {
+      "enum": [
+        "not_applicable",
+        "unknown",
+        "allowed",
+        "prohibited"
+      ],
+      "title": "DiscoveryRobotsStatus",
+      "type": "string"
+    },
+    "Identifier": {
+      "maxLength": 200,
+      "minLength": 1,
+      "type": "string"
+    },
+    "MediaType": {
+      "pattern": "^[a-z0-9][a-z0-9!#$&^_.+-]*/[a-z0-9][a-z0-9!#$&^_.+-]*$",
+      "type": "string"
+    },
+    "SchemaVersion": {
+      "const": "1.0",
+      "type": "string"
+    },
+    "Sha256Digest": {
+      "pattern": "^[a-f0-9]{64}$",
+      "type": "string"
+    },
+    "ToolIdentifier": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "tool",
+          "default": "tool",
+          "title": "Kind",
+          "type": "string"
+        },
+        "name": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/SchemaVersion",
+          "default": "1.0"
+        },
+        "version": {
+          "$ref": "#/$defs/Identifier"
+        }
+      },
+      "required": [
+        "name",
+        "version"
+      ],
+      "title": "ToolIdentifier",
+      "type": "object"
+    }
+  },
+  "$id": "urn:hiveblot:schema:v1:crawl-frontier-record",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "access_reason": {
+      "anyOf": [
+        {
+          "maxLength": 2000,
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Access Reason"
+    },
+    "access_status": {
+      "$ref": "#/$defs/DiscoveryAccessStatus"
+    },
+    "accession": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Identifier"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "acquisition_method": {
+      "$ref": "#/$defs/DiscoveryAcquisitionMethod"
+    },
+    "acquisitions": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/DiscoveryArtifactAcquisition"
+      },
+      "title": "Acquisitions",
+      "type": "array"
+    },
+    "attempt_count": {
+      "minimum": 0,
+      "title": "Attempt Count",
+      "type": "integer"
+    },
+    "canonical_url": {
+      "$ref": "#/$defs/CanonicalSourceUrl"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "discovered_at": {
+      "format": "date-time",
+      "title": "Discovered At",
+      "type": "string"
+    },
+    "entity_kind": {
+      "$ref": "#/$defs/DiscoveryEntityKind"
+    },
+    "expected_media_types": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/MediaType"
+      },
+      "title": "Expected Media Types",
+      "type": "array"
+    },
+    "frontier_id": {
+      "format": "uuid",
+      "title": "Frontier Id",
+      "type": "string"
+    },
+    "identity_key": {
+      "$ref": "#/$defs/DiscoveryIdentityKey"
+    },
+    "last_discovered_at": {
+      "format": "date-time",
+      "title": "Last Discovered At",
+      "type": "string"
+    },
+    "last_discovery_batch_id": {
+      "format": "uuid",
+      "title": "Last Discovery Batch Id",
+      "type": "string"
+    },
+    "lease": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/CrawlFrontierLease"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "license": {
+      "$ref": "#/$defs/DiscoveryLicense"
+    },
+    "next_eligible_fetch_at": {
+      "format": "date-time",
+      "title": "Next Eligible Fetch At",
+      "type": "string"
+    },
+    "primary_source": {
+      "$ref": "#/$defs/ToolIdentifier"
+    },
+    "priority": {
+      "maximum": 1000,
+      "minimum": 0,
+      "title": "Priority",
+      "type": "integer"
+    },
+    "relationships": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/CrawlFrontierRelationship"
+      },
+      "title": "Relationships",
+      "type": "array"
+    },
+    "robots_status": {
+      "$ref": "#/$defs/DiscoveryRobotsStatus"
+    },
+    "schema_version": {
+      "$ref": "#/$defs/SchemaVersion",
+      "default": "1.0"
+    },
+    "source_record_id": {
+      "$ref": "#/$defs/Identifier"
+    },
+    "source_updated_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Source Updated At"
+    },
+    "status": {
+      "$ref": "#/$defs/CrawlFrontierStatus"
+    },
+    "trace_id": {
+      "format": "uuid",
+      "title": "Trace Id",
+      "type": "string"
+    },
+    "updated_at": {
+      "format": "date-time",
+      "title": "Updated At",
+      "type": "string"
+    },
+    "version": {
+      "minimum": 1,
+      "title": "Version",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "frontier_id",
+    "identity_key",
+    "primary_source",
+    "source_record_id",
+    "entity_kind",
+    "canonical_url",
+    "acquisition_method",
+    "status",
+    "priority",
+    "discovered_at",
+    "last_discovered_at",
+    "next_eligible_fetch_at",
+    "attempt_count",
+    "robots_status",
+    "license",
+    "access_status",
+    "trace_id",
+    "last_discovery_batch_id",
+    "version",
+    "created_at",
+    "updated_at"
+  ],
+  "title": "CrawlFrontierRecord",
+  "type": "object"
+}

@@ -1,0 +1,6 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: hiveblot-pmc-discovery
+spec:
+  suspend: true

@@ -11,6 +11,13 @@ data:
   S3_ENDPOINT_URL: https://objects.invalid
   S3_REGION: us-east-1
   S3_BUCKET: hiveblot-artifacts
+  ARTIFACT_MAX_BYTES: "1073741824"
+  PMC_OAI_BASE_URL: https://pmc.ncbi.nlm.nih.gov/api/oai/v1/mh/
+  DISCOVERY_USER_AGENT: HiveBlot/0.1 (+https://github.com/saithat/QBI)
+  DISCOVERY_HTTP_TIMEOUT_SECONDS: "30"
+  DISCOVERY_MAX_RESPONSE_BYTES: "5000000"
+  DISCOVERY_LOOKBACK_DAYS: "2"
+  DISCOVERY_MAXIMUM_PAGES: "20"
   JOB_EXECUTOR: kubernetes-job
   JOB_LEASE_SECONDS: "60"
   JOB_WORKER_POLL_SECONDS: "1"

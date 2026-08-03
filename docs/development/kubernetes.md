@@ -35,7 +35,7 @@ removes the temporary file. No Secret values are committed or rendered into Kust
 1. creates the dedicated `hiveblot-kind` Docker network;
 2. starts only PostgreSQL and MinIO with Compose on that network and waits for both health checks;
 3. creates the `hiveblot` kind cluster on the same network if absent;
-4. builds and loads `hiveblot:prd-014` into kind;
+4. builds and loads `hiveblot:prd-015` into kind;
 5. applies the runtime Secret and kind Kustomize overlay; and
 6. waits for enabled Deployments to roll out.
 
