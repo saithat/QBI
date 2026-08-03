@@ -1,7 +1,8 @@
 # HiveBlot
 
 HiveBlot turns western blot evidence from scientific papers into structured, searchable,
-reviewable observations. Milestones A through E are implemented.
+reviewable observations. Milestones A through E and organization isolation from Milestone F are
+implemented.
 The evaluation UI includes a server-paginated review queue, source evidence workbench, typed
 western-blot annotation editor, source-pixel spatial review, and deterministic densitometry. The
 useful local hackathon extraction path remains operational while new scientific state enters through
@@ -57,10 +58,13 @@ official source API -> immutable raw response + strict versioned discovery batch
 
 eligible frontier -> durable fetch lease + shared per-domain permit + robots/HTTP policy
     -> immutable raw artifact -> acquisition provenance + downstream parse outbox
+
+opaque bearer token -> authenticated user + active organization memberships
+    -> backend scope decision + append-only audit -> tenant-filtered scientific state
 ```
 
-Authentication remains out of scope. Kubernetes is the deployed placement layer rather than the
-state store; PostgreSQL, object storage, and Temporal stay externally managed. The retained
+Kubernetes is the deployed placement layer rather than the state store; PostgreSQL, object storage,
+and Temporal stay externally managed. The retained
 extractor runs through stored artifacts and versioned scientific stages; the filesystem ingestion
 CLI remains available as a compatibility path.
 
@@ -71,6 +75,7 @@ apps/api/                  FastAPI entry point and HTTP-only schemas
 apps/web/                  dependency-free review, annotation, metrics, and densitometry surfaces
 workers/extraction/        stable worker entry point around retained extraction code
 packages/contracts/        strict shared Pydantic v2 contracts and JSON Schemas
+packages/auth/             opaque-token identity, organization RBAC, scope policy, and auditing
 packages/evaluation/       cases, predictions, reviews, assignments, and adjudication
 packages/extraction/       versioned western-blot normalization and pipeline orchestration
 packages/densitometry/     deterministic pixel measurement, QC, and provenance orchestration
@@ -105,6 +110,10 @@ make check
 
 `make check` verifies formatting, lint, static types, JSON Schema snapshots, the API smoke
 boundary, and all tests. Regenerate schemas intentionally with `make schemas`.
+
+Local/test configuration explicitly defaults to disabled authentication. Deployed configuration
+requires bearer authentication. See [authorization development](docs/development/authorization.md)
+before enabling bearer mode or bootstrapping users.
 
 ## Run the complete local prototype
 
@@ -174,6 +183,9 @@ model output remains enabled by default.
 
 - `GET /health` checks PostgreSQL and vLLM readiness; `/health/startup`, `/health/live`, and
   `/health/ready` expose Kubernetes-specific process and readiness checks.
+- `GET /api/v1/auth/me` returns the authenticated principal and active organization memberships.
+- Organization administration and audit routes manage scoped memberships and inspect append-only
+  allow/deny events.
 - `GET /api/records` accepts `target`, `sample`, `condition`, `limit`, and `offset`.
 - `GET /api/records/{id}` exposes one record with locally available source context.
 - `POST /api/search` accepts a natural-language query and maps model output to safe filters.

@@ -7,6 +7,7 @@ from datetime import datetime
 from uuid import UUID, uuid4
 
 from hiveblot_contracts import (
+    ArtifactVisibility,
     JobAttemptRecord,
     JobAttemptStatus,
     JobLease,
@@ -67,6 +68,7 @@ class InMemoryJobRepository:
         self,
         *,
         status: JobStatus | None,
+        accessible_organization_ids: tuple[UUID, ...] | None,
         limit: int,
         offset: int,
     ) -> Sequence[JobRecord]:
@@ -77,6 +79,14 @@ class InMemoryJobRepository:
         )
         if status is not None:
             records = [item for item in records if item.status is status]
+        if accessible_organization_ids is not None:
+            allowed = set(accessible_organization_ids)
+            records = [
+                item
+                for item in records
+                if item.specification.visibility is ArtifactVisibility.PUBLIC
+                or item.specification.organization_id in allowed
+            ]
         return tuple(records[offset : offset + limit])
 
     def lease_next(

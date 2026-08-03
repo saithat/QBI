@@ -4,6 +4,7 @@ metadata:
   name: hiveblot-runtime
 data:
   HIVEBLOT_ENV: deployed
+  AUTHENTICATION_MODE: bearer
   HIVEBLOT_DATA_DIR: /tmp/hiveblot-data
   VLLM_BASE_URL: https://models.invalid/v1
   VLLM_MODEL: Qwen/Qwen3-VL-8B-Instruct

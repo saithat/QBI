@@ -17,3 +17,8 @@ inspection, and maps optimistic schedule/retry and immutable-artifact acquisitio
 protocol parsing remains in `services/crawler`, not in FastAPI request handlers. Fetch task,
 append-only attempt, and aggregate crawl-metric routes expose the distributed worker state without
 proxying acquired bytes through FastAPI.
+
+All protected versioned routes resolve an authenticated principal through `hiveblot_auth` and make
+route-specific backend authorization decisions. List projections apply the same public/private
+scope policy as direct reads. Health and static application assets remain public; deployed settings
+require bearer authentication.

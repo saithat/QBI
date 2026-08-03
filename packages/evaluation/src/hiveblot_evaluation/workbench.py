@@ -11,6 +11,7 @@ from hiveblot_contracts import (
     AdjudicationEvidenceOverlay,
     AnnotationRevision,
     ArtifactRecord,
+    ArtifactVisibility,
     CaseArtifactRole,
     CaseSourceContext,
     EvidenceOverlay,
@@ -125,7 +126,12 @@ class EvidenceWorkbenchService:
             )
         return self._contexts.list_context_revisions(case_id, artifact_id, artifact_role)
 
-    def get_workbench(self, case_id: UUID) -> SourceEvidenceWorkbench:
+    def get_workbench(
+        self,
+        case_id: UUID,
+        *,
+        accessible_annotation_organization_ids: tuple[UUID, ...] | None = None,
+    ) -> SourceEvidenceWorkbench:
         case = self._evaluation.get_case(case_id)
         contexts = {
             (context.artifact_id, context.artifact_role): context
@@ -161,6 +167,12 @@ class EvidenceWorkbenchService:
             if evidence.region is not None and evidence.artifact_id in source_ids
         ]
         for annotation in self._evaluation.list_annotations(case_id):
+            if not _is_visible(
+                annotation.visibility,
+                annotation.organization_id,
+                accessible_annotation_organization_ids,
+            ):
+                continue
             revision = self._evaluation.get_revision(annotation.head_revision_id)
             field_keys = _field_keys_by_region(revision)
             overlays.extend(
@@ -181,6 +193,12 @@ class EvidenceWorkbenchService:
                 if spatial.region.source_artifact_id in source_ids
             )
         for adjudication in self._evaluation.list_adjudications(case_id):
+            if not _is_visible(
+                adjudication.visibility,
+                adjudication.organization_id,
+                accessible_annotation_organization_ids,
+            ):
+                continue
             revision = self._evaluation.get_revision(adjudication.selected_revision_id)
             field_keys = _field_keys_by_region(revision)
             overlays.extend(
@@ -214,6 +232,18 @@ class _EmptyContext:
 
 
 _EMPTY_CONTEXT = _EmptyContext()
+
+
+def _is_visible(
+    visibility: ArtifactVisibility,
+    organization_id: UUID | None,
+    accessible_organization_ids: tuple[UUID, ...] | None,
+) -> bool:
+    return (
+        accessible_organization_ids is None
+        or visibility is ArtifactVisibility.PUBLIC
+        or organization_id in accessible_organization_ids
+    )
 
 
 def _field_keys_by_region(revision: AnnotationRevision) -> dict[UUID, set[str]]:

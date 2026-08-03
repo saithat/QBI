@@ -12,3 +12,10 @@ scheduling state, and append-only frontier events.
 permits, robots cache state, conditional-request metadata, downstream parse outbox records, and
 fetch metrics inputs. Its down migration removes those six tables before removing the four added
 frontier columns.
+
+`0014_organization_authorization` adds users, organizations, memberships, opaque-token digests,
+append-only authorization events, organization scope for scientific/execution records, scoped
+reviewer-assignment locks, and cross-resource scope triggers. Its down migration performs a
+preflight and refuses without mutation when active scoped assignments would violate the earlier
+global assignment indexes. Existing private artifact organization UUIDs are preserved as active
+`legacy-<uuid>` organization records so their foreign-key relationships remain valid.

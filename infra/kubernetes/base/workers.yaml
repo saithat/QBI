@@ -26,7 +26,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: worker
-          image: hiveblot:prd-016
+          image: hiveblot:prd-017
           imagePullPolicy: IfNotPresent
           command: ["hiveblot-job-worker"]
           args: ["--executor", "kubernetes-job"]
@@ -110,7 +110,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: worker
-          image: hiveblot:prd-016
+          image: hiveblot:prd-017
           imagePullPolicy: IfNotPresent
           command: ["hiveblot-job-worker"]
           args: ["--executor", "kubernetes-job"]
@@ -194,7 +194,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: worker
-          image: hiveblot:prd-016
+          image: hiveblot:prd-017
           imagePullPolicy: IfNotPresent
           command: ["hiveblot-job-worker"]
           args: ["--executor", "kubernetes-job"]
@@ -278,7 +278,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: workflow-worker
-          image: hiveblot:prd-016
+          image: hiveblot:prd-017
           imagePullPolicy: IfNotPresent
           command: ["hiveblot-workflow-worker"]
           envFrom:

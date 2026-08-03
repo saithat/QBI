@@ -7,7 +7,11 @@ from typing import Annotated, NoReturn
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from hiveblot_auth import AuthorizationService
 from hiveblot_contracts import (
+    ArtifactVisibility,
+    AuthenticatedPrincipal,
+    AuthorizationPermission,
     CrawlFetchAttemptRecord,
     CrawlFetchTaskRecord,
     CrawlFrontierFilters,
@@ -18,6 +22,7 @@ from hiveblot_contracts import (
     DiscoveryAccessStatus,
     DiscoveryEntityKind,
     DiscoveryIngestionResult,
+    ResourceScope,
 )
 from hiveblot_crawler import (
     DiscoveryError,
@@ -32,6 +37,12 @@ from hiveblot_crawler import (
 from hiveblot_storage import ArtifactNotFound, ArtifactStorageError
 from pydantic import ValidationError
 
+from .auth_dependencies import (
+    AuthorizationServiceDependency,
+    PrincipalDependency,
+    RequestIdDependency,
+)
+from .authorization import require_scope
 from .discovery_dependencies import get_fetch_queue_service, get_frontier_service
 from .discovery_schemas import (
     IngestDiscoveryBatchRequest,
@@ -45,6 +56,36 @@ FrontierServiceDependency = Annotated[FrontierService, Depends(get_frontier_serv
 FetchQueueServiceDependency = Annotated[FetchQueueService, Depends(get_fetch_queue_service)]
 
 
+def require_discovery_read(
+    principal: PrincipalDependency,
+    authorization: AuthorizationServiceDependency,
+    request_id: RequestIdDependency,
+) -> None:
+    _require_discovery_permission(
+        principal,
+        authorization,
+        request_id,
+        AuthorizationPermission.ARTIFACT_READ,
+    )
+
+
+def require_discovery_write(
+    principal: PrincipalDependency,
+    authorization: AuthorizationServiceDependency,
+    request_id: RequestIdDependency,
+) -> None:
+    _require_discovery_permission(
+        principal,
+        authorization,
+        request_id,
+        AuthorizationPermission.ARTIFACT_WRITE,
+    )
+
+
+DiscoveryReadDependency = Annotated[None, Depends(require_discovery_read)]
+DiscoveryWriteDependency = Annotated[None, Depends(require_discovery_write)]
+
+
 @router.post(
     "/discovery-batches",
     response_model=DiscoveryIngestionResult,
@@ -53,6 +94,7 @@ FetchQueueServiceDependency = Annotated[FetchQueueService, Depends(get_fetch_que
 def ingest_discovery_batch(
     request: IngestDiscoveryBatchRequest,
     service: FrontierServiceDependency,
+    _authorized: DiscoveryWriteDependency,
 ) -> DiscoveryIngestionResult:
     try:
         return service.ingest(request.batch)
@@ -63,6 +105,7 @@ def ingest_discovery_batch(
 @router.get("/discovery-frontier", response_model=CrawlFrontierPage)
 def browse_discovery_frontier(
     service: FrontierServiceDependency,
+    _authorized: DiscoveryReadDependency,
     frontier_status: Annotated[CrawlFrontierStatus | None, Query(alias="status")] = None,
     entity_kind: DiscoveryEntityKind | None = None,
     source_name: Annotated[str | None, Query(min_length=1, max_length=200)] = None,
@@ -88,6 +131,7 @@ def browse_discovery_frontier(
 def get_discovery_frontier_record(
     frontier_id: UUID,
     service: FrontierServiceDependency,
+    _authorized: DiscoveryReadDependency,
 ) -> CrawlFrontierRecord:
     try:
         return service.get(frontier_id)
@@ -100,6 +144,7 @@ def update_discovery_schedule(
     frontier_id: UUID,
     request: UpdateFrontierScheduleRequest,
     service: FrontierServiceDependency,
+    _authorized: DiscoveryWriteDependency,
 ) -> CrawlFrontierRecord:
     try:
         return service.update_schedule(
@@ -117,6 +162,7 @@ def retry_discovery_frontier_record(
     frontier_id: UUID,
     request: RetryFrontierRequest,
     service: FrontierServiceDependency,
+    _authorized: DiscoveryWriteDependency,
 ) -> CrawlFrontierRecord:
     try:
         return service.retry(
@@ -137,6 +183,7 @@ def record_discovery_acquisition(
     frontier_id: UUID,
     request: RecordFrontierAcquisitionRequest,
     service: FrontierServiceDependency,
+    _authorized: DiscoveryWriteDependency,
 ) -> CrawlFrontierRecord:
     try:
         return service.record_acquisition(
@@ -153,6 +200,7 @@ def record_discovery_acquisition(
 def get_crawl_fetch_task(
     task_id: UUID,
     service: FetchQueueServiceDependency,
+    _authorized: DiscoveryReadDependency,
 ) -> CrawlFetchTaskRecord:
     try:
         return service.get_task(task_id)
@@ -167,6 +215,7 @@ def get_crawl_fetch_task(
 def list_crawl_fetch_attempts(
     task_id: UUID,
     service: FetchQueueServiceDependency,
+    _authorized: DiscoveryReadDependency,
 ) -> Sequence[CrawlFetchAttemptRecord]:
     try:
         return service.list_attempts(task_id)
@@ -175,11 +224,30 @@ def list_crawl_fetch_attempts(
 
 
 @router.get("/crawl/metrics", response_model=CrawlMetricsSnapshot)
-def get_crawl_metrics(service: FetchQueueServiceDependency) -> CrawlMetricsSnapshot:
+def get_crawl_metrics(
+    service: FetchQueueServiceDependency,
+    _authorized: DiscoveryReadDependency,
+) -> CrawlMetricsSnapshot:
     try:
         return service.metrics()
     except (DiscoveryError, ValidationError) as exc:
         _raise_http(exc)
+
+
+def _require_discovery_permission(
+    principal: AuthenticatedPrincipal,
+    authorization: AuthorizationService,
+    request_id: UUID,
+    permission: AuthorizationPermission,
+) -> None:
+    require_scope(
+        authorization,
+        principal,
+        permission,
+        scope=ResourceScope(visibility=ArtifactVisibility.PUBLIC),
+        target_type="public_discovery",
+        request_id=request_id,
+    )
 
 
 def _raise_http(

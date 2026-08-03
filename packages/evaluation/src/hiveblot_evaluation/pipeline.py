@@ -11,6 +11,7 @@ from uuid import UUID, uuid4
 from hiveblot_contracts import (
     ArtifactRecord,
     ArtifactReference,
+    ArtifactVisibility,
     BoundingRegion,
     ComponentEvidenceReference,
     ComponentInvocationRecord,
@@ -27,6 +28,7 @@ from hiveblot_contracts import (
     PipelineRunRecord,
     PipelineRunStatus,
     PublishedPipelineValue,
+    ResourceScope,
     SucceededComponentResult,
     ValidationIssue,
     ValidationSeverity,
@@ -127,6 +129,13 @@ class PipelineRegistryService:
     def list_definitions(self) -> Sequence[PipelineDefinitionRecord]:
         return self._repository.list_definitions()
 
+    def case_scope(self, case_id: UUID) -> ResourceScope:
+        case = self._evaluation.get_case(case_id)
+        return ResourceScope(
+            visibility=case.visibility,
+            organization_id=case.organization_id,
+        )
+
     def create_run(
         self,
         case_id: UUID,
@@ -135,8 +144,26 @@ class PipelineRegistryService:
         input_artifact_ids: tuple[UUID, ...],
         configuration_json: str,
         trace_id: UUID,
+        visibility: ArtifactVisibility | None = None,
+        organization_id: UUID | None = None,
     ) -> PipelineRunDetail:
         case = self._evaluation.get_case(case_id)
+        case_scope = ResourceScope(
+            visibility=case.visibility,
+            organization_id=case.organization_id,
+        )
+        run_scope = (
+            case_scope
+            if visibility is None
+            else ResourceScope(visibility=visibility, organization_id=organization_id)
+        )
+        if (
+            case_scope.visibility is ArtifactVisibility.ORGANIZATION_PRIVATE
+            and run_scope != case_scope
+        ):
+            raise InvalidEvaluationState(
+                "private evaluation cases require pipeline runs in the same organization"
+            )
         definition = self.get_definition(definition_id)
         if not input_artifact_ids:
             raise InvalidEvaluationState("a pipeline run requires at least one input artifact")
@@ -145,6 +172,12 @@ class PipelineRegistryService:
         case_sources = {source.artifact_id for source in case.source_artifacts}
         if not set(input_artifact_ids).issubset(case_sources):
             raise InvalidEvaluationState("pipeline run inputs must be source artifacts of the case")
+        for artifact_id in input_artifact_ids:
+            artifact = self._artifacts.get_artifact(artifact_id)
+            if not _scope_can_read_artifact(run_scope, artifact):
+                raise InvalidEvaluationState(
+                    "pipeline run input artifacts must be public or belong to the run organization"
+                )
         inputs = tuple(self._artifact_reference(artifact_id) for artifact_id in input_artifact_ids)
         now = self._clock()
         run = PipelineRunRecord(
@@ -153,6 +186,8 @@ class PipelineRegistryService:
             definition_id=definition.definition_id,
             pipeline=definition.pipeline,
             status=PipelineRunStatus.ACTIVE,
+            visibility=run_scope.visibility,
+            organization_id=run_scope.organization_id,
             input_artifacts=inputs,
             configuration_json=configuration_json,
             trace_id=trace_id,
@@ -240,6 +275,7 @@ class PipelineRegistryService:
     ) -> ComponentInvocationRecord:
         invocation = self._pending_invocation(invocation_id)
         self._validate_parent_results(invocation)
+        self._validate_output_artifact_scope(invocation, output_artifact_ids)
         output_artifacts = tuple(
             self._artifact_reference(artifact_id) for artifact_id in output_artifact_ids
         )
@@ -315,6 +351,7 @@ class PipelineRegistryService:
             raise InvalidEvaluationState(
                 "output-validation failures are produced by schema validation"
             )
+        self._validate_output_artifact_scope(invocation, output_artifact_ids)
         output_artifacts = tuple(
             self._artifact_reference(artifact_id) for artifact_id in output_artifact_ids
         )
@@ -426,6 +463,8 @@ class PipelineRegistryService:
             run_id=detail.run.run_id,
             case_id=detail.run.case_id,
             pipeline=detail.run.pipeline,
+            visibility=detail.run.visibility,
+            organization_id=detail.run.organization_id,
             output_schema=output_schema,
             normalized_output_json=normalized_output_json,
             values=values,
@@ -519,6 +558,31 @@ class PipelineRegistryService:
             raise InvalidEvaluationState(
                 "validation issues must reference run inputs or component outputs"
             )
+
+    def _validate_output_artifact_scope(
+        self,
+        invocation: ComponentInvocationRecord,
+        output_artifact_ids: tuple[UUID, ...],
+    ) -> None:
+        run = self.get_run(invocation.run_id)
+        for artifact_id in output_artifact_ids:
+            artifact = self._artifacts.get_artifact(artifact_id)
+            if (
+                artifact.visibility is not run.visibility
+                or artifact.organization_id != run.organization_id
+            ):
+                raise InvalidEvaluationState(
+                    "component output artifact scope must match the pipeline run"
+                )
+
+
+def _scope_can_read_artifact(scope: ResourceScope, artifact: ArtifactRecord) -> bool:
+    if artifact.visibility is ArtifactVisibility.PUBLIC:
+        return True
+    return (
+        scope.visibility is ArtifactVisibility.ORGANIZATION_PRIVATE
+        and artifact.organization_id == scope.organization_id
+    )
 
 
 def _resolve_json_pointer(document: object, pointer: str) -> object:

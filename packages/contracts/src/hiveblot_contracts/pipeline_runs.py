@@ -9,7 +9,7 @@ from uuid import UUID
 
 from pydantic import AwareDatetime, Field, model_validator
 
-from .artifacts import ArtifactReference, BoundingRegion
+from .artifacts import ArtifactReference, ArtifactVisibility, BoundingRegion
 from .base import ContractModel, Identifier
 from .evaluation import ValidationIssue
 from .identifiers import ModelIdentifier, PipelineIdentifier, ToolIdentifier
@@ -87,6 +87,8 @@ class PipelineRunRecord(ContractModel):
     definition_id: UUID
     pipeline: PipelineIdentifier
     status: PipelineRunStatus
+    visibility: ArtifactVisibility = ArtifactVisibility.PUBLIC
+    organization_id: UUID | None = None
     input_artifacts: tuple[ArtifactReference, ...] = Field(min_length=1)
     configuration_json: str = Field(default="{}", min_length=2)
     trace_id: UUID
@@ -96,6 +98,13 @@ class PipelineRunRecord(ContractModel):
     @model_validator(mode="after")
     def run_is_valid(self) -> Self:
         _validate_json_object(self.configuration_json, "run configuration_json")
+        if self.visibility is ArtifactVisibility.PUBLIC and self.organization_id is not None:
+            raise ValueError("public pipeline runs cannot belong to an organization")
+        if (
+            self.visibility is ArtifactVisibility.ORGANIZATION_PRIVATE
+            and self.organization_id is None
+        ):
+            raise ValueError("organization-private pipeline runs require an organization")
         artifact_ids = [artifact.artifact_id for artifact in self.input_artifacts]
         if len(artifact_ids) != len(set(artifact_ids)):
             raise ValueError("pipeline run input artifacts must be unique")
@@ -233,6 +242,8 @@ class PipelinePublicationRecord(ContractModel):
     run_id: UUID
     case_id: UUID
     pipeline: PipelineIdentifier
+    visibility: ArtifactVisibility = ArtifactVisibility.PUBLIC
+    organization_id: UUID | None = None
     output_schema: OutputSchemaIdentifier
     normalized_output_json: str = Field(min_length=1)
     values: tuple[PublishedPipelineValue, ...] = Field(min_length=1)
@@ -243,6 +254,13 @@ class PipelinePublicationRecord(ContractModel):
     @model_validator(mode="after")
     def publication_is_valid(self) -> Self:
         _validate_json_document(self.normalized_output_json, "publication normalized_output_json")
+        if self.visibility is ArtifactVisibility.PUBLIC and self.organization_id is not None:
+            raise ValueError("public pipeline publications cannot belong to an organization")
+        if (
+            self.visibility is ArtifactVisibility.ORGANIZATION_PRIVATE
+            and self.organization_id is None
+        ):
+            raise ValueError("organization-private pipeline publications require an organization")
         paths = [value.field_path for value in self.values]
         if len(paths) != len(set(paths)):
             raise ValueError("published field paths must be unique")
@@ -265,9 +283,11 @@ class PipelineRunDetail(ContractModel):
             publication.run_id != self.run.run_id
             or publication.case_id != self.run.case_id
             or publication.pipeline != self.run.pipeline
+            or publication.visibility is not self.run.visibility
+            or publication.organization_id != self.run.organization_id
             for publication in self.publications
         ):
-            raise ValueError("pipeline publications must belong to the pipeline run and case")
+            raise ValueError("pipeline publications must belong to and match the pipeline run")
         invocation_id_list = [item.invocation_id for item in self.invocations]
         if len(invocation_id_list) != len(set(invocation_id_list)):
             raise ValueError("pipeline run invocation IDs must be unique")

@@ -13,6 +13,7 @@ from hiveblot_contracts import (
     ArtifactReference,
     ArtifactRelationship,
     ArtifactRelationshipKind,
+    ArtifactVisibility,
     ComponentEvidenceReference,
     ComponentInvocationRecord,
     ComponentInvocationStatus,
@@ -27,6 +28,7 @@ from hiveblot_contracts import (
     OutputSchemaIdentifier,
     PipelineIdentifier,
     PublishedPipelineValue,
+    ResourceScope,
     SucceededComponentResult,
     ToolPipelineComponent,
     ValidationIssue,
@@ -64,6 +66,8 @@ class StoredDensitometryAttempt:
     replay_of_invocation_id: UUID | None
     publication_id: UUID
     trace_id: UUID
+    visibility: ArtifactVisibility
+    organization_id: UUID | None
     created_at: datetime
     result: DensitometryResult
 
@@ -95,6 +99,9 @@ class DensitometryService:
         loading_control_target_id: UUID | None,
         configuration: DensitometryConfiguration,
         trace_id: UUID | None = None,
+        actor_id: UUID | None = None,
+        visibility: ArtifactVisibility | None = None,
+        organization_id: UUID | None = None,
     ) -> DensitometryRunRecord:
         trace_id = trace_id or uuid4()
         densitometry_input = self._geometry.build_input(
@@ -111,12 +118,20 @@ class DensitometryService:
             input_artifact_ids=(image_artifact_id,),
             configuration_json=_json(densitometry_input),
             trace_id=trace_id,
+            visibility=visibility,
+            organization_id=organization_id,
+        )
+        output_scope = ResourceScope(
+            visibility=detail.run.visibility,
+            organization_id=detail.run.organization_id,
         )
         invocation = detail.invocations[0]
         result, publication_id = self._execute_and_publish(
             invocation,
             densitometry_input,
             trace_id=trace_id,
+            actor_id=actor_id,
+            output_scope=output_scope,
         )
         return DensitometryRunRecord(
             run_id=detail.run.run_id,
@@ -134,6 +149,7 @@ class DensitometryService:
         invocation_id: UUID,
         *,
         trace_id: UUID | None = None,
+        actor_id: UUID | None = None,
     ) -> DensitometryReplayRecord:
         trace_id = trace_id or uuid4()
         original = self._pipelines.get_invocation(invocation_id)
@@ -156,6 +172,11 @@ class DensitometryService:
             replay,
             densitometry_input,
             trace_id=trace_id,
+            actor_id=actor_id,
+            output_scope=ResourceScope(
+                visibility=run.visibility,
+                organization_id=run.organization_id,
+            ),
         )
         return DensitometryReplayRecord(
             run_id=run.run_id,
@@ -196,6 +217,8 @@ class DensitometryService:
                         replay_of_invocation_id=invocation.replay_of_invocation_id,
                         publication_id=publication.publication_id,
                         trace_id=invocation.trace_id,
+                        visibility=detail.run.visibility,
+                        organization_id=detail.run.organization_id,
                         created_at=invocation.result.completed_at,
                         result=result,
                     )
@@ -218,6 +241,8 @@ class DensitometryService:
         densitometry_input: DensitometryInput,
         *,
         trace_id: UUID,
+        actor_id: UUID | None,
+        output_scope: ResourceScope,
     ) -> tuple[DensitometryResult, UUID]:
         started = time.perf_counter()
         raw_output_json: str | None = None
@@ -234,15 +259,15 @@ class DensitometryService:
                     f"urn:hiveblot:densitometry:{self._tool.identity.version}:"
                     f"{computation.input_sha256}"
                 ),
-                visibility=source.visibility,
-                organization_id=source.organization_id,
+                visibility=output_scope.visibility,
+                organization_id=output_scope.organization_id,
                 relationships=(
                     ArtifactRelationship(
                         related_artifact_id=source.artifact_id,
                         kind=ArtifactRelationshipKind.DERIVED_FROM,
                     ),
                 ),
-                actor_id=None,
+                actor_id=actor_id,
             )
             result = computation.result(_artifact_reference(published.artifact))
             evidence = self._evidence(densitometry_input)

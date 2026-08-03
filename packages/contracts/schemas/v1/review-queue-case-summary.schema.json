@@ -1,5 +1,14 @@
 {
   "$defs": {
+    "ArtifactVisibility": {
+      "description": "Visibility attached to artifact metadata and access grants.",
+      "enum": [
+        "public",
+        "organization_private"
+      ],
+      "title": "ArtifactVisibility",
+      "type": "string"
+    },
     "Identifier": {
       "maxLength": 200,
       "minLength": 1,
@@ -136,6 +145,19 @@
       "title": "Model Disagreement",
       "type": "boolean"
     },
+    "organization_id": {
+      "anyOf": [
+        {
+          "format": "uuid",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Organization Id"
+    },
     "prediction_id": {
       "anyOf": [
         {
@@ -196,6 +218,10 @@
       "format": "date-time",
       "title": "Updated At",
       "type": "string"
+    },
+    "visibility": {
+      "$ref": "#/$defs/ArtifactVisibility",
+      "default": "public"
     },
     "warning_count": {
       "minimum": 0,

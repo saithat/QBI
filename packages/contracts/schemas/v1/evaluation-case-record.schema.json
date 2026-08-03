@@ -1,5 +1,14 @@
 {
   "$defs": {
+    "ArtifactVisibility": {
+      "description": "Visibility attached to artifact metadata and access grants.",
+      "enum": [
+        "public",
+        "organization_private"
+      ],
+      "title": "ArtifactVisibility",
+      "type": "string"
+    },
     "CaseArtifactRole": {
       "enum": [
         "source_document",
@@ -104,6 +113,19 @@
       "default": null,
       "title": "Dataset Id"
     },
+    "organization_id": {
+      "anyOf": [
+        {
+          "format": "uuid",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Organization Id"
+    },
     "review_status": {
       "$ref": "#/$defs/ReviewStatus"
     },
@@ -127,6 +149,10 @@
       "minimum": 1,
       "title": "Version",
       "type": "integer"
+    },
+    "visibility": {
+      "$ref": "#/$defs/ArtifactVisibility",
+      "default": "public"
     }
   },
   "required": [

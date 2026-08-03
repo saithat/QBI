@@ -1,5 +1,14 @@
 {
   "$defs": {
+    "ArtifactVisibility": {
+      "description": "Visibility attached to artifact metadata and access grants.",
+      "enum": [
+        "public",
+        "organization_private"
+      ],
+      "title": "ArtifactVisibility",
+      "type": "string"
+    },
     "SchemaVersion": {
       "const": "1.0",
       "type": "string"
@@ -38,6 +47,19 @@
       "title": "Created At",
       "type": "string"
     },
+    "organization_id": {
+      "anyOf": [
+        {
+          "format": "uuid",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Organization Id"
+    },
     "rationale": {
       "maxLength": 10000,
       "minLength": 1,
@@ -52,6 +74,10 @@
       "format": "uuid",
       "title": "Selected Revision Id",
       "type": "string"
+    },
+    "visibility": {
+      "$ref": "#/$defs/ArtifactVisibility",
+      "default": "public"
     }
   },
   "required": [

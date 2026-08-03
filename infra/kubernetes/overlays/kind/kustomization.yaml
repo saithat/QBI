@@ -5,7 +5,7 @@ resources:
 images:
   - name: hiveblot
     newName: hiveblot
-    newTag: prd-016
+    newTag: prd-017
 patches:
   - path: runtime-config-patch.yaml
   - path: workspace-patch.yaml

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 from datetime import datetime
-from typing import Annotated, Literal
+from typing import Annotated, Literal, Self
 from uuid import UUID
 
 from hiveblot_contracts import (
@@ -22,7 +22,15 @@ from hiveblot_contracts import (
     PredictionGeometryReference,
     ReviewerGeometryReference,
 )
-from pydantic import BeforeValidator, Field, StrictBool, StrictFloat, StrictInt, TypeAdapter
+from pydantic import (
+    BeforeValidator,
+    Field,
+    StrictBool,
+    StrictFloat,
+    StrictInt,
+    TypeAdapter,
+    model_validator,
+)
 
 from .evaluation_schemas import JsonUUID
 
@@ -78,10 +86,22 @@ class StartDensitometryRunRequest(ContractModel):
     image_artifact_id: JsonUUID
     geometry: JsonDensitometryGeometryReference
     loading_control_target_id: JsonUUID | None = None
+    visibility: Literal["public", "organization_private"] | None = None
+    organization_id: JsonUUID | None = None
     configuration: DensitometryConfigurationRequest = Field(
         default_factory=DensitometryConfigurationRequest
     )
     trace_id: JsonUUID | None = None
+
+    @model_validator(mode="after")
+    def explicit_scope_is_complete(self) -> Self:
+        if self.visibility == "public" and self.organization_id is not None:
+            raise ValueError("public densitometry runs cannot include organization_id")
+        if self.visibility == "organization_private" and self.organization_id is None:
+            raise ValueError("organization-private densitometry runs require organization_id")
+        if self.visibility is None and self.organization_id is not None:
+            raise ValueError("organization_id requires an explicit visibility")
+        return self
 
 
 class ReplayDensitometryRequest(ContractModel):
@@ -110,6 +130,8 @@ class DensitometryAttemptResponse(ContractModel):
     replay_of_invocation_id: UUID | None
     publication_id: UUID
     trace_id: UUID
+    visibility: Literal["public", "organization_private"]
+    organization_id: UUID | None
     created_at: datetime
     result: DensitometryResult
     source_image_download_url: str

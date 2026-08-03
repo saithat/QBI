@@ -6,7 +6,11 @@ from typing import Annotated, Literal, NoReturn
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
+from hiveblot_auth import AuthorizationService
 from hiveblot_contracts import (
+    ArtifactVisibility,
+    AuthenticatedPrincipal,
+    AuthorizationPermission,
     GoldenCaseState,
     GoldenCaseTransition,
     GoldenDatasetDraftDetail,
@@ -16,6 +20,7 @@ from hiveblot_contracts import (
     GoldenDatasetSnapshot,
     GoldenDatasetSplit,
     GoldenDatasetType,
+    ResourceScope,
 )
 from hiveblot_evaluation import (
     ConcurrencyConflict,
@@ -28,6 +33,12 @@ from hiveblot_evaluation import (
 from hiveblot_storage import ArtifactNotFound, ArtifactStorageError
 from pydantic import ValidationError
 
+from .auth_dependencies import (
+    AuthorizationServiceDependency,
+    PrincipalDependency,
+    RequestIdDependency,
+)
+from .authorization import require_actor, require_resource, require_scope
 from .golden_dependencies import get_golden_dataset_service
 from .golden_schemas import (
     AddGoldenCaseRequest,
@@ -66,7 +77,27 @@ GoldenServiceDependency = Annotated[
 def create_golden_dataset(
     request: CreateGoldenDatasetRequest,
     service: GoldenServiceDependency,
+    principal: PrincipalDependency,
+    authorization: AuthorizationServiceDependency,
+    request_id: RequestIdDependency,
 ) -> GoldenDatasetResponse:
+    require_actor(principal, request.created_by, field_name="created_by")
+    _require_public_dataset(
+        authorization,
+        principal,
+        AuthorizationPermission.DATASET_PUBLISH,
+        request_id,
+        target_type="golden_dataset",
+    )
+    if request.predecessor_snapshot_id is not None:
+        _require_golden_resource(
+            "golden_snapshot",
+            request.predecessor_snapshot_id,
+            AuthorizationPermission.DATASET_READ,
+            authorization,
+            principal,
+            request_id,
+        )
     try:
         record = service.create_dataset(
             dataset_name=request.dataset_name,
@@ -83,8 +114,18 @@ def create_golden_dataset(
 @router.get("/golden-datasets", response_model=GoldenDatasetListResponse)
 def list_golden_datasets(
     service: GoldenServiceDependency,
+    principal: PrincipalDependency,
+    authorization: AuthorizationServiceDependency,
+    request_id: RequestIdDependency,
     limit: Annotated[int, Query(ge=1, le=200)] = 50,
 ) -> GoldenDatasetListResponse:
+    _require_public_dataset(
+        authorization,
+        principal,
+        AuthorizationPermission.DATASET_READ,
+        request_id,
+        target_type="golden_dataset_collection",
+    )
     try:
         records = service.list_datasets(limit=limit)
     except (EvaluationError, ArtifactStorageError, ValidationError, ValueError) as exc:
@@ -101,7 +142,18 @@ def list_golden_datasets(
 def get_golden_dataset(
     dataset_id: UUID,
     service: GoldenServiceDependency,
+    principal: PrincipalDependency,
+    authorization: AuthorizationServiceDependency,
+    request_id: RequestIdDependency,
 ) -> GoldenDatasetDetailResponse:
+    _require_golden_resource(
+        "golden_dataset",
+        dataset_id,
+        AuthorizationPermission.DATASET_READ,
+        authorization,
+        principal,
+        request_id,
+    )
     try:
         detail = service.get_detail(dataset_id)
     except (EvaluationError, ArtifactStorageError, ValidationError, ValueError) as exc:
@@ -118,7 +170,18 @@ def delete_golden_dataset(
     dataset_id: UUID,
     request: DeleteGoldenDatasetRequest,
     service: GoldenServiceDependency,
+    principal: PrincipalDependency,
+    authorization: AuthorizationServiceDependency,
+    request_id: RequestIdDependency,
 ) -> Response:
+    _require_golden_resource(
+        "golden_dataset",
+        dataset_id,
+        AuthorizationPermission.DATASET_PUBLISH,
+        authorization,
+        principal,
+        request_id,
+    )
     try:
         service.delete_draft(
             dataset_id,
@@ -139,7 +202,32 @@ def add_golden_case(
     case_id: UUID,
     request: AddGoldenCaseRequest,
     service: GoldenServiceDependency,
+    principal: PrincipalDependency,
+    authorization: AuthorizationServiceDependency,
+    request_id: RequestIdDependency,
 ) -> GoldenDatasetDetailResponse:
+    require_actor(principal, request.actor_id, field_name="actor_id")
+    _require_golden_resource(
+        "golden_dataset",
+        dataset_id,
+        AuthorizationPermission.DATASET_PUBLISH,
+        authorization,
+        principal,
+        request_id,
+    )
+    case_scope = require_resource(
+        authorization,
+        principal,
+        AuthorizationPermission.EVALUATION_READ,
+        target_type="evaluation_case",
+        target_id=case_id,
+        request_id=request_id,
+    )
+    if case_scope.visibility is not ArtifactVisibility.PUBLIC:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail="shared golden datasets cannot include organization-private cases",
+        )
     try:
         detail = service.add_case(
             dataset_id,
@@ -164,7 +252,36 @@ def promote_golden_case(
     case_id: UUID,
     request: PromoteGoldenCaseRequest,
     service: GoldenServiceDependency,
+    principal: PrincipalDependency,
+    authorization: AuthorizationServiceDependency,
+    request_id: RequestIdDependency,
 ) -> GoldenDatasetDetailResponse:
+    require_actor(principal, request.actor_id, field_name="actor_id")
+    _require_golden_resource(
+        "golden_dataset",
+        dataset_id,
+        AuthorizationPermission.DATASET_PUBLISH,
+        authorization,
+        principal,
+        request_id,
+    )
+    require_resource(
+        authorization,
+        principal,
+        AuthorizationPermission.EVALUATION_READ,
+        target_type="evaluation_case",
+        target_id=case_id,
+        request_id=request_id,
+    )
+    if request.selected_revision_id is not None:
+        require_resource(
+            authorization,
+            principal,
+            AuthorizationPermission.ANNOTATION_READ,
+            target_type="annotation_revision",
+            target_id=request.selected_revision_id,
+            request_id=request_id,
+        )
     try:
         detail = service.promote_case(
             dataset_id,
@@ -189,7 +306,26 @@ def list_golden_case_transitions(
     dataset_id: UUID,
     case_id: UUID,
     service: GoldenServiceDependency,
+    principal: PrincipalDependency,
+    authorization: AuthorizationServiceDependency,
+    request_id: RequestIdDependency,
 ) -> GoldenTransitionListResponse:
+    _require_golden_resource(
+        "golden_dataset",
+        dataset_id,
+        AuthorizationPermission.DATASET_READ,
+        authorization,
+        principal,
+        request_id,
+    )
+    require_resource(
+        authorization,
+        principal,
+        AuthorizationPermission.EVALUATION_READ,
+        target_type="evaluation_case",
+        target_id=case_id,
+        request_id=request_id,
+    )
     try:
         transitions = service.list_case_transitions(dataset_id, case_id)
     except (EvaluationError, ArtifactStorageError, ValidationError, ValueError) as exc:
@@ -210,7 +346,19 @@ def freeze_golden_dataset(
     dataset_id: UUID,
     request: FreezeGoldenDatasetRequest,
     service: GoldenServiceDependency,
+    principal: PrincipalDependency,
+    authorization: AuthorizationServiceDependency,
+    request_id: RequestIdDependency,
 ) -> GoldenDatasetSnapshotResponse:
+    require_actor(principal, request.frozen_by, field_name="frozen_by")
+    _require_golden_resource(
+        "golden_dataset",
+        dataset_id,
+        AuthorizationPermission.DATASET_PUBLISH,
+        authorization,
+        principal,
+        request_id,
+    )
     try:
         snapshot = service.freeze(
             dataset_id,
@@ -229,7 +377,18 @@ def freeze_golden_dataset(
 def get_golden_snapshot(
     snapshot_id: UUID,
     service: GoldenServiceDependency,
+    principal: PrincipalDependency,
+    authorization: AuthorizationServiceDependency,
+    request_id: RequestIdDependency,
 ) -> GoldenDatasetSnapshotResponse:
+    _require_golden_resource(
+        "golden_snapshot",
+        snapshot_id,
+        AuthorizationPermission.DATASET_READ,
+        authorization,
+        principal,
+        request_id,
+    )
     try:
         snapshot = service.get_snapshot(snapshot_id)
     except (EvaluationError, ArtifactStorageError, ValidationError, ValueError) as exc:
@@ -246,7 +405,18 @@ def publish_golden_export(
     snapshot_id: UUID,
     request: PublishGoldenExportRequest,
     service: GoldenServiceDependency,
+    principal: PrincipalDependency,
+    authorization: AuthorizationServiceDependency,
+    request_id: RequestIdDependency,
 ) -> GoldenExportResponse:
+    _require_golden_resource(
+        "golden_snapshot",
+        snapshot_id,
+        AuthorizationPermission.DATASET_PUBLISH,
+        authorization,
+        principal,
+        request_id,
+    )
     del request
     try:
         record = service.publish_export(snapshot_id)
@@ -262,7 +432,18 @@ def publish_golden_export(
 def get_golden_export(
     snapshot_id: UUID,
     service: GoldenServiceDependency,
+    principal: PrincipalDependency,
+    authorization: AuthorizationServiceDependency,
+    request_id: RequestIdDependency,
 ) -> GoldenExportResponse:
+    _require_golden_resource(
+        "golden_snapshot",
+        snapshot_id,
+        AuthorizationPermission.DATASET_READ,
+        authorization,
+        principal,
+        request_id,
+    )
     try:
         record = service.get_export(snapshot_id)
     except (EvaluationError, ArtifactStorageError, ValidationError, ValueError) as exc:
@@ -278,7 +459,18 @@ def create_golden_export_download_url(
     snapshot_id: UUID,
     export_kind: Literal["cases_jsonl", "manifest_json"],
     service: GoldenServiceDependency,
+    principal: PrincipalDependency,
+    authorization: AuthorizationServiceDependency,
+    request_id: RequestIdDependency,
 ) -> GoldenExportDownloadResponse:
+    _require_golden_resource(
+        "golden_snapshot",
+        snapshot_id,
+        AuthorizationPermission.DATASET_READ,
+        authorization,
+        principal,
+        request_id,
+    )
     try:
         record = service.get_export(snapshot_id)
         url, expires_at = service.create_export_download_url(
@@ -292,6 +484,42 @@ def create_golden_export_download_url(
         export_kind=export_kind,
         url=url,
         expires_at=expires_at,
+    )
+
+
+def _require_public_dataset(
+    authorization: AuthorizationService,
+    principal: AuthenticatedPrincipal,
+    permission: AuthorizationPermission,
+    request_id: UUID,
+    *,
+    target_type: str,
+) -> None:
+    require_scope(
+        authorization,
+        principal,
+        permission,
+        scope=ResourceScope(visibility=ArtifactVisibility.PUBLIC),
+        target_type=target_type,
+        request_id=request_id,
+    )
+
+
+def _require_golden_resource(
+    target_type: str,
+    target_id: UUID,
+    permission: AuthorizationPermission,
+    authorization: AuthorizationService,
+    principal: AuthenticatedPrincipal,
+    request_id: UUID,
+) -> None:
+    require_resource(
+        authorization,
+        principal,
+        permission,
+        target_type=target_type,
+        target_id=target_id,
+        request_id=request_id,
     )
 
 

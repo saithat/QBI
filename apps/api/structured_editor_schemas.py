@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Self
+from typing import Literal, Self
 from uuid import UUID
 
 from hiveblot_contracts import (
@@ -62,9 +62,21 @@ class StructuredEditorResponse(ContractModel):
 class SaveStructuredAnnotationRequest(ContractModel):
     reviewer_id: JsonUUID
     expected_head_revision_id: JsonUUID | None = None
+    visibility: Literal["public", "organization_private"] | None = None
+    organization_id: JsonUUID | None = None
     annotation: JsonStructuredAnnotation
     rationale: str | None = Field(default=None, max_length=10_000)
     error_codes: JsonTuple[str] = ()
+
+    @model_validator(mode="after")
+    def explicit_scope_is_complete(self) -> Self:
+        if self.visibility == "public" and self.organization_id is not None:
+            raise ValueError("public annotations cannot include organization_id")
+        if self.visibility == "organization_private" and self.organization_id is None:
+            raise ValueError("organization-private annotations require organization_id")
+        if self.visibility is None and self.organization_id is not None:
+            raise ValueError("organization_id requires an explicit visibility")
+        return self
 
 
 class AcceptPredictionRequest(ContractModel):

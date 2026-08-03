@@ -39,6 +39,7 @@ lint:
 
 typecheck:
 	uv run mypy apps hiveblot packages/contracts/src/hiveblot_contracts \
+		packages/auth/src/hiveblot_auth \
 		packages/densitometry/src/hiveblot_densitometry \
 		packages/evaluation/src/hiveblot_evaluation \
 		packages/extraction/src/hiveblot_extraction packages/storage/src/hiveblot_storage \

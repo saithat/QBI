@@ -6,7 +6,16 @@ from typing import Annotated, NoReturn
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from hiveblot_contracts import CanonicalEntityType, WesternBlotStructuredAnnotation
+from hiveblot_auth import AuthorizationService
+from hiveblot_contracts import (
+    AnnotationDocumentRecord,
+    ArtifactVisibility,
+    AuthenticatedPrincipal,
+    AuthorizationPermission,
+    CanonicalEntityType,
+    ResourceScope,
+    WesternBlotStructuredAnnotation,
+)
 from hiveblot_evaluation import (
     ConcurrencyConflict,
     DuplicateEvaluationRecord,
@@ -16,6 +25,17 @@ from hiveblot_evaluation import (
     StructuredAnnotationService,
 )
 
+from .auth_dependencies import (
+    AuthorizationServiceDependency,
+    PrincipalDependency,
+    RequestIdDependency,
+)
+from .authorization import (
+    annotation_creation_scope,
+    require_actor,
+    require_resource,
+    require_scope,
+)
 from .evaluation_schemas import (
     AnnotationDocumentResponse,
     AnnotationMutationResponse,
@@ -48,11 +68,29 @@ StructuredServiceDependency = Annotated[
 def get_structured_editor(
     case_id: UUID,
     service: StructuredServiceDependency,
+    principal: PrincipalDependency,
+    authorization: AuthorizationServiceDependency,
+    request_id: RequestIdDependency,
     reviewer_id: UUID,
     prediction_id: UUID | None = None,
 ) -> StructuredEditorResponse:
+    require_actor(principal, reviewer_id, field_name="reviewer_id")
+    require_resource(
+        authorization,
+        principal,
+        AuthorizationPermission.EVALUATION_READ,
+        target_type="evaluation_case",
+        target_id=case_id,
+        request_id=request_id,
+    )
     try:
         current = service.reviewer_annotation(case_id, reviewer_id)
+        if current is not None and not authorization.is_allowed(
+            principal,
+            AuthorizationPermission.ANNOTATION_READ,
+            scope=_document_scope(current[0]),
+        ):
+            current = None
         document, head = current if current is not None else (None, None)
         revisions = service.list_revisions(document.annotation_id) if document is not None else ()
         predictions = service.list_predictions(case_id)
@@ -147,8 +185,30 @@ def save_structured_annotation(
     case_id: UUID,
     request: SaveStructuredAnnotationRequest,
     service: StructuredServiceDependency,
+    principal: PrincipalDependency,
+    authorization: AuthorizationServiceDependency,
+    request_id: RequestIdDependency,
 ) -> AnnotationMutationResponse:
+    require_actor(principal, request.reviewer_id, field_name="reviewer_id")
+    case_scope = require_resource(
+        authorization,
+        principal,
+        AuthorizationPermission.EVALUATION_REVIEW,
+        target_type="evaluation_case",
+        target_id=case_id,
+        request_id=request_id,
+    )
     try:
+        current = service.reviewer_annotation(case_id, request.reviewer_id)
+        scope = _editor_scope(
+            current[0] if current is not None else None,
+            case_scope=case_scope,
+            requested_visibility=request.visibility,
+            requested_organization_id=request.organization_id,
+            principal=principal,
+            authorization=authorization,
+            request_id=request_id,
+        )
         document, revision = service.save(
             case_id,
             reviewer_id=request.reviewer_id,
@@ -156,6 +216,8 @@ def save_structured_annotation(
             annotation=request.annotation,
             rationale=request.rationale,
             error_codes=request.error_codes,
+            visibility=scope.visibility,
+            organization_id=scope.organization_id,
         )
         return AnnotationMutationResponse(
             annotation=AnnotationDocumentResponse.model_validate(
@@ -175,7 +237,18 @@ def accept_prediction(
     case_id: UUID,
     request: AcceptPredictionRequest,
     service: StructuredServiceDependency,
+    principal: PrincipalDependency,
+    authorization: AuthorizationServiceDependency,
+    request_id: RequestIdDependency,
 ) -> StructuredAnnotationDraftResponse:
+    require_resource(
+        authorization,
+        principal,
+        AuthorizationPermission.EVALUATION_READ,
+        target_type="evaluation_case",
+        target_id=case_id,
+        request_id=request_id,
+    )
     try:
         _, prediction = service.prediction_annotation(case_id, request.prediction_id)
         annotation = service.accept_prediction(
@@ -207,7 +280,19 @@ def undo_structured_annotation(
     annotation_id: UUID,
     request: UndoStructuredAnnotationRequest,
     service: StructuredServiceDependency,
+    principal: PrincipalDependency,
+    authorization: AuthorizationServiceDependency,
+    request_id: RequestIdDependency,
 ) -> AnnotationMutationResponse:
+    require_actor(principal, request.reviewer_id, field_name="reviewer_id")
+    require_resource(
+        authorization,
+        principal,
+        AuthorizationPermission.ANNOTATION_WRITE,
+        target_type="annotation",
+        target_id=annotation_id,
+        request_id=request_id,
+    )
     try:
         document, revision = service.undo(
             annotation_id,
@@ -229,10 +314,21 @@ def undo_structured_annotation(
 @router.get("/canonical-entities", response_model=CanonicalEntityListResponse)
 def lookup_canonical_entities(
     service: StructuredServiceDependency,
+    principal: PrincipalDependency,
+    authorization: AuthorizationServiceDependency,
+    request_id: RequestIdDependency,
     query: Annotated[str, Query(min_length=1, max_length=500)],
     entity_type: CanonicalEntityType | None = None,
     limit: Annotated[int, Query(ge=1, le=50)] = 10,
 ) -> CanonicalEntityListResponse:
+    require_scope(
+        authorization,
+        principal,
+        AuthorizationPermission.EVALUATION_READ,
+        scope=ResourceScope(visibility=ArtifactVisibility.PUBLIC),
+        target_type="canonical_entity",
+        request_id=request_id,
+    )
     return CanonicalEntityListResponse(
         query=query,
         entity_type=entity_type,
@@ -242,6 +338,62 @@ def lookup_canonical_entities(
             limit=limit,
         ),
     )
+
+
+def _document_scope(document: AnnotationDocumentRecord) -> ResourceScope:
+    return ResourceScope(
+        visibility=document.visibility,
+        organization_id=document.organization_id,
+    )
+
+
+def _editor_scope(
+    document: AnnotationDocumentRecord | None,
+    *,
+    case_scope: ResourceScope,
+    requested_visibility: str | None,
+    requested_organization_id: UUID | None,
+    principal: AuthenticatedPrincipal,
+    authorization: AuthorizationService,
+    request_id: UUID,
+) -> ResourceScope:
+    explicit_visibility = (
+        ArtifactVisibility(requested_visibility) if requested_visibility is not None else None
+    )
+    if document is not None:
+        existing = require_resource(
+            authorization,
+            principal,
+            AuthorizationPermission.ANNOTATION_WRITE,
+            target_type="annotation",
+            target_id=document.annotation_id,
+            request_id=request_id,
+        )
+        if explicit_visibility is not None and (
+            explicit_visibility is not existing.visibility
+            or requested_organization_id != existing.organization_id
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="annotation scope cannot change across revisions",
+            )
+        return existing
+    scope = annotation_creation_scope(
+        authorization,
+        principal,
+        case_scope=case_scope,
+        requested_visibility=explicit_visibility,
+        requested_organization_id=requested_organization_id,
+    )
+    require_scope(
+        authorization,
+        principal,
+        AuthorizationPermission.ANNOTATION_WRITE,
+        scope=scope,
+        target_type="annotation",
+        request_id=request_id,
+    )
+    return scope
 
 
 def _raise_http(exc: EvaluationError) -> NoReturn:

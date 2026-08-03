@@ -66,8 +66,20 @@ class CreatePipelineDefinitionRequest(ContractModel):
 class CreatePipelineRunRequest(ContractModel):
     definition_id: JsonUUID
     input_artifact_ids: JsonTuple[JsonUUID] = Field(min_length=1)
+    visibility: Literal["public", "organization_private"] | None = None
+    organization_id: JsonUUID | None = None
     configuration_json: str = Field(default="{}", min_length=2)
     trace_id: JsonUUID
+
+    @model_validator(mode="after")
+    def explicit_scope_is_complete(self) -> Self:
+        if self.visibility == "public" and self.organization_id is not None:
+            raise ValueError("public pipeline runs cannot include organization_id")
+        if self.visibility == "organization_private" and self.organization_id is None:
+            raise ValueError("organization-private pipeline runs require organization_id")
+        if self.visibility is None and self.organization_id is not None:
+            raise ValueError("organization_id requires an explicit visibility")
+        return self
 
 
 class ComponentEvidenceInput(ContractModel):
@@ -218,6 +230,8 @@ class PipelineRunResponse(ContractModel):
     pipeline_name: str
     pipeline_version: str
     status: Literal["active", "published"]
+    visibility: Literal["public", "organization_private"]
+    organization_id: UUID | None
     input_artifacts: tuple[ArtifactReferenceResponse, ...]
     configuration_json: str
     trace_id: UUID
@@ -239,6 +253,8 @@ class PipelinePublicationResponse(ContractModel):
     case_id: UUID
     pipeline_name: str
     pipeline_version: str
+    visibility: Literal["public", "organization_private"]
+    organization_id: UUID | None
     output_schema: OutputSchemaResponse
     normalized_output_json: str
     values: tuple[PublishedValueResponse, ...]

@@ -241,22 +241,4 @@ class JobWorker:
         return tuple(published)
 
     def _output_scope(self, lease: JobLease) -> tuple[ArtifactVisibility, UUID | None]:
-        records = [
-            self._artifacts.get_artifact(item.artifact.artifact_id)
-            for item in lease.specification.inputs
-        ]
-        private_organizations = {
-            item.organization_id
-            for item in records
-            if item.visibility is ArtifactVisibility.ORGANIZATION_PRIVATE
-        }
-        if len(private_organizations) > 1:
-            raise ExecutorError(
-                "job inputs from different organizations cannot produce a shared output",
-                retryable=False,
-            )
-        if private_organizations:
-            organization_id = next(iter(private_organizations))
-            assert organization_id is not None
-            return ArtifactVisibility.ORGANIZATION_PRIVATE, organization_id
-        return ArtifactVisibility.PUBLIC, None
+        return lease.specification.visibility, lease.specification.organization_id

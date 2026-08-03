@@ -28,6 +28,7 @@ def render_secret_environment(content: str) -> str:
         "VLLM_API_KEY",
         "S3_ACCESS_KEY_ID",
         "S3_SECRET_ACCESS_KEY",
+        "AUTH_TOKEN_PEPPER",
     }
     missing = sorted(name for name in required if not values.get(name))
     if missing:
@@ -41,6 +42,7 @@ def render_secret_environment(content: str) -> str:
     )
     secret_values = {
         "DATABASE_URL": database_url,
+        "AUTH_TOKEN_PEPPER": values["AUTH_TOKEN_PEPPER"],
         "VLLM_API_KEY": values["VLLM_API_KEY"],
         "S3_ACCESS_KEY_ID": values["S3_ACCESS_KEY_ID"],
         "S3_SECRET_ACCESS_KEY": values["S3_SECRET_ACCESS_KEY"],

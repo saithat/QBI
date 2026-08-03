@@ -176,6 +176,8 @@ class InMemoryEvaluationRepository:
             item
             for item in self.assignments.values()
             if item.case_id == assignment.case_id
+            and item.visibility is assignment.visibility
+            and item.organization_id == assignment.organization_id
             and item.status is ReviewerAssignmentStatus.ASSIGNED
         ]
         if any(item.reviewer_id == assignment.reviewer_id for item in active):

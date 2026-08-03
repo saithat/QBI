@@ -116,7 +116,7 @@ def test_secret_renderer_writes_only_runtime_secret_fields_with_private_mode(tmp
     renderer = _load_secret_renderer()
     source = tmp_path / "source.env"
     output = tmp_path / "runtime.env"
-    credentials = [secrets.token_urlsafe(24) for _ in range(4)]
+    credentials = [secrets.token_urlsafe(24) for _ in range(5)]
     source.write_text(
         "POSTGRES_DB=db\n"
         "POSTGRES_USER=user\n"
@@ -124,6 +124,7 @@ def test_secret_renderer_writes_only_runtime_secret_fields_with_private_mode(tmp
         f"VLLM_API_KEY={credentials[1]}\n"
         f"S3_ACCESS_KEY_ID={credentials[2]}\n"
         f"S3_SECRET_ACCESS_KEY={credentials[3]}\n"
+        f"AUTH_TOKEN_PEPPER={credentials[4]}\n"
         "UNRELATED=excluded\n",
         encoding="utf-8",
     )
@@ -133,6 +134,7 @@ def test_secret_renderer_writes_only_runtime_secret_fields_with_private_mode(tmp
     values = renderer.parse_environment(output.read_text(encoding="utf-8"))
     assert set(values) == {
         "DATABASE_URL",
+        "AUTH_TOKEN_PEPPER",
         "VLLM_API_KEY",
         "S3_ACCESS_KEY_ID",
         "S3_SECRET_ACCESS_KEY",

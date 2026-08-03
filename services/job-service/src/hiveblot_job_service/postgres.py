@@ -57,9 +57,11 @@ class PostgresJobRepository:
                     """
                     INSERT INTO jobs (
                         job_id, job_type, idempotency_key, parent_job_id, trace_id, specification,
-                        specification_sha256, status, next_eligible_at,
-                        created_at, updated_at
-                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, 'pending', %s, %s, %s)
+                        specification_sha256, visibility, organization_id, submitted_by,
+                        status, next_eligible_at, created_at, updated_at
+                    ) VALUES (
+                        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 'pending', %s, %s, %s
+                    )
                     RETURNING *
                     """,
                     (
@@ -70,6 +72,9 @@ class PostgresJobRepository:
                         specification.trace_id,
                         payload,
                         specification_sha256,
+                        specification.visibility.value,
+                        specification.organization_id,
+                        specification.submitted_by,
                         created_at,
                         created_at,
                         created_at,
@@ -110,6 +115,7 @@ class PostgresJobRepository:
         self,
         *,
         status: JobStatus | None,
+        accessible_organization_ids: tuple[UUID, ...] | None,
         limit: int,
         offset: int,
     ) -> Sequence[JobRecord]:
@@ -118,6 +124,12 @@ class PostgresJobRepository:
         if status is not None:
             clauses.append("status = %s")
             parameters.append(status.value)
+        if accessible_organization_ids is not None:
+            if accessible_organization_ids:
+                clauses.append("(visibility = 'public' OR organization_id = ANY(%s::uuid[]))")
+                parameters.append(list(accessible_organization_ids))
+            else:
+                clauses.append("visibility = 'public'")
         where = f"WHERE {' AND '.join(clauses)}" if clauses else ""
         parameters.extend((limit, offset))
         with psycopg.connect(self._database_url, row_factory=dict_row) as connection:

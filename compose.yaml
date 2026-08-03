@@ -79,6 +79,8 @@ services:
     build: .
     environment:
       HIVEBLOT_ENV: local
+      AUTHENTICATION_MODE: ${AUTHENTICATION_MODE:-disabled}
+      AUTH_TOKEN_PEPPER: ${AUTH_TOKEN_PEPPER:-}
       DATABASE_URL: postgresql://${POSTGRES_USER:-hiveblot}:${POSTGRES_PASSWORD:?Run `make local-env` first}@postgres:5432/${POSTGRES_DB:-hiveblot}
       VLLM_BASE_URL: http://vllm:8000/v1
       VLLM_MODEL: Qwen/Qwen3-VL-8B-Instruct

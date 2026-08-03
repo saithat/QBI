@@ -11,6 +11,7 @@ from hiveblot_contracts import (
     AnnotationErrorCode,
     AnnotationRevision,
     AntibodyAnnotation,
+    ArtifactVisibility,
     BiologicalContextAnnotation,
     CanonicalEntityReference,
     CanonicalEntityType,
@@ -187,6 +188,8 @@ class StructuredAnnotationService:
         annotation: WesternBlotStructuredAnnotation,
         rationale: str | None,
         error_codes: tuple[str, ...],
+        visibility: ArtifactVisibility = ArtifactVisibility.PUBLIC,
+        organization_id: UUID | None = None,
     ) -> tuple[AnnotationDocumentRecord, AnnotationRevision]:
         current = self.reviewer_annotation(case_id, reviewer_id)
         if current is None:
@@ -201,6 +204,8 @@ class StructuredAnnotationService:
                 spatial_annotations=(),
                 relationships=(),
                 structured_annotation=annotation,
+                visibility=visibility,
+                organization_id=organization_id,
             )
         document, head = current
         if expected_head_revision_id is None:

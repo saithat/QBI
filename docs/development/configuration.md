@@ -12,6 +12,11 @@ Profiles:
   rejected. Temporal address, namespace, and task queue must also be explicit. Public discovery
   must provide an identifying `DISCOVERY_USER_AGENT` rather than the local placeholder.
 
+`AUTHENTICATION_MODE` is `disabled` only for explicit local/test use. Deployed settings require
+`bearer` and an `AUTH_TOKEN_PEPPER` of at least 32 characters. The pepper keys stored token digests;
+rotating it invalidates existing bearer tokens. Keep it in the deployment secret manager, never in
+a tracked environment template. See `docs/development/authorization.md`.
+
 Artifact URL lifetimes and maximum byte size are bounded settings. HTTP source ingestion remains
 disabled until `SOURCE_INGEST_ALLOWED_HOSTS` contains an exact, comma-separated host allowlist.
 
@@ -20,7 +25,8 @@ must come from the deployment's secret and configuration systems. No code should
 `Settings.model_dump()` with unredacted secrets or pass secrets through job contracts.
 
 All tracked environment templates are credential-free. Run `make local-env` to generate a
-gitignored, mode-`0600` local file. `docker compose` requires those generated values and does not
+gitignored, mode-`0600` local file, including an independent random token pepper. `docker compose`
+requires those generated values and does not
 fall back to shared passwords or object-store keys. The generator is create-only and will not
 replace an existing `.env`.
 

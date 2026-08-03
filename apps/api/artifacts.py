@@ -6,11 +6,20 @@ from typing import Annotated, NoReturn
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
+from hiveblot_auth import (
+    AuthorizationService,
+    AuthorizationTargetNotFound,
+    InvalidAuthorizationState,
+    PermissionDenied,
+)
 from hiveblot_contracts import (
     ArtifactRecord,
     ArtifactRelationship,
     ArtifactRelationshipKind,
     ArtifactVisibility,
+    AuthenticatedPrincipal,
+    AuthorizationPermission,
+    ResourceScope,
 )
 from hiveblot_storage import (
     ArtifactNotFound,
@@ -37,6 +46,11 @@ from .artifact_schemas import (
     SourceIngestionRequest,
     UploadPartResponse,
 )
+from .auth_dependencies import (
+    AuthorizationServiceDependency,
+    PrincipalDependency,
+    RequestIdDependency,
+)
 
 router = APIRouter(prefix="/api/v1", tags=["artifacts"])
 ArtifactServiceDependency = Annotated[ArtifactService, Depends(get_artifact_service)]
@@ -50,7 +64,27 @@ ArtifactServiceDependency = Annotated[ArtifactService, Depends(get_artifact_serv
 def begin_multipart_upload(
     request: BeginMultipartUploadRequest,
     service: ArtifactServiceDependency,
+    principal: PrincipalDependency,
+    authorization: AuthorizationServiceDependency,
+    request_id: RequestIdDependency,
 ) -> BeginMultipartUploadResponse:
+    scope = _request_scope(request.visibility, request.organization_id)
+    _authorize_scope(
+        authorization,
+        principal,
+        AuthorizationPermission.ARTIFACT_WRITE,
+        scope=scope,
+        target_type="artifact_upload",
+        request_id=request_id,
+    )
+    _authorize_relationships(
+        request.relationships,
+        service=service,
+        authorization=authorization,
+        principal=principal,
+        request_id=request_id,
+        target_scope=scope,
+    )
     try:
         result = service.begin_multipart_upload(
             original_filename=request.original_filename,
@@ -61,7 +95,7 @@ def begin_multipart_upload(
             organization_id=request.organization_id,
             source_uri=request.source_uri,
             relationships=_relationships(request.relationships),
-            actor_id=None,
+            actor_id=principal.user_id,
         )
     except ArtifactStorageError as exc:
         _raise_http(exc)
@@ -82,7 +116,18 @@ def complete_multipart_upload(
     upload_id: UUID,
     request: CompleteMultipartUploadRequest,
     service: ArtifactServiceDependency,
+    principal: PrincipalDependency,
+    authorization: AuthorizationServiceDependency,
+    request_id: RequestIdDependency,
 ) -> ArtifactPublicationResponse:
+    _authorize_resource(
+        authorization,
+        principal,
+        AuthorizationPermission.ARTIFACT_WRITE,
+        target_type="artifact_upload",
+        target_id=upload_id,
+        request_id=request_id,
+    )
     try:
         result = service.complete_multipart_upload(
             upload_id,
@@ -90,7 +135,7 @@ def complete_multipart_upload(
                 CompletedPart(part_number=part.part_number, etag=part.etag)
                 for part in request.parts
             ),
-            actor_id=None,
+            actor_id=principal.user_id,
         )
     except ArtifactStorageError as exc:
         _raise_http(exc)
@@ -107,9 +152,20 @@ def complete_multipart_upload(
 def abort_multipart_upload(
     upload_id: UUID,
     service: ArtifactServiceDependency,
+    principal: PrincipalDependency,
+    authorization: AuthorizationServiceDependency,
+    request_id: RequestIdDependency,
 ) -> Response:
+    _authorize_resource(
+        authorization,
+        principal,
+        AuthorizationPermission.ARTIFACT_WRITE,
+        target_type="artifact_upload",
+        target_id=upload_id,
+        request_id=request_id,
+    )
     try:
-        service.abort_upload(upload_id, actor_id=None)
+        service.abort_upload(upload_id, actor_id=principal.user_id)
     except ArtifactStorageError as exc:
         _raise_http(exc)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
@@ -123,7 +179,27 @@ def abort_multipart_upload(
 def ingest_source(
     request: SourceIngestionRequest,
     service: ArtifactServiceDependency,
+    principal: PrincipalDependency,
+    authorization: AuthorizationServiceDependency,
+    request_id: RequestIdDependency,
 ) -> ArtifactPublicationResponse:
+    scope = _request_scope(request.visibility, request.organization_id)
+    _authorize_scope(
+        authorization,
+        principal,
+        AuthorizationPermission.ARTIFACT_WRITE,
+        scope=scope,
+        target_type="artifact",
+        request_id=request_id,
+    )
+    _authorize_relationships(
+        request.relationships,
+        service=service,
+        authorization=authorization,
+        principal=principal,
+        request_id=request_id,
+        target_scope=scope,
+    )
     try:
         result = service.ingest_from_source(
             adapter_name=request.adapter_name,
@@ -131,7 +207,7 @@ def ingest_source(
             visibility=ArtifactVisibility(request.visibility),
             organization_id=request.organization_id,
             relationships=_relationships(request.relationships),
-            actor_id=None,
+            actor_id=principal.user_id,
         )
     except ArtifactStorageError as exc:
         _raise_http(exc)
@@ -145,11 +221,21 @@ def ingest_source(
 def get_artifact(
     artifact_id: UUID,
     service: ArtifactServiceDependency,
+    principal: PrincipalDependency,
+    authorization: AuthorizationServiceDependency,
+    request_id: RequestIdDependency,
 ) -> ArtifactResponse:
     try:
-        return _artifact_response(service.get_artifact(artifact_id))
+        record = service.get_artifact(artifact_id)
     except ArtifactStorageError as exc:
         _raise_http(exc)
+    _authorize_artifact(
+        record,
+        authorization=authorization,
+        principal=principal,
+        request_id=request_id,
+    )
+    return _artifact_response(record)
 
 
 @router.post(
@@ -159,9 +245,25 @@ def get_artifact(
 def create_download_url(
     artifact_id: UUID,
     service: ArtifactServiceDependency,
+    principal: PrincipalDependency,
+    authorization: AuthorizationServiceDependency,
+    request_id: RequestIdDependency,
 ) -> SignedArtifactUrlResponse:
     try:
-        url, expires_at = service.create_download_url(artifact_id, actor_id=None)
+        record = service.get_artifact(artifact_id)
+    except ArtifactStorageError as exc:
+        _raise_http(exc)
+    _authorize_artifact(
+        record,
+        authorization=authorization,
+        principal=principal,
+        request_id=request_id,
+    )
+    try:
+        url, expires_at = service.create_download_url(
+            artifact_id,
+            actor_id=principal.user_id,
+        )
     except ArtifactStorageError as exc:
         _raise_http(exc)
     return SignedArtifactUrlResponse(
@@ -178,7 +280,20 @@ def create_download_url(
 def list_artifact_events(
     artifact_id: UUID,
     service: ArtifactServiceDependency,
+    principal: PrincipalDependency,
+    authorization: AuthorizationServiceDependency,
+    request_id: RequestIdDependency,
 ) -> ArtifactEventListResponse:
+    try:
+        record = service.get_artifact(artifact_id)
+    except ArtifactStorageError as exc:
+        _raise_http(exc)
+    _authorize_artifact(
+        record,
+        authorization=authorization,
+        principal=principal,
+        request_id=request_id,
+    )
     try:
         events = service.list_events(artifact_id)
     except ArtifactStorageError as exc:
@@ -198,6 +313,122 @@ def list_artifact_events(
             for event in events
         ),
     )
+
+
+def _request_scope(visibility: str, organization_id: UUID | None) -> ResourceScope:
+    return ResourceScope(
+        visibility=ArtifactVisibility(visibility),
+        organization_id=organization_id,
+    )
+
+
+def _authorize_artifact(
+    record: ArtifactRecord,
+    *,
+    authorization: AuthorizationService,
+    principal: AuthenticatedPrincipal,
+    request_id: UUID,
+) -> None:
+    _authorize_scope(
+        authorization,
+        principal,
+        AuthorizationPermission.ARTIFACT_READ,
+        scope=ResourceScope(
+            visibility=record.visibility,
+            organization_id=record.organization_id,
+        ),
+        target_type="artifact",
+        target_id=record.artifact_id,
+        request_id=request_id,
+        conceal=True,
+    )
+
+
+def _authorize_relationships(
+    relationships: tuple[ArtifactRelationshipInput, ...],
+    *,
+    service: ArtifactService,
+    authorization: AuthorizationService,
+    principal: AuthenticatedPrincipal,
+    request_id: UUID,
+    target_scope: ResourceScope,
+) -> None:
+    for relationship in relationships:
+        try:
+            related = service.get_artifact(relationship.related_artifact_id)
+        except ArtifactStorageError as exc:
+            _raise_http(exc)
+        _authorize_artifact(
+            related,
+            authorization=authorization,
+            principal=principal,
+            request_id=request_id,
+        )
+        if target_scope.visibility is ArtifactVisibility.PUBLIC:
+            if related.visibility is not ArtifactVisibility.PUBLIC:
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+                    detail="public artifacts cannot reference private artifacts",
+                )
+        elif (
+            related.visibility is ArtifactVisibility.ORGANIZATION_PRIVATE
+            and related.organization_id != target_scope.organization_id
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+                detail="related private artifacts must belong to the target organization",
+            )
+
+
+def _authorize_resource(
+    authorization: AuthorizationService,
+    principal: AuthenticatedPrincipal,
+    permission: AuthorizationPermission,
+    *,
+    target_type: str,
+    target_id: UUID,
+    request_id: UUID,
+) -> None:
+    try:
+        authorization.authorize_resource(
+            principal,
+            permission,
+            target_type=target_type,
+            target_id=target_id,
+            request_id=request_id,
+        )
+    except (AuthorizationTargetNotFound, PermissionDenied) as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found") from exc
+    except InvalidAuthorizationState as exc:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
+
+
+def _authorize_scope(
+    authorization: AuthorizationService,
+    principal: AuthenticatedPrincipal,
+    permission: AuthorizationPermission,
+    *,
+    scope: ResourceScope,
+    target_type: str,
+    request_id: UUID,
+    target_id: UUID | None = None,
+    conceal: bool = False,
+) -> None:
+    try:
+        authorization.authorize_scope(
+            principal,
+            permission,
+            scope=scope,
+            target_type=target_type,
+            target_id=target_id,
+            request_id=request_id,
+        )
+    except PermissionDenied as exc:
+        code = status.HTTP_404_NOT_FOUND if conceal else status.HTTP_403_FORBIDDEN
+        detail = "Not found" if conceal else "Permission denied"
+        raise HTTPException(status_code=code, detail=detail) from exc
+    except InvalidAuthorizationState as exc:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
 
 
 def _relationships(

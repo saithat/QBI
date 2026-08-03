@@ -4,6 +4,7 @@ from datetime import datetime
 from uuid import UUID
 
 from hiveblot_contracts import (
+    ArtifactVisibility,
     ReviewQueueCaseSummary,
     ReviewQueueFilters,
     SavedReviewView,
@@ -25,6 +26,7 @@ class InMemoryReviewQueueRepository:
         self,
         filters: ReviewQueueFilters,
         *,
+        accessible_organization_ids: tuple[UUID, ...] | None,
         limit: int,
         offset: int,
     ):
@@ -32,6 +34,11 @@ class InMemoryReviewQueueRepository:
         filtered = tuple(
             item
             for item in self.cases
+            if (
+                accessible_organization_ids is None
+                or item.visibility is ArtifactVisibility.PUBLIC
+                or item.organization_id in accessible_organization_ids
+            )
             if (not filters.review_statuses or item.review_status in filters.review_statuses)
             and (
                 filters.missing_provenance is None

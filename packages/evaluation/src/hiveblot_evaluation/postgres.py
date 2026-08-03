@@ -16,6 +16,7 @@ from hiveblot_contracts import (
     AnnotationErrorCode,
     AnnotationRelationship,
     AnnotationRevision,
+    ArtifactVisibility,
     BoundingRegion,
     CaseArtifactRole,
     CaseSourceArtifact,
@@ -63,15 +64,17 @@ class PostgresEvaluationRepository:
                 connection.execute(
                     """
                     INSERT INTO evaluation_cases (
-                        case_id, case_key, dataset_id, assay_type, review_status,
-                        version, created_at, updated_at
-                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                        case_id, case_key, dataset_id, assay_type, visibility, organization_id,
+                        review_status, version, created_at, updated_at
+                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                     """,
                     (
                         record.case_id,
                         record.case_key,
                         record.dataset_id,
                         record.assay_type,
+                        record.visibility.value,
+                        record.organization_id,
                         record.review_status.value,
                         record.version,
                         record.created_at,
@@ -130,6 +133,8 @@ class PostgresEvaluationRepository:
             case_key=row["case_key"],
             dataset_id=row["dataset_id"],
             assay_type="western_blot",
+            visibility=ArtifactVisibility(row["visibility"]),
+            organization_id=row["organization_id"],
             review_status=ReviewStatus(row["review_status"]),
             version=row["version"],
             source_artifacts=tuple(
@@ -254,14 +259,16 @@ class PostgresEvaluationRepository:
                 connection.execute(
                     """
                     INSERT INTO annotation_documents (
-                        annotation_id, case_id, reviewer_id, head_revision_id,
-                        revision_count, created_at, updated_at
-                    ) VALUES (%s, %s, %s, %s, %s, %s, %s)
+                        annotation_id, case_id, reviewer_id, visibility, organization_id,
+                        head_revision_id, revision_count, created_at, updated_at
+                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
                     """,
                     (
                         document.annotation_id,
                         document.case_id,
                         document.reviewer_id,
+                        document.visibility.value,
+                        document.organization_id,
                         document.head_revision_id,
                         document.revision_count,
                         document.created_at,
@@ -658,9 +665,16 @@ class PostgresEvaluationRepository:
                 active = connection.execute(
                     """
                     SELECT reviewer_id, exclusive FROM reviewer_assignments
-                    WHERE case_id = %s AND assignment_status = 'assigned'
+                    WHERE case_id = %s
+                      AND visibility = %s
+                      AND organization_id IS NOT DISTINCT FROM %s
+                      AND assignment_status = 'assigned'
                     """,
-                    (assignment.case_id,),
+                    (
+                        assignment.case_id,
+                        assignment.visibility.value,
+                        assignment.organization_id,
+                    ),
                 ).fetchall()
                 if any(row["reviewer_id"] == assignment.reviewer_id for row in active):
                     raise ConcurrencyConflict("reviewer already has an active case assignment")
@@ -669,15 +683,17 @@ class PostgresEvaluationRepository:
                 connection.execute(
                     """
                     INSERT INTO reviewer_assignments (
-                        assignment_id, case_id, reviewer_id, exclusive, assignment_status,
-                        version, assigned_at, updated_at
-                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                        assignment_id, case_id, reviewer_id, exclusive, visibility,
+                        organization_id, assignment_status, version, assigned_at, updated_at
+                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                     """,
                     (
                         assignment.assignment_id,
                         assignment.case_id,
                         assignment.reviewer_id,
                         assignment.exclusive,
+                        assignment.visibility.value,
+                        assignment.organization_id,
                         assignment.status.value,
                         assignment.version,
                         assignment.assigned_at,
@@ -693,6 +709,10 @@ class PostgresEvaluationRepository:
         except errors.ForeignKeyViolation as exc:
             raise EvaluationNotFound(
                 f"evaluation case {assignment.case_id} does not exist"
+            ) from exc
+        except (errors.CheckViolation, errors.RaiseException) as exc:
+            raise InvalidEvaluationState(
+                "review assignment violates case or organization scope"
             ) from exc
         return assignment
 
@@ -756,14 +776,16 @@ class PostgresEvaluationRepository:
                 connection.execute(
                     """
                     INSERT INTO adjudication_records (
-                        adjudication_id, case_id, adjudicator_id,
+                        adjudication_id, case_id, adjudicator_id, visibility, organization_id,
                         selected_revision_id, rationale, created_at
-                    ) VALUES (%s, %s, %s, %s, %s, %s)
+                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
                     """,
                     (
                         record.adjudication_id,
                         record.case_id,
                         record.adjudicator_id,
+                        record.visibility.value,
+                        record.organization_id,
                         record.selected_revision_id,
                         record.rationale,
                         record.created_at,
@@ -821,6 +843,8 @@ class PostgresEvaluationRepository:
                         adjudication_id=row["adjudication_id"],
                         case_id=row["case_id"],
                         adjudicator_id=row["adjudicator_id"],
+                        visibility=ArtifactVisibility(row["visibility"]),
+                        organization_id=row["organization_id"],
                         selected_revision_id=row["selected_revision_id"],
                         considered_revision_ids=tuple(item["revision_id"] for item in considered),
                         rationale=row["rationale"],
@@ -860,6 +884,8 @@ def _annotation_from_row(row: dict[str, Any]) -> AnnotationDocumentRecord:
         annotation_id=row["annotation_id"],
         case_id=row["case_id"],
         reviewer_id=row["reviewer_id"],
+        visibility=ArtifactVisibility(row["visibility"]),
+        organization_id=row["organization_id"],
         head_revision_id=row["head_revision_id"],
         revision_count=row["revision_count"],
         created_at=row["created_at"],
@@ -883,6 +909,8 @@ def _assignment_from_row(row: dict[str, Any]) -> ReviewerAssignment:
         case_id=row["case_id"],
         reviewer_id=row["reviewer_id"],
         exclusive=row["exclusive"],
+        visibility=ArtifactVisibility(row["visibility"]),
+        organization_id=row["organization_id"],
         status=ReviewerAssignmentStatus(row["assignment_status"]),
         version=row["version"],
         assigned_at=row["assigned_at"],

@@ -110,6 +110,8 @@ class WesternBlotExtractionService:
             input_artifact_ids=(artifact.artifact_id,),
             configuration_json=_json(configuration),
             trace_id=trace_id,
+            visibility=artifact.visibility,
+            organization_id=artifact.organization_id,
         )
         invocations = {item.component.component_key: item for item in detail.invocations}
         detector_invocation = invocations[DETECT_COMPONENT]
@@ -488,6 +490,11 @@ class WesternBlotExtractionService:
         if existing is not None:
             if {item.artifact_id for item in existing.source_artifacts} != {artifact.artifact_id}:
                 raise InvalidEvaluationState("stable extraction case key references another source")
+            if (
+                existing.visibility is not artifact.visibility
+                or existing.organization_id != artifact.organization_id
+            ):
+                raise InvalidEvaluationState("extraction case scope does not match its source")
             return existing
         role = (
             CaseArtifactRole.SOURCE_DOCUMENT
@@ -504,6 +511,8 @@ class WesternBlotExtractionService:
                         role=role,
                     ),
                 ),
+                visibility=artifact.visibility,
+                organization_id=artifact.organization_id,
             )
         except DuplicateEvaluationRecord:
             concurrent = self._evaluation.get_case_by_key(case_key)

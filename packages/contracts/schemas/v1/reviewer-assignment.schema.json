@@ -1,5 +1,14 @@
 {
   "$defs": {
+    "ArtifactVisibility": {
+      "description": "Visibility attached to artifact metadata and access grants.",
+      "enum": [
+        "public",
+        "organization_private"
+      ],
+      "title": "ArtifactVisibility",
+      "type": "string"
+    },
     "ReviewerAssignmentStatus": {
       "enum": [
         "assigned",
@@ -37,6 +46,19 @@
       "title": "Exclusive",
       "type": "boolean"
     },
+    "organization_id": {
+      "anyOf": [
+        {
+          "format": "uuid",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Organization Id"
+    },
     "reviewer_id": {
       "format": "uuid",
       "title": "Reviewer Id",
@@ -58,6 +80,10 @@
       "minimum": 1,
       "title": "Version",
       "type": "integer"
+    },
+    "visibility": {
+      "$ref": "#/$defs/ArtifactVisibility",
+      "default": "public"
     }
   },
   "required": [

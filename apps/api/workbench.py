@@ -6,7 +6,14 @@ from typing import Annotated, NoReturn
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from hiveblot_contracts import CaseArtifactRole, CaseSourceContext, SourceEvidenceWorkbench
+from hiveblot_auth import AuthorizationService
+from hiveblot_contracts import (
+    AuthenticatedPrincipal,
+    AuthorizationPermission,
+    CaseArtifactRole,
+    CaseSourceContext,
+    SourceEvidenceWorkbench,
+)
 from hiveblot_evaluation import (
     ConcurrencyConflict,
     EvaluationError,
@@ -15,6 +22,12 @@ from hiveblot_evaluation import (
 )
 from hiveblot_storage import ArtifactNotFound, ArtifactStorageError
 
+from .auth_dependencies import (
+    AuthorizationServiceDependency,
+    PrincipalDependency,
+    RequestIdDependency,
+)
+from .authorization import require_resource
 from .workbench_dependencies import get_workbench_service
 from .workbench_schemas import (
     PutSourceContextRequest,
@@ -37,9 +50,27 @@ WorkbenchServiceDependency = Annotated[
 def get_workbench(
     case_id: UUID,
     service: WorkbenchServiceDependency,
+    principal: PrincipalDependency,
+    authorization: AuthorizationServiceDependency,
+    request_id: RequestIdDependency,
 ) -> SourceEvidenceWorkbenchResponse:
+    _require_case(
+        case_id,
+        AuthorizationPermission.EVALUATION_READ,
+        principal,
+        authorization,
+        request_id,
+    )
     try:
-        workbench = service.get_workbench(case_id)
+        workbench = service.get_workbench(
+            case_id,
+            accessible_annotation_organization_ids=(
+                authorization.organizations_with_permission(
+                    principal,
+                    AuthorizationPermission.ANNOTATION_READ,
+                )
+            ),
+        )
     except (EvaluationError, ArtifactStorageError) as exc:
         _raise_http(exc)
     return _workbench_response(workbench)
@@ -55,7 +86,17 @@ def put_source_context(
     artifact_role: CaseArtifactRole,
     request: PutSourceContextRequest,
     service: WorkbenchServiceDependency,
+    principal: PrincipalDependency,
+    authorization: AuthorizationServiceDependency,
+    request_id: RequestIdDependency,
 ) -> SourceContextResponse:
+    _require_case(
+        case_id,
+        AuthorizationPermission.EVALUATION_REVIEW,
+        principal,
+        authorization,
+        request_id,
+    )
     try:
         context = service.put_source_context(
             case_id,
@@ -79,7 +120,17 @@ def list_source_context_revisions(
     artifact_id: UUID,
     artifact_role: CaseArtifactRole,
     service: WorkbenchServiceDependency,
+    principal: PrincipalDependency,
+    authorization: AuthorizationServiceDependency,
+    request_id: RequestIdDependency,
 ) -> SourceContextRevisionListResponse:
+    _require_case(
+        case_id,
+        AuthorizationPermission.EVALUATION_READ,
+        principal,
+        authorization,
+        request_id,
+    )
     try:
         revisions = service.list_source_context_revisions(
             case_id,
@@ -93,6 +144,23 @@ def list_source_context_revisions(
         artifact_id=artifact_id,
         artifact_role=artifact_role.value,
         revisions=tuple(_context_response(revision) for revision in revisions),
+    )
+
+
+def _require_case(
+    case_id: UUID,
+    permission: AuthorizationPermission,
+    principal: AuthenticatedPrincipal,
+    authorization: AuthorizationService,
+    request_id: UUID,
+) -> None:
+    require_resource(
+        authorization,
+        principal,
+        permission,
+        target_type="evaluation_case",
+        target_id=case_id,
+        request_id=request_id,
     )
 
 

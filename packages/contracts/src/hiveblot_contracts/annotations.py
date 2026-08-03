@@ -16,7 +16,7 @@ from pydantic import (
     model_validator,
 )
 
-from .artifacts import BoundingRegion
+from .artifacts import ArtifactVisibility, BoundingRegion
 from .base import ContractModel, Identifier
 from .evaluation import ValidationIssue
 from .identifiers import PipelineIdentifier, ProducerIdentifier
@@ -51,11 +51,26 @@ class EvaluationCaseRecord(ContractModel):
     case_key: Identifier
     dataset_id: UUID | None = None
     assay_type: Literal["western_blot"] = "western_blot"
+    visibility: ArtifactVisibility = ArtifactVisibility.PUBLIC
+    organization_id: UUID | None = None
     review_status: ReviewStatus
     version: int = Field(ge=1)
     source_artifacts: tuple[CaseSourceArtifact, ...]
     created_at: AwareDatetime
     updated_at: AwareDatetime
+
+    @model_validator(mode="after")
+    def visibility_and_timestamps_are_consistent(self) -> Self:
+        if self.visibility is ArtifactVisibility.PUBLIC and self.organization_id is not None:
+            raise ValueError("public evaluation cases cannot belong to an organization")
+        if (
+            self.visibility is ArtifactVisibility.ORGANIZATION_PRIVATE
+            and self.organization_id is None
+        ):
+            raise ValueError("organization-private evaluation cases require an organization")
+        if self.updated_at < self.created_at:
+            raise ValueError("evaluation case updated_at cannot precede created_at")
+        return self
 
 
 class PredictionEvidence(ContractModel):
@@ -203,10 +218,25 @@ class AnnotationDocumentRecord(ContractModel):
     annotation_id: UUID
     case_id: UUID
     reviewer_id: UUID
+    visibility: ArtifactVisibility = ArtifactVisibility.PUBLIC
+    organization_id: UUID | None = None
     head_revision_id: UUID
     revision_count: int = Field(ge=1)
     created_at: AwareDatetime
     updated_at: AwareDatetime
+
+    @model_validator(mode="after")
+    def visibility_and_timestamps_are_consistent(self) -> Self:
+        if self.visibility is ArtifactVisibility.PUBLIC and self.organization_id is not None:
+            raise ValueError("public annotations cannot belong to an organization")
+        if (
+            self.visibility is ArtifactVisibility.ORGANIZATION_PRIVATE
+            and self.organization_id is None
+        ):
+            raise ValueError("organization-private annotations require an organization")
+        if self.updated_at < self.created_at:
+            raise ValueError("annotation updated_at cannot precede created_at")
+        return self
 
 
 class ReviewerAssignmentStatus(StrEnum):
@@ -220,10 +250,25 @@ class ReviewerAssignment(ContractModel):
     case_id: UUID
     reviewer_id: UUID
     exclusive: bool
+    visibility: ArtifactVisibility = ArtifactVisibility.PUBLIC
+    organization_id: UUID | None = None
     status: ReviewerAssignmentStatus
     version: int = Field(ge=1)
     assigned_at: AwareDatetime
     updated_at: AwareDatetime
+
+    @model_validator(mode="after")
+    def assignment_scope_is_consistent(self) -> Self:
+        if self.visibility is ArtifactVisibility.PUBLIC and self.organization_id is not None:
+            raise ValueError("public reviewer assignments cannot belong to an organization")
+        if (
+            self.visibility is ArtifactVisibility.ORGANIZATION_PRIVATE
+            and self.organization_id is None
+        ):
+            raise ValueError("organization-private assignments require an organization")
+        if self.updated_at < self.assigned_at:
+            raise ValueError("assignment updated_at cannot precede assigned_at")
+        return self
 
 
 class AnnotationErrorCode(ContractModel):
@@ -238,6 +283,8 @@ class AdjudicationRecord(ContractModel):
     adjudication_id: UUID
     case_id: UUID
     adjudicator_id: UUID
+    visibility: ArtifactVisibility = ArtifactVisibility.PUBLIC
+    organization_id: UUID | None = None
     selected_revision_id: UUID
     considered_revision_ids: tuple[UUID, ...] = Field(min_length=2)
     rationale: str = Field(min_length=1, max_length=10_000)
@@ -249,4 +296,11 @@ class AdjudicationRecord(ContractModel):
             raise ValueError("selected revision must be included among considered revisions")
         if len(self.considered_revision_ids) != len(set(self.considered_revision_ids)):
             raise ValueError("considered revision IDs must be unique")
+        if self.visibility is ArtifactVisibility.PUBLIC and self.organization_id is not None:
+            raise ValueError("public adjudications cannot belong to an organization")
+        if (
+            self.visibility is ArtifactVisibility.ORGANIZATION_PRIVATE
+            and self.organization_id is None
+        ):
+            raise ValueError("organization-private adjudications require an organization")
         return self

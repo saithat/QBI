@@ -18,6 +18,12 @@ from .annotations import (
     ReviewerAssignment,
 )
 from .artifacts import ArtifactRecord, ArtifactReference, BoundingRegion, SourceDocumentRecord
+from .authorization import (
+    AuditEventRecord,
+    AuthenticatedPrincipal,
+    OrganizationMembership,
+    OrganizationRecord,
+)
 from .densitometry import (
     DensitometryInput,
     DensitometryReplayRecord,
@@ -103,6 +109,8 @@ CONTRACT_REGISTRY: Mapping[str, Any] = {
     "annotation-revision": AnnotationRevision,
     "artifact-record": ArtifactRecord,
     "artifact-reference": ArtifactReference,
+    "audit-event-record": AuditEventRecord,
+    "authenticated-principal": AuthenticatedPrincipal,
     "bounding-region": BoundingRegion,
     "calibration-slice": CalibrationSlice,
     "canonical-entity-reference": CanonicalEntityReference,
@@ -142,6 +150,8 @@ CONTRACT_REGISTRY: Mapping[str, Any] = {
     "job-record": JobRecord,
     "job-specification": JobSpecification,
     "model-identifier": ModelIdentifier,
+    "organization-membership": OrganizationMembership,
+    "organization-record": OrganizationRecord,
     "pipeline-identifier": PipelineIdentifier,
     "pipeline-comparison-record": PipelineComparisonRecord,
     "pipeline-definition-record": PipelineDefinitionRecord,

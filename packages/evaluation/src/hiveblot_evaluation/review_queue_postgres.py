@@ -33,6 +33,8 @@ SELECT
     evaluation.case_key,
     evaluation.dataset_id,
     evaluation.assay_type,
+    evaluation.visibility,
+    evaluation.organization_id,
     evaluation.review_status,
     evaluation.version AS case_version,
     source.source_label,
@@ -99,6 +101,11 @@ LEFT JOIN LATERAL (
     SELECT document.reviewer_id, document.updated_at
     FROM annotation_documents AS document
     WHERE document.case_id = evaluation.case_id
+      AND (
+          %(all_organizations)s
+          OR document.visibility = 'public'
+          OR document.organization_id = ANY(%(accessible_organization_ids)s::uuid[])
+      )
     ORDER BY document.updated_at DESC, document.annotation_id DESC
     LIMIT 1
 ) AS last_review ON TRUE
@@ -109,6 +116,11 @@ LEFT JOIN LATERAL (
     FROM reviewer_assignments AS assignment
     WHERE assignment.case_id = evaluation.case_id
         AND assignment.assignment_status = 'assigned'
+        AND (
+            %(all_organizations)s
+            OR assignment.visibility = 'public'
+            OR assignment.organization_id = ANY(%(accessible_organization_ids)s::uuid[])
+        )
 ) AS assignments ON TRUE
 LEFT JOIN LATERAL (
     SELECT ARRAY_AGG(DISTINCT code.category ORDER BY code.category) AS error_categories
@@ -117,6 +129,11 @@ LEFT JOIN LATERAL (
         ON revision_error.revision_id = document.head_revision_id
     JOIN annotation_error_codes AS code ON code.code = revision_error.error_code
     WHERE document.case_id = evaluation.case_id
+      AND (
+          %(all_organizations)s
+          OR document.visibility = 'public'
+          OR document.organization_id = ANY(%(accessible_organization_ids)s::uuid[])
+      )
 ) AS head_errors ON TRUE
 LEFT JOIN LATERAL (
     SELECT
@@ -139,10 +156,14 @@ class PostgresReviewQueueRepository:
         self,
         filters: ReviewQueueFilters,
         *,
+        accessible_organization_ids: tuple[UUID, ...] | None,
         limit: int,
         offset: int,
     ) -> tuple[Sequence[ReviewQueueCaseSummary], int]:
-        conditions, parameters = _filter_conditions(filters)
+        conditions, parameters = _filter_conditions(
+            filters,
+            accessible_organization_ids=accessible_organization_ids,
+        )
         where = " WHERE " + " AND ".join(conditions) if conditions else ""
         query = (
             QUEUE_CTES
@@ -156,15 +177,24 @@ class PostgresReviewQueueRepository:
             rows = connection.execute(query, parameters).fetchall()
             total = int(rows[0]["total_count"]) if rows else 0
             if not rows and offset:
-                total = self._count_queue_cases(connection, filters)
+                total = self._count_queue_cases(
+                    connection,
+                    filters,
+                    accessible_organization_ids=accessible_organization_ids,
+                )
         return tuple(_queue_case(row) for row in rows), total
 
     def _count_queue_cases(
         self,
         connection: psycopg.Connection[dict[str, Any]],
         filters: ReviewQueueFilters,
+        *,
+        accessible_organization_ids: tuple[UUID, ...] | None,
     ) -> int:
-        conditions, parameters = _filter_conditions(filters)
+        conditions, parameters = _filter_conditions(
+            filters,
+            accessible_organization_ids=accessible_organization_ids,
+        )
         where = " WHERE " + " AND ".join(conditions) if conditions else ""
         query = "SELECT COUNT(*) AS total FROM (" + QUEUE_CTES + QUEUE_SELECT + where + ") queue"
         row = connection.execute(query, parameters).fetchone()
@@ -276,9 +306,20 @@ class PostgresReviewQueueRepository:
                 _raise_view_mutation_error(connection, view_id, owner_id)
 
 
-def _filter_conditions(filters: ReviewQueueFilters) -> tuple[list[str], dict[str, object]]:
-    conditions: list[str] = []
-    parameters: dict[str, object] = {}
+def _filter_conditions(
+    filters: ReviewQueueFilters,
+    *,
+    accessible_organization_ids: tuple[UUID, ...] | None,
+) -> tuple[list[str], dict[str, object]]:
+    all_organizations = accessible_organization_ids is None
+    conditions: list[str] = [
+        "(%(all_organizations)s OR evaluation.visibility = 'public' "
+        "OR evaluation.organization_id = ANY(%(accessible_organization_ids)s::uuid[]))"
+    ]
+    parameters: dict[str, object] = {
+        "all_organizations": all_organizations,
+        "accessible_organization_ids": list(accessible_organization_ids or ()),
+    }
     if filters.review_statuses:
         conditions.append("evaluation.review_status = ANY(%(review_statuses)s)")
         parameters["review_statuses"] = [status.value for status in filters.review_statuses]
@@ -312,12 +353,26 @@ def _filter_conditions(filters: ReviewQueueFilters) -> tuple[list[str], dict[str
                     SELECT 1 FROM annotation_documents AS reviewer_document
                     WHERE reviewer_document.case_id = evaluation.case_id
                         AND reviewer_document.reviewer_id = %(reviewer_id)s
+                        AND (
+                            %(all_organizations)s
+                            OR reviewer_document.visibility = 'public'
+                            OR reviewer_document.organization_id = ANY(
+                                %(accessible_organization_ids)s::uuid[]
+                            )
+                        )
                 )
                 OR EXISTS (
                     SELECT 1 FROM reviewer_assignments AS reviewer_assignment
                     WHERE reviewer_assignment.case_id = evaluation.case_id
                         AND reviewer_assignment.reviewer_id = %(reviewer_id)s
                         AND reviewer_assignment.assignment_status = 'assigned'
+                        AND (
+                            %(all_organizations)s
+                            OR reviewer_assignment.visibility = 'public'
+                            OR reviewer_assignment.organization_id = ANY(
+                                %(accessible_organization_ids)s::uuid[]
+                            )
+                        )
                 )
             )"""
         )
@@ -356,6 +411,8 @@ def _queue_case(row: dict[str, Any]) -> ReviewQueueCaseSummary:
         case_key=row["case_key"],
         dataset_id=row["dataset_id"],
         assay_type=row["assay_type"],
+        visibility=row["visibility"],
+        organization_id=row["organization_id"],
         review_status=ReviewStatus(row["review_status"]),
         case_version=row["case_version"],
         source_label=row["source_label"],

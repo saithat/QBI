@@ -9,7 +9,7 @@ from uuid import UUID
 
 from pydantic import AwareDatetime, Field, StringConstraints, model_validator
 
-from .artifacts import ArtifactReference
+from .artifacts import ArtifactReference, ArtifactVisibility
 from .base import ContractModel, Identifier, MediaType
 from .evaluation import ValidationIssue
 from .identifiers import PipelineIdentifier
@@ -102,6 +102,9 @@ class JobSpecification(ContractModel):
     inputs: tuple[NamedArtifactReference, ...] = ()
     expected_outputs: tuple[ExpectedJobOutput, ...] = ()
     trace_id: UUID
+    visibility: ArtifactVisibility = ArtifactVisibility.PUBLIC
+    organization_id: UUID | None = None
+    submitted_by: UUID | None = None
     parent_job_id: UUID | None = None
     submitted_at: AwareDatetime
     timeout_seconds: int = Field(gt=0, le=604800)
@@ -124,6 +127,13 @@ class JobSpecification(ContractModel):
             raise ValueError("initial retry backoff cannot exceed maximum retry backoff")
         if self.parent_job_id == self.job_id:
             raise ValueError("a job cannot be its own parent")
+        if self.visibility is ArtifactVisibility.PUBLIC and self.organization_id is not None:
+            raise ValueError("public jobs cannot belong to an organization")
+        if (
+            self.visibility is ArtifactVisibility.ORGANIZATION_PRIVATE
+            and self.organization_id is None
+        ):
+            raise ValueError("organization-private jobs require an organization")
         return self
 
 

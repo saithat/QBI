@@ -6,10 +6,18 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Annotated, Any
+from uuid import UUID
 
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import Depends, FastAPI, HTTPException, Query
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
+from hiveblot_auth import AuthorizationService
+from hiveblot_contracts import (
+    ArtifactVisibility,
+    AuthenticatedPrincipal,
+    AuthorizationPermission,
+    ResourceScope,
+)
 
 import hiveblot
 from hiveblot import db
@@ -19,6 +27,14 @@ from hiveblot.persistence_models import WesternBlotRecordListRow
 from hiveblot.settings import get_settings
 
 from .artifacts import router as artifact_router
+from .auth import router as auth_router
+from .auth_dependencies import (
+    AuthorizationServiceDependency,
+    PrincipalDependency,
+    RequestIdDependency,
+    get_current_principal,
+)
+from .authorization import require_scope
 from .densitometry import router as densitometry_router
 from .discovery import router as discovery_router
 from .evaluation import router as evaluation_router
@@ -52,19 +68,21 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
 
 
 app = FastAPI(title="HiveBlot", version="0.1.0", lifespan=lifespan)
-app.include_router(artifact_router)
-app.include_router(densitometry_router)
-app.include_router(discovery_router)
-app.include_router(evaluation_router)
-app.include_router(extraction_router)
-app.include_router(golden_router)
-app.include_router(job_router)
-app.include_router(metrics_router)
-app.include_router(pipeline_router)
-app.include_router(review_queue_router)
-app.include_router(spatial_editor_router)
-app.include_router(structured_editor_router)
-app.include_router(workbench_router)
+authenticated = [Depends(get_current_principal)]
+app.include_router(auth_router, dependencies=authenticated)
+app.include_router(artifact_router, dependencies=authenticated)
+app.include_router(densitometry_router, dependencies=authenticated)
+app.include_router(discovery_router, dependencies=authenticated)
+app.include_router(evaluation_router, dependencies=authenticated)
+app.include_router(extraction_router, dependencies=authenticated)
+app.include_router(golden_router, dependencies=authenticated)
+app.include_router(job_router, dependencies=authenticated)
+app.include_router(metrics_router, dependencies=authenticated)
+app.include_router(pipeline_router, dependencies=authenticated)
+app.include_router(review_queue_router, dependencies=authenticated)
+app.include_router(spatial_editor_router, dependencies=authenticated)
+app.include_router(structured_editor_router, dependencies=authenticated)
+app.include_router(workbench_router, dependencies=authenticated)
 INDEX = Path(hiveblot.__file__).with_name("static") / "index.html"
 REVIEW_WEB = Path(__file__).resolve().parents[1] / "web"
 app.mount("/review/assets", StaticFiles(directory=REVIEW_WEB / "assets"), name="review-assets")
@@ -148,12 +166,22 @@ async def health() -> JSONResponse:
 
 @app.get("/api/records", response_model=RecordListResponse)
 def records(
+    principal: PrincipalDependency,
+    authorization: AuthorizationServiceDependency,
+    request_id: RequestIdDependency,
     target: str | None = None,
     sample: str | None = None,
     condition: str | None = None,
     limit: Annotated[int, Query(ge=1, le=200)] = 100,
     offset: Annotated[int, Query(ge=0)] = 0,
 ) -> RecordListResponse:
+    _require_legacy_permission(
+        principal,
+        authorization,
+        request_id,
+        AuthorizationPermission.SEARCH,
+        target_type="legacy_record_search",
+    )
     settings = get_settings()
     filters = RecordSearchCriteria(target=target, sample=sample, condition=condition)
     results = db.list_records(
@@ -170,7 +198,19 @@ def records(
 
 
 @app.get("/api/records/{record_id}", response_model=RecordDetailResponse)
-def record_detail(record_id: int) -> RecordDetailResponse:
+def record_detail(
+    record_id: int,
+    principal: PrincipalDependency,
+    authorization: AuthorizationServiceDependency,
+    request_id: RequestIdDependency,
+) -> RecordDetailResponse:
+    _require_legacy_permission(
+        principal,
+        authorization,
+        request_id,
+        AuthorizationPermission.EVALUATION_READ,
+        target_type="legacy_record",
+    )
     settings = get_settings()
     record = db.get_record(settings.database_url, record_id)
     if record is None:
@@ -193,7 +233,19 @@ def record_detail(record_id: int) -> RecordDetailResponse:
 
 
 @app.get("/api/records/{record_id}/image", include_in_schema=False)
-def record_image(record_id: int) -> FileResponse:
+def record_image(
+    record_id: int,
+    principal: PrincipalDependency,
+    authorization: AuthorizationServiceDependency,
+    request_id: RequestIdDependency,
+) -> FileResponse:
+    _require_legacy_permission(
+        principal,
+        authorization,
+        request_id,
+        AuthorizationPermission.ARTIFACT_READ,
+        target_type="legacy_record_image",
+    )
     settings = get_settings()
     record = db.get_record(settings.database_url, record_id)
     if record is None:
@@ -206,7 +258,19 @@ def record_image(record_id: int) -> FileResponse:
 
 
 @app.post("/api/search", response_model=SearchResponse)
-async def search(request: SearchRequest) -> SearchResponse:
+async def search(
+    request: SearchRequest,
+    principal: PrincipalDependency,
+    authorization: AuthorizationServiceDependency,
+    request_id: RequestIdDependency,
+) -> SearchResponse:
+    _require_legacy_permission(
+        principal,
+        authorization,
+        request_id,
+        AuthorizationPermission.SEARCH,
+        target_type="legacy_record_search",
+    )
     settings = get_settings()
     client = LocalModelClient(settings)
     try:
@@ -226,6 +290,24 @@ async def search(request: SearchRequest) -> SearchResponse:
         filters=_filters_response(filters),
         count=len(results),
         results=tuple(_record_response(record) for record in results),
+    )
+
+
+def _require_legacy_permission(
+    principal: AuthenticatedPrincipal,
+    authorization: AuthorizationService,
+    request_id: UUID,
+    permission: AuthorizationPermission,
+    *,
+    target_type: str,
+) -> None:
+    require_scope(
+        authorization,
+        principal,
+        permission,
+        scope=ResourceScope(visibility=ArtifactVisibility.PUBLIC),
+        target_type=target_type,
+        request_id=request_id,
     )
 
 

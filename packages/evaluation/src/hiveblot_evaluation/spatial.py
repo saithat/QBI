@@ -10,6 +10,7 @@ from hiveblot_contracts import (
     AnnotationErrorCode,
     AnnotationRelationship,
     AnnotationRevision,
+    ArtifactVisibility,
     GeometryDiffStatus,
     ObservationState,
     PredictionDocument,
@@ -97,6 +98,8 @@ class SpatialAnnotationService:
         annotation_set: SpatialAnnotationSet,
         rationale: str | None,
         error_codes: tuple[str, ...],
+        visibility: ArtifactVisibility = ArtifactVisibility.PUBLIC,
+        organization_id: UUID | None = None,
     ) -> tuple[AnnotationDocumentRecord, AnnotationRevision]:
         annotation_set = _validated_annotation_set(
             annotation_set.model_dump(mode="python"),
@@ -115,6 +118,8 @@ class SpatialAnnotationService:
                 field_annotations=(),
                 spatial_annotations=annotation_set.spatial_annotations,
                 relationships=spatial_relationships,
+                visibility=visibility,
+                organization_id=organization_id,
             )
         document, head = current
         if expected_head_revision_id is None:

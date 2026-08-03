@@ -6,6 +6,7 @@ import pytest
 from pydantic import ValidationError
 
 from hiveblot.settings import (
+    AuthenticationMode,
     DiscoverySettings,
     FetchWorkerSettings,
     RuntimeEnvironment,
@@ -115,6 +116,8 @@ def test_deployed_settings_require_explicit_non_local_values(monkeypatch) -> Non
         "TEMPORAL_ADDRESS",
         "TEMPORAL_NAMESPACE",
         "TEMPORAL_TASK_QUEUE",
+        "AUTHENTICATION_MODE",
+        "AUTH_TOKEN_PEPPER",
     ):
         monkeypatch.delenv(name, raising=False)
 
@@ -137,5 +140,7 @@ def test_deployed_settings_require_explicit_non_local_values(monkeypatch) -> Non
             temporal_namespace="hiveblot",
             temporal_task_queue="hiveblot-platform-v1",
             discovery_user_agent="HiveBlot/0.1 (+https://example.test/contact)",
+            authentication_mode=AuthenticationMode.BEARER,
+            auth_token_pepper=token_urlsafe(32),
             _env_file=None,
         )

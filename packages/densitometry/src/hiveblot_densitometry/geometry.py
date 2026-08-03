@@ -9,6 +9,7 @@ from uuid import UUID
 from hiveblot_contracts import (
     ArtifactRecord,
     ArtifactReference,
+    ArtifactVisibility,
     BoundingRegion,
     CaseArtifactRole,
     DensitometryBandRegion,
@@ -38,6 +39,8 @@ class DensitometryGeometryOption:
     geometry: DensitometryGeometryReference
     label: str
     created_at: datetime
+    visibility: ArtifactVisibility
+    organization_id: UUID | None
     image_artifact: ArtifactRecord
     image_kind: DensitometryImageKind
     lanes: tuple[DensitometryLaneRegion, ...]
@@ -65,7 +68,14 @@ class DensitometryGeometryResolver:
             if self._artifacts.get_artifact(source.artifact_id).media_type.startswith("image/")
         )
         snapshots: list[
-            tuple[DensitometryGeometryReference, str, datetime, SpatialAnnotationSet]
+            tuple[
+                DensitometryGeometryReference,
+                str,
+                datetime,
+                ArtifactVisibility,
+                UUID | None,
+                SpatialAnnotationSet,
+            ]
         ] = []
         for prediction in self._evaluation.list_predictions(case_id):
             try:
@@ -77,6 +87,8 @@ class DensitometryGeometryResolver:
                     PredictionGeometryReference(prediction_id=prediction.prediction_id),
                     f"Prediction {prediction.producer.name} {prediction.producer.version}",
                     prediction.created_at,
+                    case.visibility,
+                    case.organization_id,
                     annotation_set,
                 )
             )
@@ -87,11 +99,13 @@ class DensitometryGeometryResolver:
                         ReviewerGeometryReference(annotation_revision_id=revision.revision_id),
                         f"Reviewer revision {revision.revision_number}",
                         revision.created_at,
+                        document.visibility,
+                        document.organization_id,
                         self._spatial.annotation_set(revision),
                     )
                 )
         options: list[DensitometryGeometryOption] = []
-        for geometry, label, created_at, annotation_set in snapshots:
+        for geometry, label, created_at, visibility, organization_id, annotation_set in snapshots:
             for source, artifact in image_sources:
                 try:
                     lanes, targets, bands, controls = _regions(
@@ -105,6 +119,8 @@ class DensitometryGeometryResolver:
                         geometry=geometry,
                         label=label,
                         created_at=created_at,
+                        visibility=visibility,
+                        organization_id=organization_id,
                         image_artifact=artifact,
                         image_kind=_image_kind(source.role),
                         lanes=lanes,

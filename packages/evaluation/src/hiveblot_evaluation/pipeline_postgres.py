@@ -101,8 +101,8 @@ class PostgresPipelineRunRepository:
                     """
                     INSERT INTO pipeline_runs (
                         run_id, case_id, definition_id, run_status, run_json,
-                        trace_id, created_at, updated_at
-                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                        trace_id, visibility, organization_id, created_at, updated_at
+                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                     """,
                     (
                         run.run_id,
@@ -111,6 +111,8 @@ class PostgresPipelineRunRepository:
                         run.status.value,
                         Jsonb(run.model_dump(mode="json")),
                         run.trace_id,
+                        run.visibility.value,
+                        run.organization_id,
                         run.created_at,
                         run.updated_at,
                     ),
@@ -253,8 +255,9 @@ class PostgresPipelineRunRepository:
                 connection.execute(
                     """
                     INSERT INTO pipeline_publications (
-                        publication_id, run_id, case_id, publication_json, trace_id, created_at
-                    ) VALUES (%s, %s, %s, %s, %s, %s)
+                        publication_id, run_id, case_id, publication_json, trace_id,
+                        visibility, organization_id, created_at
+                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
                     """,
                     (
                         publication.publication_id,
@@ -262,6 +265,8 @@ class PostgresPipelineRunRepository:
                         publication.case_id,
                         Jsonb(publication.model_dump(mode="json")),
                         publication.trace_id,
+                        publication.visibility.value,
+                        publication.organization_id,
                         publication.created_at,
                     ),
                 )

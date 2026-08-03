@@ -34,6 +34,15 @@
       "title": "ArtifactReference",
       "type": "object"
     },
+    "ArtifactVisibility": {
+      "description": "Visibility attached to artifact metadata and access grants.",
+      "enum": [
+        "public",
+        "organization_private"
+      ],
+      "title": "ArtifactVisibility",
+      "type": "string"
+    },
     "BoundingRegion": {
       "additionalProperties": false,
       "description": "A rectangle expressed in immutable source-image pixel coordinates.",
@@ -570,6 +579,19 @@
           "title": "Normalized Output Json",
           "type": "string"
         },
+        "organization_id": {
+          "anyOf": [
+            {
+              "format": "uuid",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Organization Id"
+        },
         "output_artifacts": {
           "default": [],
           "items": {
@@ -610,6 +632,10 @@
           "minItems": 1,
           "title": "Values",
           "type": "array"
+        },
+        "visibility": {
+          "$ref": "#/$defs/ArtifactVisibility",
+          "default": "public"
         }
       },
       "required": [
@@ -658,6 +684,19 @@
           "title": "Input Artifacts",
           "type": "array"
         },
+        "organization_id": {
+          "anyOf": [
+            {
+              "format": "uuid",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Organization Id"
+        },
         "pipeline": {
           "$ref": "#/$defs/PipelineIdentifier"
         },
@@ -682,6 +721,10 @@
           "format": "date-time",
           "title": "Updated At",
           "type": "string"
+        },
+        "visibility": {
+          "$ref": "#/$defs/ArtifactVisibility",
+          "default": "public"
         }
       },
       "required": [

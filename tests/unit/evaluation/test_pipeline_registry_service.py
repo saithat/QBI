@@ -1,5 +1,5 @@
 from datetime import UTC, datetime
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import pytest
 from hiveblot_contracts import (
@@ -30,7 +30,7 @@ from tests.fakes.workbench import InMemoryArtifactLookup
 NOW = datetime(2026, 8, 2, 21, tzinfo=UTC)
 
 
-def make_service():
+def make_service(*, extra_artifacts: tuple[ArtifactRecord, ...] = ()):
     input_artifact = _artifact("a", "source.png")
     output_artifact = _artifact("b", "normalized.json", media_type="application/json")
     evaluation = EvaluationService(InMemoryEvaluationRepository(), clock=lambda: NOW)
@@ -48,7 +48,7 @@ def make_service():
     service = PipelineRegistryService(
         repository,
         evaluation,
-        InMemoryArtifactLookup((input_artifact, output_artifact)),
+        InMemoryArtifactLookup((input_artifact, output_artifact, *extra_artifacts)),
         clock=lambda: NOW,
     )
     fixture = pipeline_definition()
@@ -224,6 +224,84 @@ def test_publication_links_final_values_to_their_producing_invocation() -> None:
         )
 
 
+def test_private_run_on_public_case_keeps_outputs_and_publication_private() -> None:
+    organization_id = uuid4()
+    private_output = _artifact(
+        "c",
+        "private-normalized.json",
+        media_type="application/json",
+        visibility=ArtifactVisibility.ORGANIZATION_PRIVATE,
+        organization_id=organization_id,
+    )
+    service, _, case, input_artifact, public_output, definition = make_service(
+        extra_artifacts=(private_output,)
+    )
+    detail = service.create_run(
+        case.case_id,
+        definition_id=definition.definition_id,
+        input_artifact_ids=(input_artifact.artifact_id,),
+        configuration_json='{"mode":"private"}',
+        trace_id=uuid4(),
+        visibility=ArtifactVisibility.ORGANIZATION_PRIVATE,
+        organization_id=organization_id,
+    )
+    first, second = detail.invocations
+    service.complete_success(
+        first.invocation_id,
+        output_schema=first.component.output_schema,
+        raw_output_json="raw regions",
+        normalized_output_json=SpatialAnnotationSet().model_dump_json(),
+        output_artifact_ids=(),
+        evidence=(),
+        validation_issues=(),
+        latency_ms=2,
+        cost_microusd=0,
+    )
+    normalized = structured_annotation("TP53").model_dump_json()
+    with pytest.raises(InvalidEvaluationState, match="pipeline run"):
+        service.complete_success(
+            second.invocation_id,
+            output_schema=second.component.output_schema,
+            raw_output_json="raw metadata",
+            normalized_output_json=normalized,
+            output_artifact_ids=(public_output.artifact_id,),
+            evidence=(),
+            validation_issues=(),
+            latency_ms=8,
+            cost_microusd=4,
+        )
+    completed = service.complete_success(
+        second.invocation_id,
+        output_schema=second.component.output_schema,
+        raw_output_json="raw metadata",
+        normalized_output_json=normalized,
+        output_artifact_ids=(private_output.artifact_id,),
+        evidence=(),
+        validation_issues=(),
+        latency_ms=8,
+        cost_microusd=4,
+    )
+    publication = service.publish(
+        detail.run.run_id,
+        output_schema=completed.component.output_schema,
+        normalized_output_json=normalized,
+        values=(
+            PublishedPipelineValue(
+                field_path="",
+                producing_invocation_id=completed.invocation_id,
+                result_path="",
+                value_json=normalized,
+            ),
+        ),
+        output_artifact_ids=(private_output.artifact_id,),
+        trace_id=uuid4(),
+    )
+
+    assert detail.run.visibility is ArtifactVisibility.ORGANIZATION_PRIVATE
+    assert publication.visibility is ArtifactVisibility.ORGANIZATION_PRIVATE
+    assert publication.organization_id == organization_id
+
+
 def test_downstream_component_cannot_complete_before_its_parent() -> None:
     service, _, case, input_artifact, _, definition = make_service()
     detail = create_run(service, case, input_artifact, definition)
@@ -245,7 +323,14 @@ def test_downstream_component_cannot_complete_before_its_parent() -> None:
         )
 
 
-def _artifact(seed: str, filename: str, *, media_type: str = "image/png") -> ArtifactRecord:
+def _artifact(
+    seed: str,
+    filename: str,
+    *,
+    media_type: str = "image/png",
+    visibility: ArtifactVisibility = ArtifactVisibility.PUBLIC,
+    organization_id: UUID | None = None,
+) -> ArtifactRecord:
     return ArtifactRecord(
         artifact_id=uuid4(),
         sha256=seed * 64,
@@ -254,6 +339,7 @@ def _artifact(seed: str, filename: str, *, media_type: str = "image/png") -> Art
         original_filename=filename,
         source_uri=f"urn:hiveblot:test:{filename}",
         acquisition_method=ArtifactAcquisitionMethod.SOURCE_ADAPTER,
-        visibility=ArtifactVisibility.PUBLIC,
+        visibility=visibility,
+        organization_id=organization_id,
         created_at=NOW,
     )

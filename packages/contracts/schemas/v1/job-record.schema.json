@@ -34,6 +34,15 @@
       "title": "ArtifactReference",
       "type": "object"
     },
+    "ArtifactVisibility": {
+      "description": "Visibility attached to artifact metadata and access grants.",
+      "enum": [
+        "public",
+        "organization_private"
+      ],
+      "title": "ArtifactVisibility",
+      "type": "string"
+    },
     "CancelledJobResult": {
       "additionalProperties": false,
       "properties": {
@@ -393,6 +402,19 @@
           "title": "Message Type",
           "type": "string"
         },
+        "organization_id": {
+          "anyOf": [
+            {
+              "format": "uuid",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Organization Id"
+        },
         "parent_job_id": {
           "anyOf": [
             {
@@ -442,6 +464,19 @@
           "title": "Submitted At",
           "type": "string"
         },
+        "submitted_by": {
+          "anyOf": [
+            {
+              "format": "uuid",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Submitted By"
+        },
         "timeout_seconds": {
           "exclusiveMinimum": 0,
           "maximum": 604800,
@@ -452,6 +487,10 @@
           "format": "uuid",
           "title": "Trace Id",
           "type": "string"
+        },
+        "visibility": {
+          "$ref": "#/$defs/ArtifactVisibility",
+          "default": "public"
         }
       },
       "required": [

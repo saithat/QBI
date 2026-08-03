@@ -146,6 +146,10 @@ class GoldenDatasetService:
         if any(item.case_id == case_id for item in detail.members):
             raise InvalidEvaluationState(f"case {case_id} already belongs to the dataset")
         case = self._evaluation.get_case(case_id)
+        if case.visibility is not ArtifactVisibility.PUBLIC:
+            raise InvalidEvaluationState(
+                "organization-private cases cannot enter a shared golden dataset"
+            )
         sources = tuple(
             GoldenCaseSourceArtifact(
                 role=source.role,
@@ -468,7 +472,11 @@ class GoldenDatasetService:
         case_id: UUID,
         selected_revision_id: UUID | None,
     ) -> UUID:
-        documents = tuple(self._evaluation.list_annotations(case_id))
+        documents = tuple(
+            document
+            for document in self._evaluation.list_annotations(case_id)
+            if document.visibility is ArtifactVisibility.PUBLIC
+        )
         if not documents:
             raise InvalidEvaluationState("reviewed state requires an annotation revision")
         selected = selected_revision_id
@@ -488,13 +496,21 @@ class GoldenDatasetService:
         document = self._evaluation.get_annotation(revision.annotation_id)
         if document.case_id != case_id:
             raise InvalidEvaluationState("selected annotation revision belongs to another case")
+        if document.visibility is not ArtifactVisibility.PUBLIC:
+            raise InvalidEvaluationState(
+                "organization-private annotations cannot enter a shared golden dataset"
+            )
         if document.head_revision_id != revision_id:
             raise InvalidEvaluationState(
                 "selected reviewer revision must be a current document head"
             )
 
     def _latest_adjudication(self, case_id: UUID) -> AdjudicationRecord:
-        records = tuple(self._evaluation.list_adjudications(case_id))
+        records = tuple(
+            record
+            for record in self._evaluation.list_adjudications(case_id)
+            if record.visibility is ArtifactVisibility.PUBLIC
+        )
         if not records:
             raise InvalidEvaluationState("adjudicated state requires an adjudication record")
         return max(records, key=lambda item: (item.created_at, str(item.adjudication_id)))
@@ -503,10 +519,18 @@ class GoldenDatasetService:
         if member.selected_revision_id is None:
             raise InvalidEvaluationState("gold member is missing its selected revision")
         case = self._evaluation.get_case(member.case_id)
+        if case.visibility is not ArtifactVisibility.PUBLIC:
+            raise InvalidEvaluationState(
+                "organization-private cases cannot enter a shared frozen snapshot"
+            )
         revision = self._evaluation.get_revision(member.selected_revision_id)
         document = self._evaluation.get_annotation(revision.annotation_id)
         if document.case_id != case.case_id:
             raise InvalidEvaluationState("gold revision no longer belongs to its evaluation case")
+        if document.visibility is not ArtifactVisibility.PUBLIC:
+            raise InvalidEvaluationState(
+                "organization-private annotations cannot enter a shared frozen snapshot"
+            )
         adjudication = next(
             (
                 item
@@ -515,6 +539,10 @@ class GoldenDatasetService:
             ),
             None,
         )
+        if adjudication is not None and adjudication.visibility is not ArtifactVisibility.PUBLIC:
+            raise InvalidEvaluationState(
+                "organization-private adjudication cannot enter a shared frozen snapshot"
+            )
         transitions = tuple(self._repository.list_transitions(member.dataset_id, member.case_id))
         gold_transition = next(
             (item for item in reversed(transitions) if item.to_state is GoldenCaseState.GOLD),

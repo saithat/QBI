@@ -1,0 +1,121 @@
+{
+  "$defs": {
+    "OrganizationMembership": {
+      "additionalProperties": false,
+      "properties": {
+        "active": {
+          "title": "Active",
+          "type": "boolean"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "membership_id": {
+          "format": "uuid",
+          "title": "Membership Id",
+          "type": "string"
+        },
+        "organization_id": {
+          "format": "uuid",
+          "title": "Organization Id",
+          "type": "string"
+        },
+        "role": {
+          "$ref": "#/$defs/OrganizationRole"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/SchemaVersion",
+          "default": "1.0"
+        },
+        "updated_at": {
+          "format": "date-time",
+          "title": "Updated At",
+          "type": "string"
+        },
+        "user_id": {
+          "format": "uuid",
+          "title": "User Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "membership_id",
+        "organization_id",
+        "user_id",
+        "role",
+        "active",
+        "created_at",
+        "updated_at"
+      ],
+      "title": "OrganizationMembership",
+      "type": "object"
+    },
+    "OrganizationRole": {
+      "enum": [
+        "organization_administrator",
+        "scientist",
+        "reviewer",
+        "read_only"
+      ],
+      "title": "OrganizationRole",
+      "type": "string"
+    },
+    "SchemaVersion": {
+      "const": "1.0",
+      "type": "string"
+    }
+  },
+  "$id": "urn:hiveblot:schema:v1:authenticated-principal",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "authenticated_at": {
+      "format": "date-time",
+      "title": "Authenticated At",
+      "type": "string"
+    },
+    "memberships": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/OrganizationMembership"
+      },
+      "title": "Memberships",
+      "type": "array"
+    },
+    "schema_version": {
+      "$ref": "#/$defs/SchemaVersion",
+      "default": "1.0"
+    },
+    "system": {
+      "default": false,
+      "title": "System",
+      "type": "boolean"
+    },
+    "token_id": {
+      "anyOf": [
+        {
+          "format": "uuid",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Token Id"
+    },
+    "user_id": {
+      "format": "uuid",
+      "title": "User Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "user_id",
+    "authenticated_at"
+  ],
+  "title": "AuthenticatedPrincipal",
+  "type": "object"
+}

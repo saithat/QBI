@@ -22,6 +22,7 @@ class ReviewQueueRepository(Protocol):
         self,
         filters: ReviewQueueFilters,
         *,
+        accessible_organization_ids: tuple[UUID, ...] | None,
         limit: int,
         offset: int,
     ) -> tuple[Sequence[ReviewQueueCaseSummary], int]: ...
@@ -66,6 +67,7 @@ class ReviewQueueService:
         self,
         filters: ReviewQueueFilters,
         *,
+        accessible_organization_ids: tuple[UUID, ...] | None = None,
         limit: int,
         offset: int,
     ) -> ReviewQueuePage:
@@ -73,7 +75,12 @@ class ReviewQueueService:
             raise ValueError("limit must be between 1 and 200")
         if offset < 0:
             raise ValueError("offset must be non-negative")
-        items, total = self._repository.list_queue_cases(filters, limit=limit, offset=offset)
+        items, total = self._repository.list_queue_cases(
+            filters,
+            accessible_organization_ids=accessible_organization_ids,
+            limit=limit,
+            offset=offset,
+        )
         next_offset = offset + len(items) if offset + len(items) < total else None
         return ReviewQueuePage(
             filters=filters,

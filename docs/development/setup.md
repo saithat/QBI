@@ -71,6 +71,8 @@ HIVEBLOT_RUN_LIVE_DISCOVERY=1 \
   uv run pytest tests/integration/test_discovery_live.py
 HIVEBLOT_RUN_LIVE_FETCH=1 \
   uv run pytest tests/integration/test_fetching_live.py
+HIVEBLOT_RUN_LIVE_AUTH=1 \
+  uv run pytest tests/integration/test_authorization_live.py
 ```
 
 See `docs/development/artifact-storage.md` for the multipart API flow and
@@ -81,6 +83,8 @@ See `docs/development/artifact-storage.md` for the multipart API flow and
 Public-source adapter, frontier, and scheduled-discovery verification is documented in
 `docs/development/public-discovery.md`. Queue-backed acquisition, shared source limits, and KEDA
 verification are documented in `docs/development/distributed-fetching.md`.
+Identity bootstrap, bearer-mode setup, tenant isolation, audit inspection, and the isolated live
+authorization test are documented in `docs/development/authorization.md`.
 
 For the local Kubernetes runtime and the full artifact-to-Kubernetes-Job acceptance smoke, see
 `docs/development/kubernetes.md`.

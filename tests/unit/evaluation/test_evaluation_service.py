@@ -4,6 +4,7 @@ from uuid import uuid4
 import pytest
 from hiveblot_contracts import (
     AnnotationRelationship,
+    ArtifactVisibility,
     BoundingRegion,
     CaseArtifactRole,
     CaseSourceArtifact,
@@ -245,6 +246,36 @@ def test_invalid_error_code_and_exclusive_assignment_conflicts_fail_safely() -> 
     service.assign_reviewer(case.case_id, reviewer_id=uuid4(), exclusive=True)
     with pytest.raises(ConcurrencyConflict):
         service.assign_reviewer(case.case_id, reviewer_id=uuid4(), exclusive=False)
+
+
+def test_public_case_assignments_lock_independently_per_organization() -> None:
+    service, _, case, _ = make_service()
+    organization_a = uuid4()
+    organization_b = uuid4()
+    reviewer_a = uuid4()
+    service.assign_reviewer(
+        case.case_id,
+        reviewer_id=reviewer_a,
+        exclusive=True,
+        visibility=ArtifactVisibility.ORGANIZATION_PRIVATE,
+        organization_id=organization_a,
+    )
+    service.assign_reviewer(
+        case.case_id,
+        reviewer_id=uuid4(),
+        exclusive=True,
+        visibility=ArtifactVisibility.ORGANIZATION_PRIVATE,
+        organization_id=organization_b,
+    )
+
+    with pytest.raises(ConcurrencyConflict):
+        service.assign_reviewer(
+            case.case_id,
+            reviewer_id=uuid4(),
+            exclusive=True,
+            visibility=ArtifactVisibility.ORGANIZATION_PRIVATE,
+            organization_id=organization_a,
+        )
 
 
 def test_normalized_prediction_must_be_json_but_raw_output_need_not_be() -> None:

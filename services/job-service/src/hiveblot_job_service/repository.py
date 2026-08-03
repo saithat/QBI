@@ -33,6 +33,7 @@ class JobRepository(Protocol):
         self,
         *,
         status: JobStatus | None,
+        accessible_organization_ids: tuple[UUID, ...] | None,
         limit: int,
         offset: int,
     ) -> Sequence[JobRecord]: ...

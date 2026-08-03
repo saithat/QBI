@@ -13,6 +13,7 @@ from hiveblot_contracts import (
     AnnotationErrorCode,
     AnnotationRelationship,
     AnnotationRevision,
+    ArtifactVisibility,
     CaseSourceArtifact,
     EvaluationCaseRecord,
     FieldAnnotation,
@@ -56,6 +57,8 @@ class EvaluationService:
         case_key: str,
         dataset_id: UUID | None,
         source_artifacts: tuple[CaseSourceArtifact, ...],
+        visibility: ArtifactVisibility = ArtifactVisibility.PUBLIC,
+        organization_id: UUID | None = None,
     ) -> EvaluationCaseRecord:
         if not source_artifacts:
             raise InvalidEvaluationState("an evaluation case requires at least one source artifact")
@@ -68,6 +71,8 @@ class EvaluationService:
                 case_id=uuid4(),
                 case_key=case_key,
                 dataset_id=dataset_id,
+                visibility=visibility,
+                organization_id=organization_id,
                 review_status=ReviewStatus.UNREVIEWED,
                 version=1,
                 source_artifacts=source_artifacts,
@@ -176,6 +181,8 @@ class EvaluationService:
         spatial_annotations: tuple[SpatialAnnotation, ...],
         relationships: tuple[AnnotationRelationship, ...],
         structured_annotation: WesternBlotStructuredAnnotation | None = None,
+        visibility: ArtifactVisibility = ArtifactVisibility.PUBLIC,
+        organization_id: UUID | None = None,
     ) -> tuple[AnnotationDocumentRecord, AnnotationRevision]:
         self.get_case(case_id)
         self._validate_error_codes(error_codes)
@@ -201,6 +208,8 @@ class EvaluationService:
             annotation_id=annotation_id,
             case_id=case_id,
             reviewer_id=reviewer_id,
+            visibility=visibility,
+            organization_id=organization_id,
             head_revision_id=revision_id,
             revision_count=1,
             created_at=now,
@@ -294,8 +303,19 @@ class EvaluationService:
         *,
         reviewer_id: UUID,
         exclusive: bool,
+        visibility: ArtifactVisibility | None = None,
+        organization_id: UUID | None = None,
     ) -> ReviewerAssignment:
-        self.get_case(case_id)
+        case = self.get_case(case_id)
+        assignment_visibility = visibility or case.visibility
+        assignment_organization_id = case.organization_id if visibility is None else organization_id
+        if case.visibility is ArtifactVisibility.ORGANIZATION_PRIVATE and (
+            assignment_visibility is not case.visibility
+            or assignment_organization_id != case.organization_id
+        ):
+            raise InvalidEvaluationState(
+                "private evaluation cases require assignments in the same organization"
+            )
         now = self._clock()
         return self._repository.create_assignment(
             ReviewerAssignment(
@@ -303,6 +323,8 @@ class EvaluationService:
                 case_id=case_id,
                 reviewer_id=reviewer_id,
                 exclusive=exclusive,
+                visibility=assignment_visibility,
+                organization_id=assignment_organization_id,
                 status=ReviewerAssignmentStatus.ASSIGNED,
                 version=1,
                 assigned_at=now,
@@ -338,6 +360,8 @@ class EvaluationService:
         selected_revision_id: UUID,
         considered_revision_ids: tuple[UUID, ...],
         rationale: str,
+        visibility: ArtifactVisibility = ArtifactVisibility.PUBLIC,
+        organization_id: UUID | None = None,
     ) -> AdjudicationRecord:
         case = self.get_case(case_id)
         if case.review_status is not ReviewStatus.NEEDS_ADJUDICATION:
@@ -348,10 +372,19 @@ class EvaluationService:
             raise InvalidEvaluationState("all adjudicated revisions must belong to the case")
         if len({document.reviewer_id for document in documents}) < 2:
             raise InvalidEvaluationState("adjudication requires revisions from two reviewers")
+        if any(
+            document.visibility is not visibility or document.organization_id != organization_id
+            for document in documents
+        ):
+            raise InvalidEvaluationState(
+                "adjudicated annotation revisions must share the adjudication scope"
+            )
         record = AdjudicationRecord(
             adjudication_id=uuid4(),
             case_id=case_id,
             adjudicator_id=adjudicator_id,
+            visibility=visibility,
+            organization_id=organization_id,
             selected_revision_id=selected_revision_id,
             considered_revision_ids=considered_revision_ids,
             rationale=rationale,

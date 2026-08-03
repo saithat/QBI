@@ -7,7 +7,12 @@ from uuid import UUID
 
 import requests
 from fastapi import APIRouter, Depends, HTTPException, status
+from hiveblot_auth import AuthorizationService
 from hiveblot_contracts import (
+    ArtifactVisibility,
+    AuthenticatedPrincipal,
+    AuthorizationPermission,
+    ResourceScope,
     WesternBlotComponentReplayRecord,
     WesternBlotExtractionConfiguration,
     WesternBlotExtractionImplementation,
@@ -29,6 +34,12 @@ from hiveblot_extraction import (
 from hiveblot_storage import ArtifactNotFound, ArtifactStorageError
 from pydantic import ValidationError
 
+from .auth_dependencies import (
+    AuthorizationServiceDependency,
+    PrincipalDependency,
+    RequestIdDependency,
+)
+from .authorization import require_resource, require_scope
 from .extraction_dependencies import get_western_blot_extraction_service
 from .extraction_schemas import (
     ReplayWesternBlotComponentRequest,
@@ -52,7 +63,11 @@ ExtractionServiceDependency = Annotated[
 )
 def list_western_blot_extraction_implementations(
     service: ExtractionServiceDependency,
+    principal: PrincipalDependency,
+    authorization: AuthorizationServiceDependency,
+    request_id: RequestIdDependency,
 ) -> WesternBlotImplementationListResponse:
+    _require_public_read(authorization, principal, request_id)
     return WesternBlotImplementationListResponse(
         implementations=tuple(
             _implementation_response(item) for item in service.list_implementations()
@@ -68,7 +83,27 @@ def list_western_blot_extraction_implementations(
 def start_western_blot_extraction(
     request: StartWesternBlotExtractionRequest,
     service: ExtractionServiceDependency,
+    principal: PrincipalDependency,
+    authorization: AuthorizationServiceDependency,
+    request_id: RequestIdDependency,
 ) -> WesternBlotExtractionRunResponse:
+    source_scope = require_resource(
+        authorization,
+        principal,
+        AuthorizationPermission.ARTIFACT_READ,
+        target_type="artifact",
+        target_id=request.source_artifact_id,
+        request_id=request_id,
+    )
+    require_scope(
+        authorization,
+        principal,
+        AuthorizationPermission.EVALUATION_MANAGE,
+        scope=source_scope,
+        target_type="western_blot_extraction",
+        target_id=request.source_artifact_id,
+        request_id=request_id,
+    )
     try:
         record = service.run(
             request.source_artifact_id,
@@ -104,7 +139,18 @@ def replay_western_blot_extraction_component(
     invocation_id: UUID,
     request: ReplayWesternBlotComponentRequest,
     service: ExtractionServiceDependency,
+    principal: PrincipalDependency,
+    authorization: AuthorizationServiceDependency,
+    request_id: RequestIdDependency,
 ) -> WesternBlotComponentReplayResponse:
+    require_resource(
+        authorization,
+        principal,
+        AuthorizationPermission.EVALUATION_MANAGE,
+        target_type="component_invocation",
+        target_id=invocation_id,
+        request_id=request_id,
+    )
     try:
         record = service.replay_component(invocation_id, trace_id=request.trace_id)
     except (
@@ -117,6 +163,21 @@ def replay_western_blot_extraction_component(
     ) as exc:
         _raise_http(exc)
     return _replay_response(record)
+
+
+def _require_public_read(
+    authorization: AuthorizationService,
+    principal: AuthenticatedPrincipal,
+    request_id: UUID,
+) -> None:
+    require_scope(
+        authorization,
+        principal,
+        AuthorizationPermission.EVALUATION_READ,
+        scope=ResourceScope(visibility=ArtifactVisibility.PUBLIC),
+        target_type="western_blot_extraction_implementation",
+        request_id=request_id,
+    )
 
 
 def _implementation_response(

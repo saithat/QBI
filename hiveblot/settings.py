@@ -23,6 +23,11 @@ class JobExecutorKind(StrEnum):
     KUBERNETES_JOB = "kubernetes-job"
 
 
+class AuthenticationMode(StrEnum):
+    DISABLED = "disabled"
+    BEARER = "bearer"
+
+
 class DiscoverySettings(BaseSettings):
     """Least-privilege settings for the bounded public-discovery worker."""
 
@@ -379,6 +384,14 @@ class Settings(BaseSettings):
         validation_alias="DATABASE_URL",
         min_length=1,
     )
+    authentication_mode: AuthenticationMode = Field(
+        default=AuthenticationMode.DISABLED,
+        validation_alias="AUTHENTICATION_MODE",
+    )
+    auth_token_pepper: SecretStr = Field(
+        default=SecretStr(""),
+        validation_alias="AUTH_TOKEN_PEPPER",
+    )
     vllm_base_url: str = Field(
         default="http://localhost:8000/v1",
         validation_alias="VLLM_BASE_URL",
@@ -680,11 +693,18 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def deployed_configuration_must_be_explicit_and_safe(self) -> Self:
+        if (
+            self.authentication_mode is AuthenticationMode.BEARER
+            and len(self.auth_token_pepper.get_secret_value()) < 32
+        ):
+            raise ValueError("AUTH_TOKEN_PEPPER must contain at least 32 characters")
         if self.environment is not RuntimeEnvironment.DEPLOYED:
             return self
 
         required = {
             "database_url",
+            "authentication_mode",
+            "auth_token_pepper",
             "vllm_base_url",
             "vllm_model",
             "vllm_model_revision",
@@ -703,6 +723,9 @@ class Settings(BaseSettings):
             raise ValueError(
                 "deployed configuration requires explicit values for: " + ", ".join(missing)
             )
+
+        if self.authentication_mode is not AuthenticationMode.BEARER:
+            raise ValueError("deployed API configuration requires bearer authentication")
 
         key = self.vllm_api_key.get_secret_value().strip().casefold()
         if key in {"", "local", "replace-me", "changeme"}:

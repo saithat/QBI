@@ -1,7 +1,9 @@
 from datetime import UTC, datetime
+from uuid import uuid4
 
 import httpx
 import pytest
+from hiveblot_auth import AuthorizationService, InMemoryAuthorizationRepository
 from pydantic import ValidationError
 
 from apps.api.main import app
@@ -39,7 +41,16 @@ def test_api_entrypoint_serves_versioned_strict_responses(monkeypatch) -> None:
     )
     api.get_settings.cache_clear()
 
-    response = api.records(limit=1)
+    authorization = AuthorizationService(
+        InMemoryAuthorizationRepository(),
+        token_pepper="p" * 32,
+    )
+    response = api.records(
+        limit=1,
+        principal=authorization.system_principal(),
+        authorization=authorization,
+        request_id=uuid4(),
+    )
     openapi = app.openapi()
 
     assert response.schema_version == "1.0"

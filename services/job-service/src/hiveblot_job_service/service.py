@@ -12,6 +12,7 @@ from uuid import UUID, uuid4
 from hiveblot_contracts import (
     ArtifactRecord,
     ArtifactReference,
+    ArtifactVisibility,
     FailedJobResult,
     JobAttemptRecord,
     JobLease,
@@ -46,13 +47,29 @@ class JobService:
 
     def submit(self, specification: JobSpecification) -> JobRecord:
         if specification.parent_job_id is not None:
-            self.get_job(specification.parent_job_id)
+            parent = self.get_job(specification.parent_job_id)
+            if (
+                parent.specification.visibility is not specification.visibility
+                or parent.specification.organization_id != specification.organization_id
+            ):
+                raise InvalidJobState("child job scope must match its parent")
         for named in specification.inputs:
-            canonical = self._artifact_reference(named.artifact.artifact_id)
+            artifact = self._artifacts.get_artifact(named.artifact.artifact_id)
+            canonical = _reference(artifact)
             if named.artifact != canonical:
                 raise InvalidJobState(
                     f"job input {named.name!r} does not match canonical artifact metadata"
                 )
+            if (
+                specification.visibility is ArtifactVisibility.PUBLIC
+                and artifact.visibility is not ArtifactVisibility.PUBLIC
+            ):
+                raise InvalidJobState("public jobs may reference only public artifacts")
+            if (
+                artifact.visibility is ArtifactVisibility.ORGANIZATION_PRIVATE
+                and artifact.organization_id != specification.organization_id
+            ):
+                raise InvalidJobState("private job inputs must belong to the job organization")
         rendered = _json(specification)
         return self._repository.submit(
             specification,
@@ -70,11 +87,13 @@ class JobService:
         self,
         *,
         status: JobStatus | None = None,
+        accessible_organization_ids: tuple[UUID, ...] | None = None,
         limit: int = 100,
         offset: int = 0,
     ) -> Sequence[JobRecord]:
         return self._repository.list_jobs(
             status=status,
+            accessible_organization_ids=accessible_organization_ids,
             limit=max(1, min(limit, 200)),
             offset=max(0, offset),
         )
@@ -193,15 +212,18 @@ class JobService:
             if missing:
                 raise InvalidJobState("successful job result is missing a required output")
         for named in result.outputs:
-            canonical = self._artifact_reference(named.artifact.artifact_id)
+            artifact = self._artifacts.get_artifact(named.artifact.artifact_id)
+            self._validate_artifact_scope(lease.specification, artifact)
+            canonical = _reference(artifact)
             if canonical != named.artifact:
                 raise InvalidJobState("job output does not match canonical artifact metadata")
             if canonical.media_type != expected[named.name].media_type:
                 raise InvalidJobState("job output media type does not match its declaration")
-        if result.logs_artifact is not None and result.logs_artifact != self._artifact_reference(
-            result.logs_artifact.artifact_id
-        ):
-            raise InvalidJobState("job logs artifact metadata is not canonical")
+        if result.logs_artifact is not None:
+            logs = self._artifacts.get_artifact(result.logs_artifact.artifact_id)
+            self._validate_artifact_scope(lease.specification, logs)
+            if result.logs_artifact != _reference(logs):
+                raise InvalidJobState("job logs artifact metadata is not canonical")
 
     def _next_status(self, lease: JobLease, result: JobResult) -> JobStatus:
         cancel_requested = self._repository.is_cancel_requested(lease.job_id)
@@ -226,13 +248,26 @@ class JobService:
         return JobStatus.PENDING
 
     def _artifact_reference(self, artifact_id: UUID) -> ArtifactReference:
-        artifact = self._artifacts.get_artifact(artifact_id)
-        return ArtifactReference(
-            artifact_id=artifact.artifact_id,
-            sha256=artifact.sha256,
-            media_type=artifact.media_type,
-            byte_size=artifact.byte_size,
-        )
+        return _reference(self._artifacts.get_artifact(artifact_id))
+
+    @staticmethod
+    def _validate_artifact_scope(
+        specification: JobSpecification,
+        artifact: ArtifactRecord,
+    ) -> None:
+        if artifact.visibility is not specification.visibility:
+            raise InvalidJobState("job output artifact visibility must match the job")
+        if artifact.organization_id != specification.organization_id:
+            raise InvalidJobState("job output artifact organization must match the job")
+
+
+def _reference(artifact: ArtifactRecord) -> ArtifactReference:
+    return ArtifactReference(
+        artifact_id=artifact.artifact_id,
+        sha256=artifact.sha256,
+        media_type=artifact.media_type,
+        byte_size=artifact.byte_size,
+    )
 
 
 def _retry_delay_seconds(specification: JobSpecification, attempt: int) -> float:

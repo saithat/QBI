@@ -52,7 +52,17 @@ class CaseSourceInput(ContractModel):
 class CreateEvaluationCaseRequest(ContractModel):
     case_key: str = Field(min_length=1, max_length=200)
     dataset_id: JsonUUID | None = None
+    visibility: Literal["public", "organization_private"] = "public"
+    organization_id: JsonUUID | None = None
     source_artifacts: JsonTuple[CaseSourceInput] = Field(min_length=1)
+
+    @model_validator(mode="after")
+    def visibility_matches_organization(self) -> Self:
+        if self.visibility == "public" and self.organization_id is not None:
+            raise ValueError("public evaluation cases cannot include organization_id")
+        if self.visibility == "organization_private" and self.organization_id is None:
+            raise ValueError("organization-private cases require organization_id")
+        return self
 
 
 class UpdateCaseStatusRequest(ContractModel):
@@ -73,6 +83,8 @@ class EvaluationCaseResponse(ContractModel):
     case_key: str
     dataset_id: UUID | None
     assay_type: Literal["western_blot"]
+    visibility: Literal["public", "organization_private"]
+    organization_id: UUID | None
     review_status: ReviewStatus
     version: int = Field(ge=1)
     source_artifacts: tuple[CaseSourceResponse, ...]
@@ -342,6 +354,18 @@ class AnnotationSnapshotInput(ContractModel):
 
 class CreateAnnotationRequest(AnnotationSnapshotInput):
     reviewer_id: JsonUUID
+    visibility: Literal["public", "organization_private"] | None = None
+    organization_id: JsonUUID | None = None
+
+    @model_validator(mode="after")
+    def visibility_matches_organization(self) -> Self:
+        if self.visibility == "public" and self.organization_id is not None:
+            raise ValueError("public annotations cannot include organization_id")
+        if self.visibility == "organization_private" and self.organization_id is None:
+            raise ValueError("organization-private annotations require organization_id")
+        if self.visibility is None and self.organization_id is not None:
+            raise ValueError("organization_id requires an explicit visibility")
+        return self
 
 
 class AppendAnnotationRevisionRequest(AnnotationSnapshotInput):
@@ -410,6 +434,8 @@ class AnnotationDocumentResponse(ContractModel):
     annotation_id: UUID
     case_id: UUID
     reviewer_id: UUID
+    visibility: Literal["public", "organization_private"]
+    organization_id: UUID | None
     head_revision_id: UUID
     revision_count: int
     created_at: datetime
@@ -434,6 +460,18 @@ class RevisionListResponse(ContractModel):
 class CreateAssignmentRequest(ContractModel):
     reviewer_id: JsonUUID
     exclusive: bool = False
+    visibility: Literal["public", "organization_private"] | None = None
+    organization_id: JsonUUID | None = None
+
+    @model_validator(mode="after")
+    def explicit_scope_is_complete(self) -> Self:
+        if self.visibility == "public" and self.organization_id is not None:
+            raise ValueError("public assignments cannot include organization_id")
+        if self.visibility == "organization_private" and self.organization_id is None:
+            raise ValueError("organization-private assignments require organization_id")
+        if self.visibility is None and self.organization_id is not None:
+            raise ValueError("organization_id requires an explicit visibility")
+        return self
 
 
 class UpdateAssignmentRequest(ContractModel):
@@ -446,6 +484,8 @@ class AssignmentResponse(ContractModel):
     case_id: UUID
     reviewer_id: UUID
     exclusive: bool
+    visibility: Literal["public", "organization_private"]
+    organization_id: UUID | None
     status: ReviewerAssignmentStatus
     version: int
     assigned_at: datetime
@@ -477,6 +517,8 @@ class ErrorCodeListResponse(ContractModel):
 
 class CreateAdjudicationRequest(ContractModel):
     adjudicator_id: JsonUUID
+    visibility: Literal["public", "organization_private"] | None = None
+    organization_id: JsonUUID | None = None
     selected_revision_id: JsonUUID
     considered_revision_ids: JsonTuple[JsonUUID] = Field(min_length=2)
     rationale: str = Field(min_length=1, max_length=10_000)
@@ -487,6 +529,12 @@ class CreateAdjudicationRequest(ContractModel):
             raise ValueError("selected revision must be included among considered revisions")
         if len(self.considered_revision_ids) != len(set(self.considered_revision_ids)):
             raise ValueError("considered revision IDs must be unique")
+        if self.visibility == "public" and self.organization_id is not None:
+            raise ValueError("public adjudications cannot include organization_id")
+        if self.visibility == "organization_private" and self.organization_id is None:
+            raise ValueError("organization-private adjudications require organization_id")
+        if self.visibility is None and self.organization_id is not None:
+            raise ValueError("organization_id requires an explicit visibility")
         return self
 
 
@@ -494,6 +542,8 @@ class AdjudicationResponse(ContractModel):
     adjudication_id: UUID
     case_id: UUID
     adjudicator_id: UUID
+    visibility: Literal["public", "organization_private"]
+    organization_id: UUID | None
     selected_revision_id: UUID
     considered_revision_ids: tuple[UUID, ...]
     rationale: str

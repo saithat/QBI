@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 from datetime import datetime
-from typing import Annotated, Self
+from typing import Annotated, Literal, Self
 from uuid import UUID
 
 from hiveblot_contracts import (
@@ -72,9 +72,21 @@ class SpatialEditorResponse(ContractModel):
 class SaveSpatialAnnotationRequest(ContractModel):
     reviewer_id: JsonUUID
     expected_head_revision_id: JsonUUID | None = None
+    visibility: Literal["public", "organization_private"] | None = None
+    organization_id: JsonUUID | None = None
     annotation_set: JsonSpatialAnnotationSet
     rationale: str | None = Field(default=None, max_length=10_000)
     error_codes: JsonTuple[str] = ()
+
+    @model_validator(mode="after")
+    def explicit_scope_is_complete(self) -> Self:
+        if self.visibility == "public" and self.organization_id is not None:
+            raise ValueError("public annotations cannot include organization_id")
+        if self.visibility == "organization_private" and self.organization_id is None:
+            raise ValueError("organization-private annotations require organization_id")
+        if self.visibility is None and self.organization_id is not None:
+            raise ValueError("organization_id requires an explicit visibility")
+        return self
 
 
 class AcceptSpatialPredictionRequest(ContractModel):

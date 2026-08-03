@@ -26,7 +26,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: fetch-worker
-          image: hiveblot:prd-016
+          image: hiveblot:prd-017
           imagePullPolicy: IfNotPresent
           command: ["hiveblot-fetch-worker"]
           env:

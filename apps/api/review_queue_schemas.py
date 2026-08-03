@@ -60,6 +60,8 @@ class ReviewQueueCaseResponse(ContractModel):
     case_key: str
     dataset_id: UUID | None
     assay_type: Literal["western_blot"]
+    visibility: Literal["public", "organization_private"]
+    organization_id: UUID | None
     review_status: ReviewStatusValue
     case_version: int
     source_label: str | None

@@ -6,7 +6,11 @@ from typing import Annotated, NoReturn
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from hiveblot_auth import AuthorizationService
 from hiveblot_contracts import (
+    ArtifactVisibility,
+    AuthenticatedPrincipal,
+    AuthorizationPermission,
     BoundingRegion,
     CalibrationCategory,
     CalibrationSlice,
@@ -36,6 +40,7 @@ from hiveblot_contracts import (
     ReferenceObservationDocument,
     ReferenceRegionObservation,
     ReferenceRelationshipObservation,
+    ResourceScope,
     ReviewStatus,
     SpatialAnnotationType,
     ToolIdentifier,
@@ -49,6 +54,12 @@ from hiveblot_evaluation import (
 )
 from pydantic import BaseModel, ValidationError
 
+from .auth_dependencies import (
+    AuthorizationServiceDependency,
+    PrincipalDependency,
+    RequestIdDependency,
+)
+from .authorization import require_resource, require_scope
 from .evaluation_schemas import BoundingRegionInput
 from .metrics_dependencies import get_evaluation_metrics_service
 from .metrics_schemas import (
@@ -87,7 +98,35 @@ MetricsServiceDependency = Annotated[
 def create_metric_run(
     request: CreateMetricRunRequest,
     service: MetricsServiceDependency,
+    principal: PrincipalDependency,
+    authorization: AuthorizationServiceDependency,
+    request_id: RequestIdDependency,
 ) -> MetricRunResponse:
+    _require_metric_permission(
+        authorization,
+        principal,
+        AuthorizationPermission.DATASET_PUBLISH,
+        request_id,
+        target_type="evaluation_metric_run",
+    )
+    case_ids = {
+        *(item.case_id for item in request.dataset.cases),
+        *(item.case_id for item in request.submission.cases),
+    }
+    for case_id in case_ids:
+        case_scope = require_resource(
+            authorization,
+            principal,
+            AuthorizationPermission.EVALUATION_READ,
+            target_type="evaluation_case",
+            target_id=case_id,
+            request_id=request_id,
+        )
+        if case_scope.visibility is not ArtifactVisibility.PUBLIC:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+                detail="shared metric runs cannot include organization-private cases",
+            )
     try:
         record = service.score(_scoring_input(request))
     except (EvaluationError, ValidationError) as exc:
@@ -98,12 +137,22 @@ def create_metric_run(
 @router.get("/evaluation-metric-runs", response_model=MetricRunListResponse)
 def list_metric_runs(
     service: MetricsServiceDependency,
+    principal: PrincipalDependency,
+    authorization: AuthorizationServiceDependency,
+    request_id: RequestIdDependency,
     dataset_name: str | None = None,
     dataset_version: str | None = None,
     pipeline_name: str | None = None,
     pipeline_version: str | None = None,
     limit: Annotated[int, Query(ge=1, le=200)] = 50,
 ) -> MetricRunListResponse:
+    _require_metric_permission(
+        authorization,
+        principal,
+        AuthorizationPermission.DATASET_READ,
+        request_id,
+        target_type="evaluation_metric_run",
+    )
     try:
         records = service.list(
             dataset_name=dataset_name,
@@ -124,7 +173,18 @@ def list_metric_runs(
 def get_metric_run(
     metric_run_id: UUID,
     service: MetricsServiceDependency,
+    principal: PrincipalDependency,
+    authorization: AuthorizationServiceDependency,
+    request_id: RequestIdDependency,
 ) -> MetricRunResponse:
+    _require_metric_permission(
+        authorization,
+        principal,
+        AuthorizationPermission.DATASET_READ,
+        request_id,
+        target_type="evaluation_metric_run",
+        target_id=metric_run_id,
+    )
     try:
         record = service.get(metric_run_id)
     except (EvaluationError, ValidationError) as exc:
@@ -140,7 +200,26 @@ def get_metric_case(
     metric_run_id: UUID,
     case_id: UUID,
     service: MetricsServiceDependency,
+    principal: PrincipalDependency,
+    authorization: AuthorizationServiceDependency,
+    request_id: RequestIdDependency,
 ) -> MetricCaseDetailResponse:
+    _require_metric_permission(
+        authorization,
+        principal,
+        AuthorizationPermission.DATASET_READ,
+        request_id,
+        target_type="evaluation_metric_run",
+        target_id=metric_run_id,
+    )
+    require_resource(
+        authorization,
+        principal,
+        AuthorizationPermission.EVALUATION_READ,
+        target_type="evaluation_case",
+        target_id=case_id,
+        request_id=request_id,
+    )
     try:
         record = service.get_case(metric_run_id, case_id)
     except (EvaluationError, ValidationError) as exc:
@@ -155,8 +234,19 @@ def get_metric_case(
 def get_metric_calibration(
     metric_run_id: UUID,
     service: MetricsServiceDependency,
+    principal: PrincipalDependency,
+    authorization: AuthorizationServiceDependency,
+    request_id: RequestIdDependency,
     category: CalibrationCategory | None = None,
 ) -> CalibrationSliceResponse:
+    _require_metric_permission(
+        authorization,
+        principal,
+        AuthorizationPermission.DATASET_READ,
+        request_id,
+        target_type="evaluation_metric_run",
+        target_id=metric_run_id,
+    )
     try:
         record = service.calibration(metric_run_id, category=category)
     except (EvaluationError, ValidationError) as exc:
@@ -172,7 +262,17 @@ def get_metric_calibration(
 def compare_pipeline_runs(
     request: CompareMetricRunsRequest,
     service: MetricsServiceDependency,
+    principal: PrincipalDependency,
+    authorization: AuthorizationServiceDependency,
+    request_id: RequestIdDependency,
 ) -> PipelineComparisonResponse:
+    _require_metric_permission(
+        authorization,
+        principal,
+        AuthorizationPermission.DATASET_READ,
+        request_id,
+        target_type="evaluation_pipeline_comparison",
+    )
     try:
         comparison = service.compare(
             request.baseline_metric_run_id,
@@ -182,6 +282,26 @@ def compare_pipeline_runs(
     except (EvaluationError, ValidationError) as exc:
         _raise_http(exc)
     return _comparison_response(comparison)
+
+
+def _require_metric_permission(
+    authorization: AuthorizationService,
+    principal: AuthenticatedPrincipal,
+    permission: AuthorizationPermission,
+    request_id: UUID,
+    *,
+    target_type: str,
+    target_id: UUID | None = None,
+) -> None:
+    require_scope(
+        authorization,
+        principal,
+        permission,
+        scope=ResourceScope(visibility=ArtifactVisibility.PUBLIC),
+        target_type=target_type,
+        target_id=target_id,
+        request_id=request_id,
+    )
 
 
 def _scoring_input(request: CreateMetricRunRequest) -> EvaluationScoringInput:

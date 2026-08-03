@@ -17,6 +17,7 @@ GENERATED_KEYS = (
     "S3_ACCESS_KEY_ID",
     "S3_SECRET_ACCESS_KEY",
     "VLLM_API_KEY",
+    "AUTH_TOKEN_PEPPER",
 )
 
 
@@ -46,6 +47,7 @@ def render_local_environment(template: str) -> str:
     object_store_user = "hiveblot-local-" + secrets.token_hex(8)
     object_store_password = secrets.token_urlsafe(32)
     model_api_key = secrets.token_urlsafe(32)
+    auth_token_pepper = secrets.token_urlsafe(48)
     postgres_user = template_values.get("POSTGRES_USER", "hiveblot")
     postgres_database = template_values.get("POSTGRES_DB", "hiveblot")
 
@@ -61,6 +63,7 @@ def render_local_environment(template: str) -> str:
         "S3_ACCESS_KEY_ID": object_store_user,
         "S3_SECRET_ACCESS_KEY": object_store_password,
         "VLLM_API_KEY": model_api_key,
+        "AUTH_TOKEN_PEPPER": auth_token_pepper,
     }
 
     rendered: list[str] = []

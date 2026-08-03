@@ -9,6 +9,7 @@ from uuid import UUID
 from pydantic import AwareDatetime, Field, model_validator
 
 from .annotations import ReviewStatus
+from .artifacts import ArtifactVisibility
 from .base import ContractModel, Identifier
 
 
@@ -53,6 +54,8 @@ class ReviewQueueCaseSummary(ContractModel):
     case_key: Identifier
     dataset_id: UUID | None
     assay_type: Literal["western_blot"]
+    visibility: ArtifactVisibility = ArtifactVisibility.PUBLIC
+    organization_id: UUID | None = None
     review_status: ReviewStatus
     case_version: int = Field(ge=1)
     source_label: str | None
@@ -71,6 +74,17 @@ class ReviewQueueCaseSummary(ContractModel):
     last_reviewer_id: UUID | None
     last_reviewed_at: AwareDatetime | None
     updated_at: AwareDatetime
+
+    @model_validator(mode="after")
+    def visibility_matches_organization(self) -> Self:
+        if self.visibility is ArtifactVisibility.PUBLIC and self.organization_id is not None:
+            raise ValueError("public review cases cannot belong to an organization")
+        if (
+            self.visibility is ArtifactVisibility.ORGANIZATION_PRIVATE
+            and self.organization_id is None
+        ):
+            raise ValueError("organization-private review cases require an organization")
+        return self
 
 
 class ReviewQueuePage(ContractModel):
