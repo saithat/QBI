@@ -9,6 +9,7 @@ from typing import Annotated, cast
 from uuid import UUID, uuid4
 
 import psycopg
+from hiveblot_contracts import PLATFORM_OPERATOR_USER_ID
 from pydantic import Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -59,6 +60,71 @@ def main() -> None:
     print("Store the bearer token now; HiveBlot persists only its keyed digest.")
 
 
+def platform_token_main() -> None:
+    """Issue a short-lived token for platform search-management operations."""
+
+    args = _platform_token_parser().parse_args()
+    settings = AuthBootstrapSettings()
+    token = "hvb_platform_" + secrets.token_urlsafe(32)
+    created_at = datetime.now(UTC)
+    token_id = issue_platform_operator_token(
+        settings.database_url,
+        token_label=args.token_label,
+        token=token,
+        token_pepper=settings.auth_token_pepper.get_secret_value().encode("utf-8"),
+        created_at=created_at,
+        expires_at=created_at + timedelta(days=args.expires_days),
+    )
+    print(f"user_id={PLATFORM_OPERATOR_USER_ID}")
+    print(f"token_id={token_id}")
+    print(f"bearer_token={token}")
+    print("Store this privileged token now; HiveBlot persists only its keyed digest.")
+
+
+def issue_platform_operator_token(
+    database_url: str,
+    *,
+    token_label: str,
+    token: str,
+    token_pepper: bytes,
+    created_at: datetime,
+    expires_at: datetime,
+) -> UUID:
+    """Issue one auditable token for the reserved platform identity."""
+
+    normalized_label = token_label.strip()
+    if not normalized_label:
+        raise ValueError("token label cannot be blank")
+    if expires_at <= created_at:
+        raise ValueError("token expiration must follow creation")
+    token_id = uuid4()
+    with psycopg.connect(database_url) as connection:
+        row = connection.execute(
+            "SELECT user_status FROM auth_users WHERE user_id = %s FOR UPDATE",
+            (PLATFORM_OPERATOR_USER_ID,),
+        ).fetchone()
+        if row is None:
+            raise ValueError("platform identity is unavailable; apply migration 0015 first")
+        if row[0] != "active":
+            raise ValueError("platform identity is not active")
+        connection.execute(
+            """
+            INSERT INTO api_access_tokens (
+                token_id, user_id, token_digest, label, created_at, expires_at
+            ) VALUES (%s, %s, %s, %s, %s, %s)
+            """,
+            (
+                token_id,
+                PLATFORM_OPERATOR_USER_ID,
+                token_digest(token, pepper=token_pepper),
+                normalized_label,
+                created_at,
+                expires_at,
+            ),
+        )
+    return token_id
+
+
 def bootstrap_identity(
     database_url: str,
     *,
@@ -104,6 +170,8 @@ def bootstrap_identity(
             user_id = row[0]
             if row[1] != "active":
                 raise ValueError("existing user is not active")
+            if user_id == PLATFORM_OPERATOR_USER_ID:
+                raise ValueError("the reserved platform identity cannot be bootstrapped as a user")
 
         if organization_slug is not None and organization_name is not None:
             organization_id = _ensure_organization(
@@ -200,6 +268,15 @@ def _parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--token-label", default="bootstrap")
     parser.add_argument("--expires-days", type=_positive_integer, default=90)
+    return parser
+
+
+def _platform_token_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        description="Issue a privileged platform-operator bearer token.",
+    )
+    parser.add_argument("--token-label", default="search-platform-operator")
+    parser.add_argument("--expires-days", type=_positive_integer, default=1)
     return parser
 
 

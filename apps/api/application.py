@@ -54,6 +54,7 @@ from .schemas import (
     SearchResponse,
     WesternBlotRecordResponse,
 )
+from .search import router as search_router
 from .spatial_editor import router as spatial_editor_router
 from .structured_editor import router as structured_editor_router
 from .workbench import router as workbench_router
@@ -80,6 +81,7 @@ app.include_router(job_router, dependencies=authenticated)
 app.include_router(metrics_router, dependencies=authenticated)
 app.include_router(pipeline_router, dependencies=authenticated)
 app.include_router(review_queue_router, dependencies=authenticated)
+app.include_router(search_router, dependencies=authenticated)
 app.include_router(spatial_editor_router, dependencies=authenticated)
 app.include_router(structured_editor_router, dependencies=authenticated)
 app.include_router(workbench_router, dependencies=authenticated)

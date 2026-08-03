@@ -19,3 +19,12 @@ reviewer-assignment locks, and cross-resource scope triggers. Its down migration
 preflight and refuses without mutation when active scoped assignments would violate the earlier
 global assignment indexes. Existing private artifact organization UUIDs are preserved as active
 `legacy-<uuid>` organization records so their foreign-key relationships remain valid.
+
+`0015_evidence_search_retrieval` adds immutable search configurations and index versions,
+provenance-linked evidence documents and artifact citations, generated PostgreSQL full-text
+vectors, structured-filter indexes, frozen retrieval datasets, and append-only evaluation runs.
+It also adds the reserved platform-operator identity used by short-lived search-management tokens
+and prevents that identity from joining an organization. Triggers enforce source/citation scope
+and immutable artifact metadata, JSON/relational agreement, configured embedding dimensions,
+completed-index immutability, legal lifecycle transitions, and a passing evaluation before
+activation.

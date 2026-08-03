@@ -36,6 +36,8 @@ def current_principal(principal: PrincipalDependency) -> CurrentPrincipalRespons
     return CurrentPrincipalResponse(
         user_id=principal.user_id,
         token_id=principal.token_id,
+        system=principal.system,
+        platform_operator=principal.platform_operator,
         memberships=tuple(
             MembershipResponse.model_validate(value.model_dump(mode="python"))
             for value in principal.memberships

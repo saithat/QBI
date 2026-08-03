@@ -48,3 +48,9 @@ See `docs/development/public-discovery.md`; do not place credentials in a user a
 lease/attempt, timeout, response/robots byte, redirect, shared interval/concurrency, permit, and
 polling settings are independently bounded by `FetchWorkerSettings`, which does not load model,
 Temporal, or Kubernetes API credentials. See `docs/development/distributed-fetching.md`.
+
+`EVIDENCE_SEARCH_INDEX_NAME` selects the logical active evidence index and
+`EVIDENCE_SEARCH_EMBEDDING_DIMENSIONS` selects the installed deterministic embedding width. Both
+are non-secret, bounded settings. Changing either requires a new immutable index configuration and
+version; an existing stored configuration is never edited. See
+`docs/development/evidence-search.md`.

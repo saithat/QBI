@@ -84,6 +84,11 @@
       "title": "Memberships",
       "type": "array"
     },
+    "platform_operator": {
+      "default": false,
+      "title": "Platform Operator",
+      "type": "boolean"
+    },
     "schema_version": {
       "$ref": "#/$defs/SchemaVersion",
       "default": "1.0"

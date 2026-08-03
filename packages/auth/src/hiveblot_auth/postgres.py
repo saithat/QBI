@@ -9,6 +9,7 @@ from uuid import UUID
 
 import psycopg
 from hiveblot_contracts import (
+    PLATFORM_OPERATOR_USER_ID,
     ArtifactVisibility,
     AuditEventRecord,
     AuditOutcome,
@@ -54,24 +55,30 @@ class PostgresAuthorizationRepository:
                 "UPDATE api_access_tokens SET last_used_at = %s WHERE token_id = %s",
                 (authenticated_at, token["token_id"]),
             )
-            rows = connection.execute(
-                """
-                SELECT membership.*
-                FROM organization_memberships AS membership
-                JOIN organizations AS organization
-                  ON organization.organization_id = membership.organization_id
-                WHERE membership.user_id = %s
-                  AND membership.active = TRUE
-                  AND organization.organization_status = 'active'
-                ORDER BY membership.organization_id
-                """,
-                (token["user_id"],),
-            ).fetchall()
+            platform_operator = token["user_id"] == PLATFORM_OPERATOR_USER_ID
+            rows = (
+                []
+                if platform_operator
+                else connection.execute(
+                    """
+                    SELECT membership.*
+                    FROM organization_memberships AS membership
+                    JOIN organizations AS organization
+                      ON organization.organization_id = membership.organization_id
+                    WHERE membership.user_id = %s
+                      AND membership.active = TRUE
+                      AND organization.organization_status = 'active'
+                    ORDER BY membership.organization_id
+                    """,
+                    (token["user_id"],),
+                ).fetchall()
+            )
             return AuthenticatedPrincipal(
                 user_id=token["user_id"],
                 token_id=token["token_id"],
                 memberships=tuple(_membership_from_row(row) for row in rows),
                 authenticated_at=authenticated_at,
+                platform_operator=platform_operator,
             )
 
     def resolve_scope(self, target_type: str, target_id: UUID) -> ResourceScope | None:
@@ -269,6 +276,11 @@ _SCOPE_QUERIES = {
         FROM pipeline_runs AS run
         WHERE run.run_id = %s
     """,
+    "pipeline_publication": """
+        SELECT publication.visibility, publication.organization_id
+        FROM pipeline_publications AS publication
+        WHERE publication.publication_id = %s
+    """,
     "component_invocation": """
         SELECT run.visibility, run.organization_id
         FROM component_invocations AS invocation
@@ -291,6 +303,17 @@ _SCOPE_QUERIES = {
         FROM job_attempts AS attempt
         JOIN jobs AS job ON job.job_id = attempt.job_id
         WHERE attempt.attempt_id = %s
+    """,
+    "retrieval_evaluation_dataset": """
+        SELECT visibility, organization_id
+        FROM retrieval_evaluation_datasets
+        WHERE dataset_id = %s
+    """,
+    "retrieval_evaluation_run": """
+        SELECT dataset.visibility, dataset.organization_id
+        FROM retrieval_evaluation_runs AS run
+        JOIN retrieval_evaluation_datasets AS dataset ON dataset.dataset_id = run.dataset_id
+        WHERE run.evaluation_run_id = %s
     """,
 }
 

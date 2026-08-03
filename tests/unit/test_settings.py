@@ -31,6 +31,8 @@ def test_settings_parse_an_explicit_test_environment(monkeypatch, tmp_path) -> N
     monkeypatch.setenv("VLLM_API_KEY", model_api_key)
     monkeypatch.setenv("HIVEBLOT_DATA_DIR", str(tmp_path))
     monkeypatch.setenv("SOURCE_INGEST_ALLOWED_HOSTS", "repo.example, data.example")
+    monkeypatch.setenv("EVIDENCE_SEARCH_INDEX_NAME", "test-evidence")
+    monkeypatch.setenv("EVIDENCE_SEARCH_EMBEDDING_DIMENSIONS", "64")
 
     settings = Settings(_env_file=None)
 
@@ -38,6 +40,8 @@ def test_settings_parse_an_explicit_test_environment(monkeypatch, tmp_path) -> N
     assert settings.vllm_base_url == "http://model.test/v1"
     assert settings.data_dir == Path(tmp_path).resolve()
     assert settings.source_ingest_allowed_hosts == ("repo.example", "data.example")
+    assert settings.evidence_search_index_name == "test-evidence"
+    assert settings.evidence_search_embedding_dimensions == 64
     assert model_api_key not in repr(settings)
 
 

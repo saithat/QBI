@@ -78,6 +78,14 @@ from .pipeline_runs import (
     PipelineRunDetail,
     PipelineRunRecord,
 )
+from .retrieval import (
+    EvidenceIndexDocument,
+    EvidenceSearchResult,
+    RetrievalEvaluationDatasetRecord,
+    RetrievalEvaluationRunRecord,
+    SearchIndexConfigurationRecord,
+    SearchIndexVersionRecord,
+)
 from .review_queue import (
     ReviewQueueCaseSummary,
     ReviewQueueFilters,
@@ -130,6 +138,8 @@ CONTRACT_REGISTRY: Mapping[str, Any] = {
     "evaluation-metric-run-record": EvaluationMetricRunRecord,
     "evaluation-scoring-input": EvaluationScoringInput,
     "evidence-overlay": EvidenceOverlay,
+    "evidence-index-document": EvidenceIndexDocument,
+    "evidence-search-result": EvidenceSearchResult,
     "golden-dataset-case-export": GoldenDatasetCaseExport,
     "golden-dataset-draft-detail": GoldenDatasetDraftDetail,
     "golden-dataset-export-manifest": GoldenDatasetExportManifest,
@@ -160,10 +170,14 @@ CONTRACT_REGISTRY: Mapping[str, Any] = {
     "pipeline-run-record": PipelineRunRecord,
     "prediction-document": PredictionDocument,
     "reviewer-assignment": ReviewerAssignment,
+    "retrieval-evaluation-dataset-record": RetrievalEvaluationDatasetRecord,
+    "retrieval-evaluation-run-record": RetrievalEvaluationRunRecord,
     "review-queue-case-summary": ReviewQueueCaseSummary,
     "review-queue-filters": ReviewQueueFilters,
     "review-queue-page": ReviewQueuePage,
     "saved-review-view": SavedReviewView,
+    "search-index-configuration-record": SearchIndexConfigurationRecord,
+    "search-index-version-record": SearchIndexVersionRecord,
     "source-document-record": SourceDocumentRecord,
     "source-evidence-workbench": SourceEvidenceWorkbench,
     "spatial-annotation-comparison": SpatialAnnotationComparison,

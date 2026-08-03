@@ -11,6 +11,8 @@ from pydantic import AwareDatetime, Field, model_validator
 from .artifacts import ArtifactVisibility
 from .base import ContractModel, Identifier
 
+PLATFORM_OPERATOR_USER_ID = UUID("00000000-0000-0000-0000-000000000001")
+
 
 class UserStatus(StrEnum):
     ACTIVE = "active"
@@ -46,6 +48,7 @@ class AuthorizationPermission(StrEnum):
     ORGANIZATION_MANAGE = "organization.manage"
     AUDIT_READ = "audit.read"
     SEARCH = "search.execute"
+    PLATFORM_SEARCH_MANAGE = "platform.search.manage"
 
 
 class UserRecord(ContractModel):
@@ -100,14 +103,27 @@ class AuthenticatedPrincipal(ContractModel):
     memberships: tuple[OrganizationMembership, ...] = ()
     authenticated_at: AwareDatetime
     system: bool = False
+    platform_operator: bool = False
 
     @model_validator(mode="after")
     def membership_identities_are_unique(self) -> Self:
         organizations = [item.organization_id for item in self.memberships if item.active]
         if len(organizations) != len(set(organizations)):
             raise ValueError("a principal cannot have multiple active roles in one organization")
-        if self.system and self.token_id is not None:
-            raise ValueError("system principals cannot carry an API token identifier")
+        if self.system:
+            if self.user_id != PLATFORM_OPERATOR_USER_ID:
+                raise ValueError("system principals must use the reserved platform identity")
+            if self.token_id is not None:
+                raise ValueError("system principals cannot carry an API token identifier")
+        if self.platform_operator:
+            if self.user_id != PLATFORM_OPERATOR_USER_ID:
+                raise ValueError("platform operators must use the reserved platform identity")
+            if self.token_id is None:
+                raise ValueError("platform operators require an authenticated API token")
+        if self.system and self.platform_operator:
+            raise ValueError("a principal cannot be both system and platform operator")
+        if (self.system or self.platform_operator) and self.memberships:
+            raise ValueError("platform principals cannot carry organization memberships")
         return self
 
 

@@ -3,6 +3,7 @@ from uuid import uuid4
 
 import pytest
 from hiveblot_contracts import (
+    PLATFORM_OPERATOR_USER_ID,
     ArtifactVisibility,
     AuthenticatedPrincipal,
     OrganizationMembership,
@@ -55,4 +56,29 @@ def test_principal_rejects_duplicate_active_memberships_for_one_organization() -
                 membership(OrganizationRole.REVIEWER),
             ),
             authenticated_at=NOW,
+        )
+
+
+def test_platform_operator_requires_the_reserved_token_identity() -> None:
+    token_id = uuid4()
+    principal = AuthenticatedPrincipal(
+        user_id=PLATFORM_OPERATOR_USER_ID,
+        token_id=token_id,
+        authenticated_at=NOW,
+        platform_operator=True,
+    )
+
+    assert principal.platform_operator is True
+    with pytest.raises(ValidationError, match="reserved platform identity"):
+        AuthenticatedPrincipal(
+            user_id=uuid4(),
+            token_id=token_id,
+            authenticated_at=NOW,
+            platform_operator=True,
+        )
+    with pytest.raises(ValidationError, match="authenticated API token"):
+        AuthenticatedPrincipal(
+            user_id=PLATFORM_OPERATOR_USER_ID,
+            authenticated_at=NOW,
+            platform_operator=True,
         )

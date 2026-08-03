@@ -1,8 +1,7 @@
 # HiveBlot
 
 HiveBlot turns western blot evidence from scientific papers into structured, searchable,
-reviewable observations. Milestones A through E and organization isolation from Milestone F are
-implemented.
+reviewable observations. Milestones A through F are implemented.
 The evaluation UI includes a server-paginated review queue, source evidence workbench, typed
 western-blot annotation editor, source-pixel spatial review, and deterministic densitometry. The
 useful local hackathon extraction path remains operational while new scientific state enters through
@@ -61,6 +60,9 @@ eligible frontier -> durable fetch lease + shared per-domain permit + robots/HTT
 
 opaque bearer token -> authenticated user + active organization memberships
     -> backend scope decision + append-only audit -> tenant-filtered scientific state
+
+reviewed/published evidence + exact artifact citations -> immutable versioned search index
+    -> frozen retrieval evaluation -> gated activation -> permission-filtered cited results
 ```
 
 Kubernetes is the deployed placement layer rather than the state store; PostgreSQL, object storage,
@@ -82,6 +84,7 @@ packages/densitometry/     deterministic pixel measurement, QC, and provenance o
 packages/storage/          immutable publication, S3, and PostgreSQL storage boundaries
 services/job-service/      domain-independent jobs, leases, attempts, logs, and execution
 services/crawler/          discovery, durable fetch queue, HTTP policy, and shared domain limits
+services/search/           versioned evidence indexes, hybrid retrieval, and frozen evaluation
 workers/jobs/              bounded operations plus local-Docker/Kubernetes worker entry points
 workers/discovery/         bounded official-source discovery CronJob/CLI entry point
 workers/fetching/          long-lived queue-backed public-source fetch worker
@@ -183,7 +186,8 @@ model output remains enabled by default.
 
 - `GET /health` checks PostgreSQL and vLLM readiness; `/health/startup`, `/health/live`, and
   `/health/ready` expose Kubernetes-specific process and readiness checks.
-- `GET /api/v1/auth/me` returns the authenticated principal and active organization memberships.
+- `GET /api/v1/auth/me` returns the authenticated principal, platform/system identity flags, and
+  active organization memberships.
 - Organization administration and audit routes manage scoped memberships and inspect append-only
   allow/deny events.
 - `GET /api/records` accepts `target`, `sample`, `condition`, `limit`, and `offset`.
@@ -232,6 +236,13 @@ model output remains enabled by default.
   immutable artifacts.
 - Crawl fetch routes expose durable task/attempt provenance and queue, worker, retry, latency,
   status, byte, source-error, and deduplication metrics.
+- Evidence-index routes create immutable configurations and versions, require frozen retrieval
+  evaluation before activation, and preserve all prior versions.
+- `POST /api/v1/evidence-search` returns permission-filtered lexical/semantic results with artifact
+  citations, review and quality state, supporting/contradictory observations, and trace metadata.
+- Retrieval-evaluation routes freeze graded judgments, hard negatives, expected filters, and
+  citation expectations, then record Recall@k, MRR, nDCG, filter/citation correctness, and
+  cross-tenant leakage.
 - `hiveblot-discover-pmc` performs bounded API-first discovery through PMC's official OAI endpoint.
 - `hiveblot-fetch-worker` leases and acquires approved sources without multiplying per-domain limits.
 
@@ -259,4 +270,6 @@ See [the repository audit](docs/architecture/repository-audit.md),
 [the Kubernetes runtime ADR](docs/adr/0014-kubernetes-runtime.md), and
 [the public discovery ADR](docs/adr/0015-api-first-public-discovery.md), and
 [the distributed fetching ADR](docs/adr/0016-postgres-fetch-queue-and-shared-domain-permits.md), and
+[the organization authorization ADR](docs/adr/0017-organization-scoped-authorization.md), and
+[the evidence retrieval ADR](docs/adr/0018-evaluated-provenance-aware-retrieval.md), and
 [development setup](docs/development/setup.md) for details.

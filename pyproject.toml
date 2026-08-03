@@ -44,6 +44,7 @@ hiveblot-job-worker = "workers.jobs.entrypoint:main"
 hiveblot-kubernetes-smoke = "workers.jobs.kubernetes_smoke:main"
 hiveblot-workflow-worker = "workers.workflow.entrypoint:main"
 hiveblot-auth-bootstrap = "hiveblot_auth.bootstrap:main"
+hiveblot-auth-platform-token = "hiveblot_auth.bootstrap:platform_token_main"
 
 [tool.hatch.build.targets.wheel]
 packages = [
@@ -57,6 +58,7 @@ packages = [
   "packages/storage/src/hiveblot_storage",
   "services/crawler/src/hiveblot_crawler",
   "services/job-service/src/hiveblot_job_service",
+  "services/search/src/hiveblot_search",
   "workers",
 ]
 
@@ -76,6 +78,7 @@ pythonpath = [
   "packages/storage/src",
   "services/crawler/src",
   "services/job-service/src",
+  "services/search/src",
 ]
 
 [tool.ruff]
@@ -97,4 +100,4 @@ warn_unreachable = true
 warn_unused_configs = true
 warn_unused_ignores = true
 exclude = ["data/", "tests/fixtures/"]
-mypy_path = "packages/auth/src:packages/contracts/src:packages/densitometry/src:packages/evaluation/src:packages/extraction/src:packages/storage/src:services/crawler/src:services/job-service/src"
+mypy_path = "packages/auth/src:packages/contracts/src:packages/densitometry/src:packages/evaluation/src:packages/extraction/src:packages/storage/src:services/crawler/src:services/job-service/src:services/search/src"

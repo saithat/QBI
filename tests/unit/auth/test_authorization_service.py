@@ -4,7 +4,13 @@ from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
 import pytest
-from hiveblot_auth import AuthorizationService, InMemoryAuthorizationRepository, PermissionDenied
+from hiveblot_auth import (
+    SYSTEM_USER_ID,
+    AuthorizationService,
+    InMemoryAuthorizationRepository,
+    InvalidAuthorizationState,
+    PermissionDenied,
+)
 from hiveblot_contracts import (
     ArtifactVisibility,
     AuthenticatedPrincipal,
@@ -98,6 +104,16 @@ def test_system_principal_is_reserved_for_explicit_auth_disabled_mode() -> None:
     repository = InMemoryAuthorizationRepository()
     service = AuthorizationService(repository, token_pepper="p" * 32, clock=lambda: NOW)
     principal = service.system_principal()
+    organization_administrator = _principal(
+        uuid4(),
+        OrganizationRole.ADMINISTRATOR,
+    )
+    platform_operator = AuthenticatedPrincipal(
+        user_id=SYSTEM_USER_ID,
+        token_id=uuid4(),
+        authenticated_at=NOW,
+        platform_operator=True,
+    )
 
     assert principal.system is True
     assert (
@@ -117,6 +133,55 @@ def test_system_principal_is_reserved_for_explicit_auth_disabled_mode() -> None:
         target_type="organization",
         request_id=uuid4(),
     )
+    service.authorize_scope(
+        platform_operator,
+        AuthorizationPermission.PLATFORM_SEARCH_MANAGE,
+        scope=ResourceScope(
+            visibility=ArtifactVisibility.ORGANIZATION_PRIVATE,
+            organization_id=uuid4(),
+        ),
+        target_type="evidence_index_management",
+        request_id=uuid4(),
+    )
+    service.authorize_scope(
+        platform_operator,
+        AuthorizationPermission.SEARCH,
+        scope=ResourceScope(
+            visibility=ArtifactVisibility.ORGANIZATION_PRIVATE,
+            organization_id=uuid4(),
+        ),
+        target_type="evidence_search",
+        request_id=uuid4(),
+    )
+    with pytest.raises(PermissionDenied):
+        service.authorize_scope(
+            platform_operator,
+            AuthorizationPermission.ARTIFACT_READ,
+            scope=ResourceScope(
+                visibility=ArtifactVisibility.ORGANIZATION_PRIVATE,
+                organization_id=uuid4(),
+            ),
+            target_type="artifact",
+            request_id=uuid4(),
+        )
+    with pytest.raises(PermissionDenied):
+        service.authorize_scope(
+            organization_administrator,
+            AuthorizationPermission.PLATFORM_SEARCH_MANAGE,
+            scope=ResourceScope(visibility=ArtifactVisibility.PUBLIC),
+            target_type="evidence_index_management",
+            request_id=uuid4(),
+        )
+    administrator_organization_id = organization_administrator.memberships[0].organization_id
+    with pytest.raises(InvalidAuthorizationState, match="reserved platform identity"):
+        service.set_membership(
+            organization_administrator,
+            organization_id=administrator_organization_id,
+            user_id=SYSTEM_USER_ID,
+            role=OrganizationRole.READ_ONLY,
+            active=True,
+            request_id=uuid4(),
+        )
 
 
 def _principal(

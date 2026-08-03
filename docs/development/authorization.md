@@ -34,6 +34,13 @@ history through `/api/v1/organizations` routes. Cross-tenant direct reads are co
 unauthorized mutations return `403`. Invalid resource-scope relationships return a validation or
 conflict response and are also rejected by PostgreSQL.
 
+Evidence-index management is deliberately not inherited by an organization role. After migration
+`0015`, `hiveblot-auth-platform-token` can issue a short-lived, auditable token for the reserved
+platform operator. The command prints plaintext once. Use that token only for search-index build,
+preview, frozen evaluation, and activation, then revoke or let it expire; never place it in a
+tracked file or shell script. It cannot read organization-private artifacts through unrelated API
+routes.
+
 Run deterministic policy and API tests without external services:
 
 ```bash

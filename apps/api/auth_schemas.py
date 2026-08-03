@@ -25,6 +25,8 @@ class MembershipResponse(ContractModel):
 class CurrentPrincipalResponse(ContractModel):
     user_id: UUID
     token_id: UUID | None
+    system: bool
+    platform_operator: bool
     memberships: tuple[MembershipResponse, ...]
 
 

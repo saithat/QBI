@@ -44,7 +44,8 @@ typecheck:
 		packages/evaluation/src/hiveblot_evaluation \
 		packages/extraction/src/hiveblot_extraction packages/storage/src/hiveblot_storage \
 		services/crawler/src/hiveblot_crawler \
-		services/job-service/src/hiveblot_job_service workers
+		services/job-service/src/hiveblot_job_service \
+		services/search/src/hiveblot_search workers
 
 schemas:
 	uv run hiveblot-schemas

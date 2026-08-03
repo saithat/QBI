@@ -56,6 +56,7 @@ def test_api_entrypoint_serves_versioned_strict_responses(monkeypatch) -> None:
     assert response.schema_version == "1.0"
     assert response.results[0].target == "p53"
     assert "/api/records" in openapi["paths"]
+    assert "/api/v1/evidence-search" in openapi["paths"]
     with pytest.raises(ValidationError, match="Extra inputs are not permitted"):
         SearchRequest.model_validate({"query": "p53", "unknown": "rejected"})
 

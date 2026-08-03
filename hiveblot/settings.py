@@ -392,6 +392,18 @@ class Settings(BaseSettings):
         default=SecretStr(""),
         validation_alias="AUTH_TOKEN_PEPPER",
     )
+    evidence_search_index_name: str = Field(
+        default="western-blot-evidence",
+        validation_alias="EVIDENCE_SEARCH_INDEX_NAME",
+        min_length=1,
+        max_length=200,
+    )
+    evidence_search_embedding_dimensions: int = Field(
+        default=256,
+        validation_alias="EVIDENCE_SEARCH_EMBEDDING_DIMENSIONS",
+        ge=8,
+        le=4096,
+    )
     vllm_base_url: str = Field(
         default="http://localhost:8000/v1",
         validation_alias="VLLM_BASE_URL",

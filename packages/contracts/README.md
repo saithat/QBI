@@ -25,5 +25,10 @@ PRD-012 adds exact image/geometry/configuration inputs, deterministic measuremen
 suitability, reproducibility metadata, and immutable run/replay summaries. Numeric values cannot be
 constructed without naming their source hash and geometry revision.
 
+PRD-018 adds explicit evidence projections, artifact citations, versioned search configuration and
+index lifecycle, permission-safe cited results, frozen relevance judgments, and immutable retrieval
+metrics. Indexed observations and claims require a producing review revision or pipeline
+publication and never replace canonical scientific records.
+
 Generate snapshots with `uv run hiveblot-schemas`. Verify committed snapshots with
 `uv run hiveblot-schemas --check`.

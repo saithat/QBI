@@ -34,7 +34,7 @@ spec:
               type: RuntimeDefault
           containers:
             - name: discovery
-              image: hiveblot:prd-017
+              image: hiveblot:prd-018
               imagePullPolicy: IfNotPresent
               command: ["hiveblot-discover-pmc"]
               env:

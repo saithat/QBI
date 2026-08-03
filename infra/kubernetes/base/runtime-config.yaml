@@ -5,6 +5,8 @@ metadata:
 data:
   HIVEBLOT_ENV: deployed
   AUTHENTICATION_MODE: bearer
+  EVIDENCE_SEARCH_INDEX_NAME: western-blot-evidence
+  EVIDENCE_SEARCH_EMBEDDING_DIMENSIONS: "256"
   HIVEBLOT_DATA_DIR: /tmp/hiveblot-data
   VLLM_BASE_URL: https://models.invalid/v1
   VLLM_MODEL: Qwen/Qwen3-VL-8B-Instruct

@@ -1,0 +1,274 @@
+{
+  "$defs": {
+    "ArtifactVisibility": {
+      "description": "Visibility attached to artifact metadata and access grants.",
+      "enum": [
+        "public",
+        "organization_private"
+      ],
+      "title": "ArtifactVisibility",
+      "type": "string"
+    },
+    "EvidenceQuality": {
+      "enum": [
+        "raw_source",
+        "supplementary_source",
+        "publication_figure",
+        "exploratory",
+        "not_assessed"
+      ],
+      "title": "EvidenceQuality",
+      "type": "string"
+    },
+    "EvidenceSearchFilters": {
+      "additionalProperties": false,
+      "properties": {
+        "biological_systems": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Biological Systems",
+          "type": "array"
+        },
+        "conditions": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Conditions",
+          "type": "array"
+        },
+        "evidence_qualities": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/EvidenceQuality"
+          },
+          "title": "Evidence Qualities",
+          "type": "array"
+        },
+        "proteins": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Proteins",
+          "type": "array"
+        },
+        "review_statuses": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/ReviewStatus"
+          },
+          "title": "Review Statuses",
+          "type": "array"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/SchemaVersion",
+          "default": "1.0"
+        },
+        "treatments": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Treatments",
+          "type": "array"
+        }
+      },
+      "title": "EvidenceSearchFilters",
+      "type": "object"
+    },
+    "Identifier": {
+      "maxLength": 200,
+      "minLength": 1,
+      "type": "string"
+    },
+    "RetrievalEvaluationQuery": {
+      "additionalProperties": false,
+      "properties": {
+        "allowed_organization_ids": {
+          "default": [],
+          "items": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "title": "Allowed Organization Ids",
+          "type": "array"
+        },
+        "expected_filters": {
+          "$ref": "#/$defs/EvidenceSearchFilters",
+          "default": {
+            "biological_systems": [],
+            "conditions": [],
+            "evidence_qualities": [],
+            "proteins": [],
+            "review_statuses": [],
+            "schema_version": "1.0",
+            "treatments": []
+          }
+        },
+        "hard_negative_document_ids": {
+          "default": [],
+          "items": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "title": "Hard Negative Document Ids",
+          "type": "array"
+        },
+        "query": {
+          "maxLength": 4000,
+          "minLength": 1,
+          "title": "Query",
+          "type": "string"
+        },
+        "query_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "relevant": {
+          "items": {
+            "$ref": "#/$defs/RetrievalRelevanceJudgment"
+          },
+          "minItems": 1,
+          "title": "Relevant",
+          "type": "array"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/SchemaVersion",
+          "default": "1.0"
+        }
+      },
+      "required": [
+        "query_id",
+        "query",
+        "relevant"
+      ],
+      "title": "RetrievalEvaluationQuery",
+      "type": "object"
+    },
+    "RetrievalRelevanceJudgment": {
+      "additionalProperties": false,
+      "properties": {
+        "document_id": {
+          "format": "uuid",
+          "title": "Document Id",
+          "type": "string"
+        },
+        "relevance": {
+          "maximum": 3,
+          "minimum": 1,
+          "title": "Relevance",
+          "type": "integer"
+        },
+        "required_citation_artifact_ids": {
+          "default": [],
+          "items": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "title": "Required Citation Artifact Ids",
+          "type": "array"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/SchemaVersion",
+          "default": "1.0"
+        }
+      },
+      "required": [
+        "document_id",
+        "relevance"
+      ],
+      "title": "RetrievalRelevanceJudgment",
+      "type": "object"
+    },
+    "ReviewStatus": {
+      "enum": [
+        "unreviewed",
+        "in_review",
+        "reviewed",
+        "needs_adjudication",
+        "adjudicated"
+      ],
+      "title": "ReviewStatus",
+      "type": "string"
+    },
+    "SchemaVersion": {
+      "const": "1.0",
+      "type": "string"
+    },
+    "Sha256Digest": {
+      "pattern": "^[a-f0-9]{64}$",
+      "type": "string"
+    }
+  },
+  "$id": "urn:hiveblot:schema:v1:retrieval-evaluation-dataset-record",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "content_sha256": {
+      "$ref": "#/$defs/Sha256Digest"
+    },
+    "dataset_id": {
+      "format": "uuid",
+      "title": "Dataset Id",
+      "type": "string"
+    },
+    "dataset_name": {
+      "$ref": "#/$defs/Identifier"
+    },
+    "dataset_version": {
+      "$ref": "#/$defs/Identifier"
+    },
+    "frozen_at": {
+      "format": "date-time",
+      "title": "Frozen At",
+      "type": "string"
+    },
+    "frozen_by": {
+      "format": "uuid",
+      "title": "Frozen By",
+      "type": "string"
+    },
+    "organization_id": {
+      "anyOf": [
+        {
+          "format": "uuid",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Organization Id"
+    },
+    "queries": {
+      "items": {
+        "$ref": "#/$defs/RetrievalEvaluationQuery"
+      },
+      "minItems": 1,
+      "title": "Queries",
+      "type": "array"
+    },
+    "schema_version": {
+      "$ref": "#/$defs/SchemaVersion",
+      "default": "1.0"
+    },
+    "visibility": {
+      "$ref": "#/$defs/ArtifactVisibility"
+    }
+  },
+  "required": [
+    "dataset_id",
+    "dataset_name",
+    "dataset_version",
+    "visibility",
+    "queries",
+    "content_sha256",
+    "frozen_by",
+    "frozen_at"
+  ],
+  "title": "RetrievalEvaluationDatasetRecord",
+  "type": "object"
+}

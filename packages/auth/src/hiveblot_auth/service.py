@@ -9,6 +9,7 @@ from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
 from hiveblot_contracts import (
+    PLATFORM_OPERATOR_USER_ID,
     ArtifactVisibility,
     AuditEventRecord,
     AuditOutcome,
@@ -43,7 +44,11 @@ _READ_PERMISSIONS = frozenset(
     }
 )
 _ROLE_PERMISSIONS: dict[OrganizationRole, frozenset[AuthorizationPermission]] = {
-    OrganizationRole.ADMINISTRATOR: frozenset(AuthorizationPermission),
+    OrganizationRole.ADMINISTRATOR: frozenset(
+        permission
+        for permission in AuthorizationPermission
+        if permission is not AuthorizationPermission.PLATFORM_SEARCH_MANAGE
+    ),
     OrganizationRole.SCIENTIST: frozenset(
         {
             *_READ_PERMISSIONS,
@@ -65,7 +70,7 @@ _ROLE_PERMISSIONS: dict[OrganizationRole, frozenset[AuthorizationPermission]] = 
     ),
     OrganizationRole.READ_ONLY: _READ_PERMISSIONS,
 }
-SYSTEM_USER_ID = UUID("00000000-0000-0000-0000-000000000001")
+SYSTEM_USER_ID = PLATFORM_OPERATOR_USER_ID
 
 
 class AuthorizationService:
@@ -158,6 +163,11 @@ class AuthorizationService:
     ) -> bool:
         if principal.system:
             return True
+        if principal.platform_operator and permission in {
+            AuthorizationPermission.PLATFORM_SEARCH_MANAGE,
+            AuthorizationPermission.SEARCH,
+        }:
+            return True
         active = tuple(item for item in principal.memberships if item.active)
         if scope.visibility is ArtifactVisibility.PUBLIC:
             if permission in _READ_PERMISSIONS:
@@ -174,7 +184,14 @@ class AuthorizationService:
         principal: AuthenticatedPrincipal,
         permission: AuthorizationPermission,
     ) -> tuple[UUID, ...] | None:
-        if principal.system:
+        if principal.system or (
+            principal.platform_operator
+            and permission
+            in {
+                AuthorizationPermission.PLATFORM_SEARCH_MANAGE,
+                AuthorizationPermission.SEARCH,
+            }
+        ):
             return None
         return tuple(
             sorted(
@@ -273,6 +290,10 @@ class AuthorizationService:
             target_id=user_id,
             request_id=request_id,
         )
+        if user_id == SYSTEM_USER_ID:
+            raise InvalidAuthorizationState(
+                "the reserved platform identity cannot join an organization"
+            )
         now = self._clock()
         return self._repository.set_membership(
             OrganizationMembership(
