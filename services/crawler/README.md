@@ -1,6 +1,7 @@
 # Public discovery service
 
 `hiveblot_crawler` owns API-first source discovery, canonical URL/accession normalization, immutable
-discovery-run provenance, and the durable crawl frontier. Exact official API responses are stored as
-immutable artifacts before normalization. It does not acquire paper/source-data bytes or parse
-papers in PRD-015; distributed fetching belongs to PRD-016.
+discovery-run provenance, the durable crawl frontier, and queue-backed public-source fetching.
+Exact official API responses and successfully fetched source bytes are stored as immutable
+artifacts before normalization or downstream parsing. PostgreSQL coordinates worker leases,
+per-domain request permits, robots state, retries, dead letters, and the parse-task outbox.

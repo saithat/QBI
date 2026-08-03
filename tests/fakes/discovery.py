@@ -152,6 +152,11 @@ class InMemoryFrontierRepository:
             raise InvalidFrontierState("cannot reschedule a leased frontier record")
         updated = current.model_copy(
             update={
+                "status": (
+                    CrawlFrontierStatus.PENDING
+                    if current.status is CrawlFrontierStatus.ACQUIRED
+                    else current.status
+                ),
                 "priority": priority,
                 "next_eligible_fetch_at": next_eligible_fetch_at,
                 "version": current.version + 1,
@@ -245,7 +250,8 @@ class InMemoryFrontierRepository:
             CrawlFrontierStatus.PROHIBITED
             if candidate.access_status is DiscoveryAccessStatus.PROHIBITED
             else CrawlFrontierStatus.PENDING
-            if candidate.expected_media_types
+            if candidate.access_status is DiscoveryAccessStatus.ALLOWED
+            and candidate.expected_media_types
             else CrawlFrontierStatus.UNSUPPORTED
         )
         return CrawlFrontierRecord(
@@ -292,7 +298,11 @@ class InMemoryFrontierRepository:
         status = current.status
         if prohibited:
             status = CrawlFrontierStatus.PROHIBITED
-        elif status is CrawlFrontierStatus.UNSUPPORTED and media_types:
+        elif (
+            status is CrawlFrontierStatus.UNSUPPORTED
+            and media_types
+            and candidate.access_status is DiscoveryAccessStatus.ALLOWED
+        ):
             status = CrawlFrontierStatus.PENDING
         return current.model_copy(
             update={

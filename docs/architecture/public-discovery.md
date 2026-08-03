@@ -14,9 +14,11 @@ official API / bulk manifest / accession source
        /             |              \
  aliases      typed relationships   events
                     |
-       future PRD-016 fetch lease
+       durable fetch-task lease
                     |
- immutable artifact -> frontier acquisition reference
+ shared domain permit + HTTP policy
+                    |
+ immutable artifact -> acquisition + parse outbox
 ```
 
 Discovery says that a source record exists and may be eligible for acquisition. It does not claim
@@ -68,8 +70,10 @@ The public inspection API filters by status, entity kind, source, access status,
 artifact is missing. Results sort by descending priority, next eligible fetch time, and stable ID.
 Schedule and manual-retry mutations require the current version and return `409` when stale.
 
-PRD-015 does not lease or fetch frontier records. The schema includes bounded lease and attempt
-fields so PRD-016 can add queue-backed workers without changing discovery identity or history.
+PRD-016 maps eligible frontier records into durable fetch tasks. Long-lived workers lease those
+tasks with `FOR UPDATE SKIP LOCKED`; an expired lease becomes retryable or dead-lettered without
+losing its attempt history. The frontier mirrors active lease/status state while fetch tasks and
+attempts retain execution-specific provenance.
 
 ## PMC adapter
 
@@ -89,7 +93,8 @@ Deleted records become prohibited entries with no expected downloadable media ty
 Acquisition publication verifies the referenced artifact's ID, SHA-256, media type, and byte size
 against artifact storage before linking it. Multiple acquisitions may be preserved for one frontier
 record. Publishing the same artifact twice is idempotent, and a successful link advances the
-frontier to `acquired`. Actual HTTP transfer remains outside this PR.
+frontier to `acquired`. HTTP transfer is owned by the distributed-fetch subsystem described in
+`docs/architecture/distributed-fetching.md`.
 
 The scheduled worker uses a dedicated discovery settings model and receives only database and
 object-store credentials plus non-secret discovery configuration. It does not receive model,

@@ -2,15 +2,19 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from typing import Annotated, NoReturn
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from hiveblot_contracts import (
+    CrawlFetchAttemptRecord,
+    CrawlFetchTaskRecord,
     CrawlFrontierFilters,
     CrawlFrontierPage,
     CrawlFrontierRecord,
     CrawlFrontierStatus,
+    CrawlMetricsSnapshot,
     DiscoveryAccessStatus,
     DiscoveryEntityKind,
     DiscoveryIngestionResult,
@@ -18,6 +22,8 @@ from hiveblot_contracts import (
 from hiveblot_crawler import (
     DiscoveryError,
     DuplicateDiscoveryBatch,
+    FetchQueueService,
+    FetchTaskNotFound,
     FrontierConcurrencyConflict,
     FrontierNotFound,
     FrontierService,
@@ -26,7 +32,7 @@ from hiveblot_crawler import (
 from hiveblot_storage import ArtifactNotFound, ArtifactStorageError
 from pydantic import ValidationError
 
-from .discovery_dependencies import get_frontier_service
+from .discovery_dependencies import get_fetch_queue_service, get_frontier_service
 from .discovery_schemas import (
     IngestDiscoveryBatchRequest,
     RecordFrontierAcquisitionRequest,
@@ -36,6 +42,7 @@ from .discovery_schemas import (
 
 router = APIRouter(prefix="/api/v1", tags=["public discovery"])
 FrontierServiceDependency = Annotated[FrontierService, Depends(get_frontier_service)]
+FetchQueueServiceDependency = Annotated[FetchQueueService, Depends(get_fetch_queue_service)]
 
 
 @router.post(
@@ -142,10 +149,43 @@ def record_discovery_acquisition(
         _raise_http(exc)
 
 
+@router.get("/crawl-fetch-tasks/{task_id}", response_model=CrawlFetchTaskRecord)
+def get_crawl_fetch_task(
+    task_id: UUID,
+    service: FetchQueueServiceDependency,
+) -> CrawlFetchTaskRecord:
+    try:
+        return service.get_task(task_id)
+    except (DiscoveryError, ValidationError) as exc:
+        _raise_http(exc)
+
+
+@router.get(
+    "/crawl-fetch-tasks/{task_id}/attempts",
+    response_model=tuple[CrawlFetchAttemptRecord, ...],
+)
+def list_crawl_fetch_attempts(
+    task_id: UUID,
+    service: FetchQueueServiceDependency,
+) -> Sequence[CrawlFetchAttemptRecord]:
+    try:
+        return service.list_attempts(task_id)
+    except (DiscoveryError, ValidationError) as exc:
+        _raise_http(exc)
+
+
+@router.get("/crawl/metrics", response_model=CrawlMetricsSnapshot)
+def get_crawl_metrics(service: FetchQueueServiceDependency) -> CrawlMetricsSnapshot:
+    try:
+        return service.metrics()
+    except (DiscoveryError, ValidationError) as exc:
+        _raise_http(exc)
+
+
 def _raise_http(
     exc: DiscoveryError | ArtifactStorageError | ValidationError | ValueError,
 ) -> NoReturn:
-    if isinstance(exc, (FrontierNotFound, ArtifactNotFound)):
+    if isinstance(exc, (FrontierNotFound, FetchTaskNotFound, ArtifactNotFound)):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
     if isinstance(
         exc,

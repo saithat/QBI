@@ -2,7 +2,12 @@
 
 from functools import lru_cache
 
-from hiveblot_crawler import FrontierService, PostgresFrontierRepository
+from hiveblot_crawler import (
+    FetchQueueService,
+    FrontierService,
+    PostgresFetchRepository,
+    PostgresFrontierRepository,
+)
 
 from hiveblot.settings import get_settings
 
@@ -16,3 +21,9 @@ def get_frontier_service() -> FrontierService:
         PostgresFrontierRepository(settings.database_url),
         get_artifact_service(),
     )
+
+
+@lru_cache(maxsize=1)
+def get_fetch_queue_service() -> FetchQueueService:
+    settings = get_settings()
+    return FetchQueueService(PostgresFetchRepository(settings.database_url))

@@ -1,6 +1,6 @@
 HIVEBLOT_KUBECTL_BIN ?= kubectl
 
-.PHONY: up down logs setup local-env kind-up kind-smoke kind-down format lint typecheck schemas schema-check test check docker-test ingest
+.PHONY: up down logs setup local-env kind-up kind-smoke kind-down format lint typecheck schemas schema-check test check docker-test ingest fetch-worker
 
 up:
 	docker compose up --build -d
@@ -63,3 +63,6 @@ ingest:
 	@test -n "$(PDF)" || (echo "Usage: make ingest PDF=paper.pdf" && exit 2)
 	@test -f "data/input/$(PDF)" || (echo "Missing data/input/$(PDF)" && exit 2)
 	docker compose run --rm app python -m workers.extraction.entrypoint "/data/input/$(PDF)"
+
+fetch-worker:
+	docker compose --profile workers run --rm fetch-worker hiveblot-fetch-worker --once

@@ -37,3 +37,8 @@ values and supply that Secret out of band.
 `DISCOVERY_MAX_RESPONSE_BYTES`, `DISCOVERY_LOOKBACK_DAYS`, and `DISCOVERY_MAXIMUM_PAGES` configure
 bounded API-first paper discovery. The user agent should contain a monitored contact or project URL.
 See `docs/development/public-discovery.md`; do not place credentials in a user agent.
+
+`FETCH_ALLOWED_HOSTS` is the mandatory exact host allowlist for long-lived fetch workers. Fetch
+lease/attempt, timeout, response/robots byte, redirect, shared interval/concurrency, permit, and
+polling settings are independently bounded by `FetchWorkerSettings`, which does not load model,
+Temporal, or Kubernetes API credentials. See `docs/development/distributed-fetching.md`.

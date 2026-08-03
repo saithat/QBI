@@ -1,0 +1,34 @@
+apiVersion: keda.sh/v1alpha1
+kind: TriggerAuthentication
+metadata:
+  name: hiveblot-fetch-queue
+spec:
+  secretTargetRef:
+    - parameter: connection
+      name: hiveblot-keda-secrets
+      key: DATABASE_URL
+---
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: hiveblot-fetch-workers
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: hiveblot-fetch-workers
+  pollingInterval: 15
+  cooldownPeriod: 120
+  minReplicaCount: 1
+  maxReplicaCount: 20
+  triggers:
+    - type: postgresql
+      authenticationRef:
+        name: hiveblot-fetch-queue
+      metadata:
+        query: >-
+          SELECT COUNT(*) FROM crawl_fetch_tasks
+          WHERE status IN ('pending', 'retry_wait')
+            AND next_eligible_at <= now()
+        targetQueryValue: "5"
+        activationTargetQueryValue: "0"

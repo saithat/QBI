@@ -11,6 +11,7 @@ resources:
   - web.yaml
   - workers.yaml
   - discovery.yaml
+  - fetching.yaml
   - otel-collector.yaml
   - network-policies.yaml
 labels:

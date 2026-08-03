@@ -5,7 +5,12 @@ from urllib.parse import urlsplit
 import pytest
 from pydantic import ValidationError
 
-from hiveblot.settings import DiscoverySettings, RuntimeEnvironment, Settings
+from hiveblot.settings import (
+    DiscoverySettings,
+    FetchWorkerSettings,
+    RuntimeEnvironment,
+    Settings,
+)
 
 
 def test_local_settings_do_not_embed_fixed_credentials() -> None:
@@ -64,6 +69,33 @@ def test_discovery_worker_settings_are_least_privilege_and_validate_source_url()
         DiscoverySettings(
             discovery_max_response_bytes=10_000,
             artifact_max_bytes=1_000,
+            _env_file=None,
+        )
+
+
+def test_fetch_worker_settings_are_least_privilege_and_bound_response_size() -> None:
+    settings = FetchWorkerSettings(
+        fetch_worker_id="fetch-worker-test",
+        discovery_user_agent="HiveBlot tests (+https://example.test/contact)",
+        _env_file=None,
+    )
+    assert settings.fetch_max_response_bytes <= settings.artifact_max_bytes
+    assert settings.fetch_http_timeout_seconds < settings.fetch_lease_seconds
+    assert settings.fetch_allowed_hosts == ("pmc.ncbi.nlm.nih.gov",)
+    assert not hasattr(settings, "vllm_api_key")
+    assert not hasattr(settings, "temporal_api_key")
+    with pytest.raises(ValidationError, match="cannot exceed"):
+        FetchWorkerSettings(
+            fetch_max_response_bytes=10_000,
+            artifact_max_bytes=1_000,
+            _env_file=None,
+        )
+    with pytest.raises(ValidationError, match="exact host"):
+        FetchWorkerSettings(fetch_allowed_hosts=("https://source.test",), _env_file=None)
+    with pytest.raises(ValidationError, match="shorter"):
+        FetchWorkerSettings(
+            fetch_http_timeout_seconds=30,
+            fetch_lease_seconds=30,
             _env_file=None,
         )
 

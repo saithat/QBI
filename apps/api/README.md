@@ -14,4 +14,6 @@ returns expiring object-store URLs for source and overlay bytes.
 
 The public-discovery adapter accepts strict, versioned source batches, exposes filtered frontier
 inspection, and maps optimistic schedule/retry and immutable-artifact acquisition mutations. Source
-protocol parsing remains in `services/crawler`, not in FastAPI request handlers.
+protocol parsing remains in `services/crawler`, not in FastAPI request handlers. Fetch task,
+append-only attempt, and aggregate crawl-metric routes expose the distributed worker state without
+proxying acquired bytes through FastAPI.

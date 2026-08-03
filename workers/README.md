@@ -7,4 +7,5 @@ external Temporal worker process; scientific workflow definitions beyond the run
 deferred.
 
 `workers/discovery` owns the bounded official-source CLI used by the Kubernetes CronJob. It emits
-canonical discovery batches into PostgreSQL and never downloads article bytes in PRD-015.
+canonical discovery batches into PostgreSQL. `workers/fetching` owns the long-lived queue worker
+that applies shared source policy, stores raw bytes, and publishes downstream parse tasks.

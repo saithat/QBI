@@ -7,3 +7,8 @@ run automatically because deleting published provenance records is destructive.
 `0012_public_discovery_frontier` adds immutable discovery runs/observations, canonical frontier
 records and aliases, typed source relationships, artifact-acquisition provenance, optimistic
 scheduling state, and append-only frontier events.
+
+`0013_distributed_fetching` adds durable fetch tasks/attempts, shared domain policies and request
+permits, robots cache state, conditional-request metadata, downstream parse outbox records, and
+fetch metrics inputs. Its down migration removes those six tables before removing the four added
+frontier columns.

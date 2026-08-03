@@ -1,0 +1,139 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hiveblot-fetch-workers
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: hiveblot-fetch-workers
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: hiveblot-fetch-workers
+        app.kubernetes.io/component: fetch-worker
+        hiveblot.io/network-access: allow
+    spec:
+      serviceAccountName: hiveblot-fetch-worker
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: fetch-worker
+          image: hiveblot:prd-016
+          imagePullPolicy: IfNotPresent
+          command: ["hiveblot-fetch-worker"]
+          env:
+            - name: HIVEBLOT_ENV
+              valueFrom:
+                configMapKeyRef: {name: hiveblot-runtime, key: HIVEBLOT_ENV}
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef: {name: hiveblot-runtime-secrets, key: DATABASE_URL}
+            - name: S3_ENDPOINT_URL
+              valueFrom:
+                configMapKeyRef: {name: hiveblot-runtime, key: S3_ENDPOINT_URL}
+            - name: S3_REGION
+              valueFrom:
+                configMapKeyRef: {name: hiveblot-runtime, key: S3_REGION}
+            - name: S3_BUCKET
+              valueFrom:
+                configMapKeyRef: {name: hiveblot-runtime, key: S3_BUCKET}
+            - name: S3_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef: {name: hiveblot-runtime-secrets, key: S3_ACCESS_KEY_ID}
+            - name: S3_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef: {name: hiveblot-runtime-secrets, key: S3_SECRET_ACCESS_KEY}
+            - name: ARTIFACT_MAX_BYTES
+              valueFrom:
+                configMapKeyRef: {name: hiveblot-runtime, key: ARTIFACT_MAX_BYTES}
+            - name: DISCOVERY_USER_AGENT
+              valueFrom:
+                configMapKeyRef: {name: hiveblot-runtime, key: DISCOVERY_USER_AGENT}
+            - name: FETCH_ALLOWED_HOSTS
+              valueFrom:
+                configMapKeyRef: {name: hiveblot-runtime, key: FETCH_ALLOWED_HOSTS}
+            - name: FETCH_WORKER_ID
+              valueFrom:
+                fieldRef: {fieldPath: metadata.name}
+            - name: FETCH_WORKER_POLL_SECONDS
+              valueFrom:
+                configMapKeyRef: {name: hiveblot-runtime, key: FETCH_WORKER_POLL_SECONDS}
+            - name: FETCH_LEASE_SECONDS
+              valueFrom:
+                configMapKeyRef: {name: hiveblot-runtime, key: FETCH_LEASE_SECONDS}
+            - name: FETCH_MAX_ATTEMPTS
+              valueFrom:
+                configMapKeyRef: {name: hiveblot-runtime, key: FETCH_MAX_ATTEMPTS}
+            - name: FETCH_HTTP_TIMEOUT_SECONDS
+              valueFrom:
+                configMapKeyRef: {name: hiveblot-runtime, key: FETCH_HTTP_TIMEOUT_SECONDS}
+            - name: FETCH_MAX_RESPONSE_BYTES
+              valueFrom:
+                configMapKeyRef: {name: hiveblot-runtime, key: FETCH_MAX_RESPONSE_BYTES}
+            - name: FETCH_MAX_REDIRECTS
+              valueFrom:
+                configMapKeyRef: {name: hiveblot-runtime, key: FETCH_MAX_REDIRECTS}
+            - name: FETCH_DOMAIN_MINIMUM_INTERVAL_MILLISECONDS
+              valueFrom:
+                configMapKeyRef:
+                  name: hiveblot-runtime
+                  key: FETCH_DOMAIN_MINIMUM_INTERVAL_MILLISECONDS
+            - name: FETCH_DOMAIN_MAXIMUM_CONCURRENCY
+              valueFrom:
+                configMapKeyRef:
+                  name: hiveblot-runtime
+                  key: FETCH_DOMAIN_MAXIMUM_CONCURRENCY
+            - name: FETCH_DOMAIN_PERMIT_SECONDS
+              valueFrom:
+                configMapKeyRef: {name: hiveblot-runtime, key: FETCH_DOMAIN_PERMIT_SECONDS}
+            - name: FETCH_DOMAIN_MAXIMUM_WAIT_SECONDS
+              valueFrom:
+                configMapKeyRef:
+                  name: hiveblot-runtime
+                  key: FETCH_DOMAIN_MAXIMUM_WAIT_SECONDS
+            - name: FETCH_ROBOTS_CACHE_SECONDS
+              valueFrom:
+                configMapKeyRef: {name: hiveblot-runtime, key: FETCH_ROBOTS_CACHE_SECONDS}
+            - name: FETCH_ROBOTS_MAX_BYTES
+              valueFrom:
+                configMapKeyRef: {name: hiveblot-runtime, key: FETCH_ROBOTS_MAX_BYTES}
+            - name: OTEL_SERVICE_NAME
+              value: hiveblot-fetch-worker
+          startupProbe:
+            exec:
+              command: ["python", "-c", "import os; os.kill(1, 0)"]
+            periodSeconds: 2
+            failureThreshold: 30
+          readinessProbe:
+            exec:
+              command: ["python", "-c", "import os; os.kill(1, 0)"]
+            periodSeconds: 2
+            failureThreshold: 30
+          livenessProbe:
+            exec:
+              command: ["python", "-c", "import os; os.kill(1, 0)"]
+            periodSeconds: 10
+            failureThreshold: 3
+          resources:
+            requests: {cpu: 100m, memory: 256Mi}
+            limits: {cpu: "1", memory: 1Gi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir:
+            sizeLimit: 512Mi

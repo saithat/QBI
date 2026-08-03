@@ -3,7 +3,7 @@ set -euo pipefail
 
 cluster_name="hiveblot"
 network_name="hiveblot-kind"
-image_name="hiveblot:prd-015"
+image_name="hiveblot:prd-016"
 kind_bin="${HIVEBLOT_KIND_BIN:-kind}"
 kubectl_bin="${HIVEBLOT_KUBECTL_BIN:-kubectl}"
 

@@ -33,6 +33,13 @@ from .discovery import (
 )
 from .evaluation import EvaluationCaseReference, ValidationIssue
 from .evidence import CaseSourceContext, EvidenceOverlay, SourceEvidenceWorkbench
+from .fetching import (
+    CrawlFetchAttemptRecord,
+    CrawlFetchLease,
+    CrawlFetchTaskRecord,
+    CrawlMetricsSnapshot,
+    DownstreamIngestionTask,
+)
 from .golden_datasets import (
     GoldenDatasetCaseExport,
     GoldenDatasetDraftDetail,
@@ -123,6 +130,11 @@ CONTRACT_REGISTRY: Mapping[str, Any] = {
     "golden-dataset-snapshot": GoldenDatasetSnapshot,
     "crawl-frontier-page": CrawlFrontierPage,
     "crawl-frontier-record": CrawlFrontierRecord,
+    "crawl-fetch-attempt-record": CrawlFetchAttemptRecord,
+    "crawl-fetch-lease": CrawlFetchLease,
+    "crawl-fetch-task-record": CrawlFetchTaskRecord,
+    "crawl-metrics-snapshot": CrawlMetricsSnapshot,
+    "downstream-ingestion-task": DownstreamIngestionTask,
     "job-result": JobResult,
     "job-attempt-record": JobAttemptRecord,
     "job-lease": JobLease,

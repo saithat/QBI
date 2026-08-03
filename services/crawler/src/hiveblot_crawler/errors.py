@@ -27,3 +27,15 @@ class FrontierConcurrencyConflict(DiscoveryError):
 
 class InvalidFrontierState(DiscoveryError):
     """A requested frontier transition is not allowed."""
+
+
+class FetchTaskNotFound(DiscoveryError):
+    """A durable fetch task or attempt does not exist."""
+
+
+class FetchLeaseLost(DiscoveryError):
+    """A fetch worker no longer owns an active lease or request permit."""
+
+
+class FetchValidationError(DiscoveryError):
+    """A fetched response violated source, size, or media-type policy."""

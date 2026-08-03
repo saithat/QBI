@@ -12,6 +12,7 @@ ROOT = Path(__file__).parents[3]
 BASE = ROOT / "infra" / "kubernetes" / "base"
 KIND = ROOT / "infra" / "kubernetes" / "kind"
 KIND_OVERLAY = ROOT / "infra" / "kubernetes" / "overlays" / "kind"
+KEDA_ADDON = ROOT / "infra" / "kubernetes" / "addons" / "keda"
 
 
 def _documents(directory: Path) -> list[dict[str, object]]:
@@ -47,6 +48,7 @@ def test_base_defines_required_stateless_workloads_and_no_durable_backends() -> 
         "hiveblot-evaluation-workers",
         "hiveblot-workflow-workers",
         "hiveblot-cpu-workers",
+        "hiveblot-fetch-workers",
         "hiveblot-otel-collector",
     }
     assert not {"StatefulSet", "Secret"} & {item.get("kind") for item in documents}
@@ -85,9 +87,10 @@ def test_service_accounts_are_separate_and_job_rbac_is_least_privilege() -> None
     accounts = {
         item["metadata"]["name"] for item in documents if item.get("kind") == "ServiceAccount"
     }
-    assert len(accounts) == 9
+    assert len(accounts) == 10
     assert "hiveblot-job-runner" in accounts
     assert "hiveblot-discovery" in accounts
+    assert "hiveblot-fetch-worker" in accounts
     role = next(item for item in documents if item.get("kind") == "Role")
     resources = {resource for rule in role["rules"] for resource in rule["resources"]}
     assert resources == {"jobs", "pods", "pods/log"}
@@ -217,3 +220,52 @@ def test_discovery_cronjob_is_bounded_scheduled_and_tokenless() -> None:
 
     kind_patch = yaml.safe_load((KIND_OVERLAY / "discovery-patch.yaml").read_text())
     assert kind_patch["spec"]["suspend"] is True
+
+
+def test_fetch_workers_are_long_lived_tokenless_and_least_privilege() -> None:
+    deployment = next(
+        item
+        for item in _documents(BASE)
+        if item.get("kind") == "Deployment" and item["metadata"]["name"] == "hiveblot-fetch-workers"
+    )
+    pod = deployment["spec"]["template"]["spec"]
+    assert pod["serviceAccountName"] == "hiveblot-fetch-worker"
+    assert pod["automountServiceAccountToken"] is False
+    container = pod["containers"][0]
+    assert container["command"] == ["hiveblot-fetch-worker"]
+    assert "envFrom" not in container
+    environment_names = {item["name"] for item in container["env"]}
+    assert "VLLM_API_KEY" not in environment_names
+    assert "TEMPORAL_API_KEY" not in environment_names
+    assert {
+        "DATABASE_URL",
+        "S3_ACCESS_KEY_ID",
+        "S3_SECRET_ACCESS_KEY",
+        "FETCH_WORKER_ID",
+        "FETCH_DOMAIN_MINIMUM_INTERVAL_MILLISECONDS",
+        "FETCH_DOMAIN_MAXIMUM_CONCURRENCY",
+    } <= environment_names
+
+
+def test_keda_addon_scales_fetch_deployment_from_durable_queue_depth() -> None:
+    documents = tuple(
+        yaml.safe_load_all((KEDA_ADDON / "fetch-worker-scaled-object.yaml").read_text())
+    )
+    authentication = next(item for item in documents if item["kind"] == "TriggerAuthentication")
+    scaler = next(item for item in documents if item["kind"] == "ScaledObject")
+    secret_reference = authentication["spec"]["secretTargetRef"][0]
+    assert secret_reference == {
+        "parameter": "connection",
+        "name": "hiveblot-keda-secrets",
+        "key": "DATABASE_URL",
+    }
+    assert scaler["apiVersion"] == "keda.sh/v1alpha1"
+    assert scaler["kind"] == "ScaledObject"
+    spec = scaler["spec"]
+    assert spec["scaleTargetRef"]["name"] == "hiveblot-fetch-workers"
+    assert spec["minReplicaCount"] == 1
+    assert spec["maxReplicaCount"] > spec["minReplicaCount"]
+    trigger = spec["triggers"][0]
+    assert trigger["type"] == "postgresql"
+    assert trigger["authenticationRef"]["name"] == "hiveblot-fetch-queue"
+    assert "crawl_fetch_tasks" in trigger["metadata"]["query"]

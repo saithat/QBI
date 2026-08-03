@@ -1,0 +1,398 @@
+{
+  "$defs": {
+    "ArtifactReference": {
+      "additionalProperties": false,
+      "description": "Stable metadata needed to identify immutable bytes without embedding them.",
+      "properties": {
+        "artifact_id": {
+          "format": "uuid",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "byte_size": {
+          "minimum": 0,
+          "title": "Byte Size",
+          "type": "integer"
+        },
+        "media_type": {
+          "$ref": "#/$defs/MediaType"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/SchemaVersion",
+          "default": "1.0"
+        },
+        "sha256": {
+          "$ref": "#/$defs/Sha256Digest"
+        }
+      },
+      "required": [
+        "artifact_id",
+        "sha256",
+        "media_type",
+        "byte_size"
+      ],
+      "title": "ArtifactReference",
+      "type": "object"
+    },
+    "CanonicalSourceUrl": {
+      "maxLength": 4096,
+      "minLength": 1,
+      "type": "string"
+    },
+    "CrawlFetchError": {
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "message": {
+          "maxLength": 4000,
+          "minLength": 1,
+          "title": "Message",
+          "type": "string"
+        },
+        "retryable": {
+          "title": "Retryable",
+          "type": "boolean"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/SchemaVersion",
+          "default": "1.0"
+        }
+      },
+      "required": [
+        "code",
+        "message",
+        "retryable"
+      ],
+      "title": "CrawlFetchError",
+      "type": "object"
+    },
+    "CrawlFetchLease": {
+      "additionalProperties": false,
+      "properties": {
+        "acquisition_method": {
+          "$ref": "#/$defs/DiscoveryAcquisitionMethod"
+        },
+        "attempt": {
+          "minimum": 1,
+          "title": "Attempt",
+          "type": "integer"
+        },
+        "attempt_id": {
+          "format": "uuid",
+          "title": "Attempt Id",
+          "type": "string"
+        },
+        "canonical_url": {
+          "$ref": "#/$defs/CanonicalSourceUrl"
+        },
+        "domain": {
+          "$ref": "#/$defs/DomainName"
+        },
+        "etag": {
+          "anyOf": [
+            {
+              "maxLength": 1000,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Etag"
+        },
+        "expected_media_types": {
+          "items": {
+            "$ref": "#/$defs/MediaType"
+          },
+          "title": "Expected Media Types",
+          "type": "array"
+        },
+        "expires_at": {
+          "format": "date-time",
+          "title": "Expires At",
+          "type": "string"
+        },
+        "frontier_id": {
+          "format": "uuid",
+          "title": "Frontier Id",
+          "type": "string"
+        },
+        "last_modified": {
+          "anyOf": [
+            {
+              "maxLength": 1000,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Last Modified"
+        },
+        "lease_token": {
+          "format": "uuid",
+          "title": "Lease Token",
+          "type": "string"
+        },
+        "leased_at": {
+          "format": "date-time",
+          "title": "Leased At",
+          "type": "string"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/SchemaVersion",
+          "default": "1.0"
+        },
+        "task_id": {
+          "format": "uuid",
+          "title": "Task Id",
+          "type": "string"
+        },
+        "trace_id": {
+          "format": "uuid",
+          "title": "Trace Id",
+          "type": "string"
+        },
+        "worker_id": {
+          "$ref": "#/$defs/Identifier"
+        }
+      },
+      "required": [
+        "task_id",
+        "frontier_id",
+        "attempt_id",
+        "attempt",
+        "worker_id",
+        "lease_token",
+        "canonical_url",
+        "domain",
+        "acquisition_method",
+        "expected_media_types",
+        "trace_id",
+        "leased_at",
+        "expires_at"
+      ],
+      "title": "CrawlFetchLease",
+      "type": "object"
+    },
+    "CrawlFetchTaskStatus": {
+      "enum": [
+        "pending",
+        "leased",
+        "retry_wait",
+        "succeeded",
+        "not_modified",
+        "prohibited",
+        "dead_letter",
+        "cancelled"
+      ],
+      "title": "CrawlFetchTaskStatus",
+      "type": "string"
+    },
+    "DiscoveryAcquisitionMethod": {
+      "enum": [
+        "official_api",
+        "bulk_manifest",
+        "accession_download",
+        "open_access_archive",
+        "controlled_crawl"
+      ],
+      "title": "DiscoveryAcquisitionMethod",
+      "type": "string"
+    },
+    "DomainName": {
+      "pattern": "^[a-z0-9](?:[a-z0-9.-]{0,251}[a-z0-9])?$",
+      "type": "string"
+    },
+    "Identifier": {
+      "maxLength": 200,
+      "minLength": 1,
+      "type": "string"
+    },
+    "MediaType": {
+      "pattern": "^[a-z0-9][a-z0-9!#$&^_.+-]*/[a-z0-9][a-z0-9!#$&^_.+-]*$",
+      "type": "string"
+    },
+    "SchemaVersion": {
+      "const": "1.0",
+      "type": "string"
+    },
+    "Sha256Digest": {
+      "pattern": "^[a-f0-9]{64}$",
+      "type": "string"
+    }
+  },
+  "$id": "urn:hiveblot:schema:v1:crawl-fetch-task-record",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "acquisition_method": {
+      "$ref": "#/$defs/DiscoveryAcquisitionMethod"
+    },
+    "attempt_count": {
+      "minimum": 0,
+      "title": "Attempt Count",
+      "type": "integer"
+    },
+    "canonical_url": {
+      "$ref": "#/$defs/CanonicalSourceUrl"
+    },
+    "completed_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Completed At"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "domain": {
+      "$ref": "#/$defs/DomainName"
+    },
+    "etag": {
+      "anyOf": [
+        {
+          "maxLength": 1000,
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Etag"
+    },
+    "expected_media_types": {
+      "items": {
+        "$ref": "#/$defs/MediaType"
+      },
+      "title": "Expected Media Types",
+      "type": "array"
+    },
+    "frontier_id": {
+      "format": "uuid",
+      "title": "Frontier Id",
+      "type": "string"
+    },
+    "last_error": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/CrawlFetchError"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "last_modified": {
+      "anyOf": [
+        {
+          "maxLength": 1000,
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Last Modified"
+    },
+    "lease": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/CrawlFetchLease"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "max_attempts": {
+      "maximum": 100,
+      "minimum": 1,
+      "title": "Max Attempts",
+      "type": "integer"
+    },
+    "next_eligible_at": {
+      "format": "date-time",
+      "title": "Next Eligible At",
+      "type": "string"
+    },
+    "priority": {
+      "maximum": 1000,
+      "minimum": 0,
+      "title": "Priority",
+      "type": "integer"
+    },
+    "result_artifact": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ArtifactReference"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "schema_version": {
+      "$ref": "#/$defs/SchemaVersion",
+      "default": "1.0"
+    },
+    "status": {
+      "$ref": "#/$defs/CrawlFetchTaskStatus"
+    },
+    "task_id": {
+      "format": "uuid",
+      "title": "Task Id",
+      "type": "string"
+    },
+    "trace_id": {
+      "format": "uuid",
+      "title": "Trace Id",
+      "type": "string"
+    },
+    "updated_at": {
+      "format": "date-time",
+      "title": "Updated At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "task_id",
+    "frontier_id",
+    "canonical_url",
+    "domain",
+    "acquisition_method",
+    "expected_media_types",
+    "status",
+    "priority",
+    "attempt_count",
+    "max_attempts",
+    "next_eligible_at",
+    "trace_id",
+    "created_at",
+    "updated_at"
+  ],
+  "title": "CrawlFetchTaskRecord",
+  "type": "object"
+}

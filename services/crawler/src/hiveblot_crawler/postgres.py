@@ -253,11 +253,20 @@ class PostgresFrontierRepository:
             connection.execute(
                 """
                 UPDATE crawl_frontier
-                SET priority = %s,
+                SET status = CASE WHEN status = 'acquired' THEN 'pending' ELSE status END,
+                    priority = %s,
                     next_eligible_fetch_at = %s,
                     version = version + 1,
                     updated_at = %s
                 WHERE frontier_id = %s
+                """,
+                (priority, next_eligible_fetch_at, updated_at, frontier_id),
+            )
+            connection.execute(
+                """
+                UPDATE crawl_fetch_tasks
+                SET priority = %s, next_eligible_at = %s, updated_at = %s
+                WHERE frontier_id = %s AND status IN ('pending', 'retry_wait')
                 """,
                 (priority, next_eligible_fetch_at, updated_at, frontier_id),
             )
@@ -307,6 +316,15 @@ class PostgresFrontierRepository:
                     version = version + 1,
                     updated_at = %s
                 WHERE frontier_id = %s
+                """,
+                (next_eligible_fetch_at, updated_at, frontier_id),
+            )
+            connection.execute(
+                """
+                UPDATE crawl_fetch_tasks
+                SET status = 'pending', next_eligible_at = %s,
+                    updated_at = %s, completed_at = NULL
+                WHERE frontier_id = %s AND status = 'retry_wait'
                 """,
                 (next_eligible_fetch_at, updated_at, frontier_id),
             )
@@ -641,7 +659,11 @@ class PostgresFrontierRepository:
         )
         if access_status is DiscoveryAccessStatus.PROHIBITED:
             status = CrawlFrontierStatus.PROHIBITED
-        elif current_status is CrawlFrontierStatus.UNSUPPORTED and media_types:
+        elif (
+            current_status is CrawlFrontierStatus.UNSUPPORTED
+            and media_types
+            and candidate.access_status is DiscoveryAccessStatus.ALLOWED
+        ):
             status = CrawlFrontierStatus.PENDING
         else:
             status = current_status
@@ -784,6 +806,8 @@ class PostgresFrontierRepository:
 def _initial_status(candidate: DiscoveryRecord) -> CrawlFrontierStatus:
     if candidate.access_status is DiscoveryAccessStatus.PROHIBITED:
         return CrawlFrontierStatus.PROHIBITED
+    if candidate.access_status is not DiscoveryAccessStatus.ALLOWED:
+        return CrawlFrontierStatus.UNSUPPORTED
     if not candidate.expected_media_types:
         return CrawlFrontierStatus.UNSUPPORTED
     return CrawlFrontierStatus.PENDING

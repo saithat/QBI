@@ -154,6 +154,208 @@ class DiscoverySettings(BaseSettings):
         return self
 
 
+class FetchWorkerSettings(BaseSettings):
+    """Least-privilege settings for long-lived public fetch workers."""
+
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        env_prefix="",
+        extra="ignore",
+        frozen=True,
+        populate_by_name=True,
+        strict=True,
+        validate_default=True,
+    )
+
+    environment: RuntimeEnvironment = Field(
+        default=RuntimeEnvironment.LOCAL,
+        validation_alias="HIVEBLOT_ENV",
+    )
+    database_url: str = Field(
+        default="postgresql://localhost:5432/hiveblot",
+        validation_alias="DATABASE_URL",
+        min_length=1,
+    )
+    s3_endpoint_url: str = Field(
+        default="http://localhost:9000",
+        validation_alias="S3_ENDPOINT_URL",
+        min_length=1,
+    )
+    s3_region: str = Field(default="us-east-1", validation_alias="S3_REGION", min_length=1)
+    s3_bucket: str = Field(
+        default="hiveblot-artifacts",
+        validation_alias="S3_BUCKET",
+        min_length=3,
+        max_length=63,
+    )
+    s3_access_key_id: SecretStr = Field(
+        default=SecretStr(""),
+        validation_alias="S3_ACCESS_KEY_ID",
+    )
+    s3_secret_access_key: SecretStr = Field(
+        default=SecretStr(""),
+        validation_alias="S3_SECRET_ACCESS_KEY",
+    )
+    artifact_max_bytes: int = Field(
+        default=1_073_741_824,
+        validation_alias="ARTIFACT_MAX_BYTES",
+        ge=1,
+    )
+    fetch_worker_id: str = Field(
+        default="fetch-worker-local",
+        validation_alias="FETCH_WORKER_ID",
+        min_length=1,
+        max_length=200,
+    )
+    fetch_worker_poll_seconds: float = Field(
+        default=1,
+        validation_alias="FETCH_WORKER_POLL_SECONDS",
+        gt=0,
+        le=300,
+    )
+    fetch_lease_seconds: int = Field(
+        default=120,
+        validation_alias="FETCH_LEASE_SECONDS",
+        ge=5,
+        le=3600,
+    )
+    fetch_max_attempts: int = Field(
+        default=5,
+        validation_alias="FETCH_MAX_ATTEMPTS",
+        ge=1,
+        le=100,
+    )
+    fetch_http_timeout_seconds: float = Field(
+        default=30,
+        validation_alias="FETCH_HTTP_TIMEOUT_SECONDS",
+        gt=0,
+        le=300,
+    )
+    fetch_max_response_bytes: int = Field(
+        default=250_000_000,
+        validation_alias="FETCH_MAX_RESPONSE_BYTES",
+        ge=1024,
+        le=2_000_000_000,
+    )
+    fetch_max_redirects: int = Field(
+        default=5,
+        validation_alias="FETCH_MAX_REDIRECTS",
+        ge=0,
+        le=20,
+    )
+    fetch_domain_minimum_interval_milliseconds: int = Field(
+        default=1000,
+        validation_alias="FETCH_DOMAIN_MINIMUM_INTERVAL_MILLISECONDS",
+        ge=0,
+        le=3_600_000,
+    )
+    fetch_domain_maximum_concurrency: int = Field(
+        default=2,
+        validation_alias="FETCH_DOMAIN_MAXIMUM_CONCURRENCY",
+        ge=1,
+        le=1000,
+    )
+    fetch_domain_permit_seconds: int = Field(
+        default=60,
+        validation_alias="FETCH_DOMAIN_PERMIT_SECONDS",
+        ge=1,
+        le=3600,
+    )
+    fetch_domain_maximum_wait_seconds: float = Field(
+        default=30,
+        validation_alias="FETCH_DOMAIN_MAXIMUM_WAIT_SECONDS",
+        gt=0,
+        le=3600,
+    )
+    fetch_robots_cache_seconds: int = Field(
+        default=86_400,
+        validation_alias="FETCH_ROBOTS_CACHE_SECONDS",
+        ge=60,
+        le=2_592_000,
+    )
+    fetch_robots_max_bytes: int = Field(
+        default=524_288,
+        validation_alias="FETCH_ROBOTS_MAX_BYTES",
+        ge=1024,
+        le=5_000_000,
+    )
+    discovery_user_agent: str = Field(
+        default="HiveBlot local development (contact not configured)",
+        validation_alias="DISCOVERY_USER_AGENT",
+        min_length=10,
+        max_length=500,
+    )
+    fetch_allowed_hosts: Annotated[tuple[str, ...], NoDecode] = Field(
+        default=("pmc.ncbi.nlm.nih.gov",),
+        validation_alias="FETCH_ALLOWED_HOSTS",
+        min_length=1,
+    )
+
+    @field_validator("s3_endpoint_url")
+    @classmethod
+    def normalize_fetch_s3_endpoint(cls, value: str) -> str:
+        return value.rstrip("/")
+
+    @field_validator("fetch_allowed_hosts", mode="before")
+    @classmethod
+    def parse_fetch_allowed_hosts(cls, value: object) -> object:
+        if isinstance(value, str):
+            return tuple(part.strip().casefold() for part in value.split(",") if part.strip())
+        return value
+
+    @field_validator("fetch_allowed_hosts")
+    @classmethod
+    def validate_fetch_allowed_hosts(cls, value: tuple[str, ...]) -> tuple[str, ...]:
+        normalized = tuple(host.strip().casefold() for host in value)
+        if len(normalized) != len(set(normalized)):
+            raise ValueError("FETCH_ALLOWED_HOSTS entries must be unique")
+        for host in normalized:
+            if urlsplit(f"//{host}").hostname != host or any(
+                character.isspace() for character in host
+            ):
+                raise ValueError("FETCH_ALLOWED_HOSTS entries must be exact host names")
+        return normalized
+
+    @model_validator(mode="after")
+    def fetch_configuration_is_safe(self) -> Self:
+        if self.fetch_max_response_bytes > self.artifact_max_bytes:
+            raise ValueError("FETCH_MAX_RESPONSE_BYTES cannot exceed ARTIFACT_MAX_BYTES")
+        if self.fetch_http_timeout_seconds >= self.fetch_lease_seconds:
+            raise ValueError("FETCH_HTTP_TIMEOUT_SECONDS must be shorter than FETCH_LEASE_SECONDS")
+        if self.environment is not RuntimeEnvironment.DEPLOYED:
+            return self
+        required = {
+            "database_url",
+            "s3_endpoint_url",
+            "s3_bucket",
+            "s3_access_key_id",
+            "s3_secret_access_key",
+            "discovery_user_agent",
+            "fetch_worker_id",
+            "fetch_allowed_hosts",
+        }
+        missing = sorted(required - self.model_fields_set)
+        if missing:
+            raise ValueError(
+                "deployed fetch workers require explicit values for: " + ", ".join(missing)
+            )
+        if "contact not configured" in self.discovery_user_agent.casefold():
+            raise ValueError("DISCOVERY_USER_AGENT must identify an operator contact when deployed")
+        if "localhost" in self.database_url.casefold() or "127.0.0.1" in self.database_url:
+            raise ValueError("DATABASE_URL must not point at localhost when deployed")
+        if "localhost" in self.s3_endpoint_url.casefold() or "127.0.0.1" in self.s3_endpoint_url:
+            raise ValueError("S3_ENDPOINT_URL must not point at localhost when deployed")
+        if not self.s3_access_key_id.get_secret_value().strip():
+            raise ValueError("S3_ACCESS_KEY_ID must not be empty when deployed")
+        storage_key = self.s3_secret_access_key.get_secret_value().strip().casefold()
+        if storage_key in {"", "minioadmin", "replace-me", "changeme"}:
+            raise ValueError(
+                "S3_SECRET_ACCESS_KEY must not use a local or placeholder value when deployed"
+            )
+        return self
+
+
 class Settings(BaseSettings):
     """HiveBlot settings loaded from environment variables or a local `.env` file."""
 

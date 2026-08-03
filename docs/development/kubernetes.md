@@ -35,14 +35,15 @@ removes the temporary file. No Secret values are committed or rendered into Kust
 1. creates the dedicated `hiveblot-kind` Docker network;
 2. starts only PostgreSQL and MinIO with Compose on that network and waits for both health checks;
 3. creates the `hiveblot` kind cluster on the same network if absent;
-4. builds and loads `hiveblot:prd-015` into kind;
+4. builds and loads `hiveblot:prd-016` into kind;
 5. applies the runtime Secret and kind Kustomize overlay; and
 6. waits for enabled Deployments to roll out.
 
 The kind overlay scales the Temporal worker to zero because no in-cluster Temporal server is
 provided. Point settings at an external Temporal endpoint and remove that replica patch to exercise
 the workflow worker. It also permits host ingress to the local NodePort; the production base limits
-HTTP ingress to namespace-selected cluster sources.
+HTTP ingress to namespace-selected cluster sources. The fetch Deployment keeps one long-lived
+worker; external acquisition still requires an intentional `FETCH_ALLOWED_HOSTS` value.
 
 Inspect the runtime:
 
@@ -80,6 +81,7 @@ Render either configuration without contacting a cluster:
 ```bash
 kubectl kustomize infra/kubernetes/base
 kubectl kustomize infra/kubernetes/overlays/kind
+kubectl kustomize infra/kubernetes/addons/keda
 uv run pytest -p no:cacheprovider tests/unit/kubernetes tests/unit/jobs/test_kubernetes_executor.py
 ```
 
@@ -87,6 +89,16 @@ The manifest tests assert workload probes, resources, Pod hardening, token use, 
 durable-state boundaries, network policies, workspace shape, and credential-free templates. The
 executor tests cover manifest translation, GPU placement, timeout/cancellation, API normalization,
 and publication through the durable in-memory job service.
+
+The optional KEDA add-on uses its PostgreSQL scaler against eligible `crawl_fetch_tasks`. Install a
+compatible externally managed KEDA release before applying it:
+
+```bash
+kubectl apply -k infra/kubernetes/addons/keda
+```
+
+KEDA changes fetch-worker replica count only. Shared PostgreSQL domain policies and permits remain
+authoritative, so scale-out cannot increase one source's request rate.
 
 ## Production adaptation checklist
 
@@ -99,5 +111,7 @@ and publication through the durable in-memory job service.
 - Pin application and collector images to reviewed immutable digests in the release pipeline.
 - Configure ingress/TLS, Pod disruption policy, autoscaling, observability export, and backup/restore
   outside this local overlay.
+- Install and monitor KEDA before applying `addons/keda`, and give its PostgreSQL identity read-only
+  access to the queue-depth query.
 - Configure GPU labels, tolerations, device plugin, quotas, and resource limits before accepting GPU
   jobs.

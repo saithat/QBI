@@ -128,6 +128,47 @@ services:
       retries: 12
     restart: unless-stopped
 
+  fetch-worker:
+    profiles: ["workers"]
+    build: .
+    command: ["hiveblot-fetch-worker"]
+    environment:
+      HIVEBLOT_ENV: local
+      DATABASE_URL: postgresql://${POSTGRES_USER:-hiveblot}:${POSTGRES_PASSWORD:?Run `make local-env` first}@postgres:5432/${POSTGRES_DB:-hiveblot}
+      S3_ENDPOINT_URL: http://minio:9000
+      S3_REGION: us-east-1
+      S3_BUCKET: ${S3_BUCKET:-hiveblot-artifacts}
+      S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID:?Run `make local-env` first}
+      S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY:?Run `make local-env` first}
+      ARTIFACT_MAX_BYTES: ${ARTIFACT_MAX_BYTES:-1073741824}
+      DISCOVERY_USER_AGENT: ${DISCOVERY_USER_AGENT:-HiveBlot local development (contact not configured)}
+      FETCH_ALLOWED_HOSTS: ${FETCH_ALLOWED_HOSTS:-pmc.ncbi.nlm.nih.gov}
+      FETCH_WORKER_ID: ${FETCH_WORKER_ID:-fetch-worker-local}
+      FETCH_WORKER_POLL_SECONDS: ${FETCH_WORKER_POLL_SECONDS:-1}
+      FETCH_LEASE_SECONDS: ${FETCH_LEASE_SECONDS:-120}
+      FETCH_MAX_ATTEMPTS: ${FETCH_MAX_ATTEMPTS:-5}
+      FETCH_HTTP_TIMEOUT_SECONDS: ${FETCH_HTTP_TIMEOUT_SECONDS:-30}
+      FETCH_MAX_RESPONSE_BYTES: ${FETCH_MAX_RESPONSE_BYTES:-250000000}
+      FETCH_MAX_REDIRECTS: ${FETCH_MAX_REDIRECTS:-5}
+      FETCH_DOMAIN_MINIMUM_INTERVAL_MILLISECONDS: ${FETCH_DOMAIN_MINIMUM_INTERVAL_MILLISECONDS:-1000}
+      FETCH_DOMAIN_MAXIMUM_CONCURRENCY: ${FETCH_DOMAIN_MAXIMUM_CONCURRENCY:-2}
+      FETCH_DOMAIN_PERMIT_SECONDS: ${FETCH_DOMAIN_PERMIT_SECONDS:-60}
+      FETCH_DOMAIN_MAXIMUM_WAIT_SECONDS: ${FETCH_DOMAIN_MAXIMUM_WAIT_SECONDS:-30}
+      FETCH_ROBOTS_CACHE_SECONDS: ${FETCH_ROBOTS_CACHE_SECONDS:-86400}
+      FETCH_ROBOTS_MAX_BYTES: ${FETCH_ROBOTS_MAX_BYTES:-524288}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    read_only: true
+    tmpfs:
+      - /tmp:size=536870912
+    security_opt:
+      - no-new-privileges:true
+    cap_drop: ["ALL"]
+    restart: unless-stopped
+
 volumes:
   minio_data:
   postgres_data:
