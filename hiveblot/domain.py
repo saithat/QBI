@@ -7,6 +7,8 @@ from dataclasses import dataclass
 
 @dataclass(frozen=True, slots=True)
 class RecordSearchCriteria:
+    q: str | None = None
+    paper_id: str | None = None
     target: str | None = None
     sample: str | None = None
     condition: str | None = None

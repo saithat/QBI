@@ -5,13 +5,11 @@ build-backend = "hatchling.build"
 [project]
 name = "hiveblot"
 version = "0.1.0"
-description = "Local western blot extraction and search"
+description = "A public database of western blot evidence"
 readme = "README.md"
 requires-python = ">=3.12,<3.14"
 dependencies = [
-  "boto3>=1.39,<2",
   "fastapi>=0.116,<1",
-  "httpx>=0.28,<1",
   "numpy>=2,<3",
   "opencv-python-headless>=4.11,<5",
   "Pillow>=11,<13",
@@ -20,66 +18,31 @@ dependencies = [
   "pydantic-settings>=2.10,<3",
   "PyMuPDF>=1.26,<2",
   "requests>=2.32,<3",
-  "temporalio>=1.30,<2",
   "uvicorn[standard]>=0.35,<1",
 ]
 
 [project.optional-dependencies]
 dev = [
+  "httpx>=0.28,<1",
   "mypy>=1.17,<2",
-  "PyYAML>=6,<7",
   "pytest>=8.4,<10",
-  "pytest-asyncio>=1.1,<2",
   "ruff>=0.12,<1",
 ]
 
 [project.scripts]
-hiveblot-ingest = "workers.extraction.entrypoint:main"
-hiveblot-schemas = "hiveblot_contracts.schema_cli:main"
-hiveblot-evaluate = "hiveblot_evaluation.metrics_cli:main"
-hiveblot-discover-pmc = "workers.discovery.entrypoint:main"
-hiveblot-fetch-worker = "workers.fetching.entrypoint:main"
-hiveblot-job-operation = "workers.jobs.operations:main"
-hiveblot-job-worker = "workers.jobs.entrypoint:main"
-hiveblot-kubernetes-smoke = "workers.jobs.kubernetes_smoke:main"
-hiveblot-workflow-worker = "workers.workflow.entrypoint:main"
-hiveblot-auth-bootstrap = "hiveblot_auth.bootstrap:main"
-hiveblot-auth-platform-token = "hiveblot_auth.bootstrap:platform_token_main"
+hiveblot-ingest = "hiveblot.pipeline:main"
+hiveblot-env = "hiveblot.bootstrap:main"
 
 [tool.hatch.build.targets.wheel]
-packages = [
-  "apps",
-  "hiveblot",
-  "packages/auth/src/hiveblot_auth",
-  "packages/contracts/src/hiveblot_contracts",
-  "packages/densitometry/src/hiveblot_densitometry",
-  "packages/evaluation/src/hiveblot_evaluation",
-  "packages/extraction/src/hiveblot_extraction",
-  "packages/storage/src/hiveblot_storage",
-  "services/crawler/src/hiveblot_crawler",
-  "services/job-service/src/hiveblot_job_service",
-  "services/search/src/hiveblot_search",
-  "workers",
-]
+packages = ["hiveblot"]
 
 [tool.hatch.build.targets.wheel.force-include]
-"packages/contracts/schemas/v1" = "hiveblot_contracts/schemas/v1"
+".env.example" = "hiveblot/env.example"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-ra"
-pythonpath = [
-  ".",
-  "packages/auth/src",
-  "packages/contracts/src",
-  "packages/densitometry/src",
-  "packages/evaluation/src",
-  "packages/extraction/src",
-  "packages/storage/src",
-  "services/crawler/src",
-  "services/job-service/src",
-  "services/search/src",
-]
+pythonpath = ["."]
 
 [tool.ruff]
 target-version = "py312"
@@ -99,5 +62,3 @@ warn_redundant_casts = true
 warn_unreachable = true
 warn_unused_configs = true
 warn_unused_ignores = true
-exclude = ["data/", "tests/fixtures/"]
-mypy_path = "packages/auth/src:packages/contracts/src:packages/densitometry/src:packages/evaluation/src:packages/extraction/src:packages/storage/src:services/crawler/src:services/job-service/src:services/search/src"

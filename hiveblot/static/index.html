@@ -3,661 +3,429 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="A local index of extracted western blot evidence.">
-  <title>HiveBlot — Local evidence index</title>
+  <meta name="description" content="Browse western blot images and extracted observations from scientific papers.">
+  <title>HiveBlot — Western blot database</title>
   <style>
-    :root {
-      color-scheme: light;
-      --paper: #f4f3ee;
-      --ink: #171815;
-      --muted: #676a63;
-      --rule: #cdcec6;
-      --soft: #e8e7e0;
-      --positive: #285f48;
-      --negative: #9a413b;
-      --uncertain: #8a6825;
-    }
-
+    :root { color-scheme: light; --paper: #f7f7f3; --ink: #20251f; --muted: #62685f; --rule: #d8dcd3; --accent: #315c43; }
     * { box-sizing: border-box; }
-
-    html { background: var(--paper); }
-
-    body {
-      margin: 0;
-      background: var(--paper);
-      color: var(--ink);
-      font: 15px/1.45 Arial, Helvetica, sans-serif;
-      -webkit-font-smoothing: antialiased;
-    }
-
-    button,
-    input { font: inherit; }
-
-    main {
-      width: min(1480px, calc(100% - 64px));
-      min-height: 100vh;
-      margin: 0 auto;
-      padding: 24px 0 36px;
-    }
-
-    .site-header {
-      display: grid;
-      grid-template-columns: 1fr auto;
-      align-items: center;
-      gap: 24px;
-      padding-bottom: 18px;
-      border-bottom: 1px solid var(--ink);
-    }
-
-    .brand {
-      color: var(--ink);
-      font: 600 20px/1 Georgia, "Times New Roman", serif;
-      text-decoration: none;
-      letter-spacing: -.4px;
-    }
-
-    .header-label {
-      justify-self: end;
-      margin: 0;
-      color: var(--muted);
-      font-size: 11px;
-      letter-spacing: .1em;
-      text-transform: uppercase;
-    }
-
-    .hero {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) minmax(260px, 390px);
-      gap: 48px;
-      align-items: end;
-      padding: clamp(64px, 9vw, 132px) 0 clamp(68px, 9vw, 128px);
-    }
-
-    .eyebrow {
-      margin: 0 0 24px;
-      color: var(--muted);
-      font-size: 11px;
-      letter-spacing: .12em;
-      text-transform: uppercase;
-    }
-
-    h1 {
-      max-width: 1000px;
-      margin: 0;
-      font: 400 clamp(54px, 8vw, 122px)/.88 Georgia, "Times New Roman", serif;
-      letter-spacing: -.065em;
-    }
-
-    .lede {
-      max-width: 34ch;
-      margin: 0 0 7px;
-      color: var(--muted);
-      font-size: clamp(17px, 1.5vw, 21px);
-      line-height: 1.45;
-    }
-
-    .explorer { border-top: 1px solid var(--ink); }
-
-    .section-heading {
-      display: flex;
-      justify-content: space-between;
-      gap: 24px;
-      padding: 13px 0 28px;
-      color: var(--muted);
-      font-size: 11px;
-      letter-spacing: .1em;
-      text-transform: uppercase;
-    }
-
-    form {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) auto;
-      border-bottom: 1px solid var(--ink);
-    }
-
-    input {
-      min-width: 0;
-      border: 0;
-      border-radius: 0;
-      outline: 0;
-      background: transparent;
-      color: var(--ink);
-      padding: 22px 24px 22px 0;
-      font: 400 clamp(20px, 2.2vw, 32px)/1.2 Georgia, "Times New Roman", serif;
-    }
-
-    input::placeholder { color: #8d8f88; opacity: 1; }
-
-    input:focus-visible { box-shadow: inset 0 -3px var(--ink); }
-
-    button {
-      align-self: stretch;
-      min-width: 140px;
-      border: 0;
-      border-radius: 0;
-      background: var(--ink);
-      color: var(--paper);
-      padding: 0 30px;
-      cursor: pointer;
-      font-size: 12px;
-      font-weight: 700;
-      letter-spacing: .09em;
-      text-transform: uppercase;
-    }
-
-    button:hover { background: #343630; }
-    button:focus-visible { outline: 3px solid var(--paper); outline-offset: -6px; }
-    button:disabled { cursor: wait; opacity: .55; }
-
-    .meta {
-      min-height: 69px;
-      display: flex;
-      align-items: center;
-      gap: 10px 20px;
-      flex-wrap: wrap;
-      border-bottom: 1px solid var(--rule);
-      color: var(--muted);
-      font-size: 12px;
-    }
-
-    .tag::before { content: "— "; }
-
-    .message {
-      padding: 72px 0;
-      border-bottom: 1px solid var(--rule);
-      color: var(--muted);
-      font: 400 clamp(20px, 2.4vw, 32px)/1.25 Georgia, "Times New Roman", serif;
-    }
-
-    .message.error { color: var(--negative); }
-
-    .table-wrap {
-      overflow-x: auto;
-      border-bottom: 1px solid var(--ink);
-    }
-
-    table {
-      width: 100%;
-      min-width: 1040px;
-      border-collapse: collapse;
-      background: transparent;
-    }
-
-    th,
-    td {
-      padding: 15px 18px 15px 0;
-      border-bottom: 1px solid var(--rule);
-      text-align: left;
-      vertical-align: top;
-    }
-
-    th:last-child,
-    td:last-child { padding-right: 0; }
-
-    th {
-      color: var(--muted);
-      font-size: 10px;
-      font-weight: 400;
-      letter-spacing: .1em;
-      text-transform: uppercase;
-    }
-
+    body { margin: 0; background: var(--paper); color: var(--ink); font: 15px/1.5 system-ui, sans-serif; }
+    main { width: min(1480px, calc(100% - 48px)); margin: 0 auto; padding: 26px 0; }
+    a { color: var(--accent); text-underline-offset: 3px; overflow-wrap: anywhere; }
+    button, input, select { font: inherit; }
+    button, select { cursor: pointer; }
+    button { border: 1px solid var(--rule); border-radius: 5px; padding: 9px 16px; background: #fff; color: var(--ink); }
+    button:hover:not(:disabled) { border-color: var(--accent); background: #edf1e9; }
+    button:disabled { opacity: .45; cursor: default; }
+    :focus-visible { outline: 3px solid #739781; outline-offset: 3px; }
+    header.site-header { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding-bottom: 20px; border-bottom: 1px solid var(--rule); }
+    .brand { color: var(--ink); font-size: 22px; font-weight: 650; text-decoration: none; }
+    .subtle { color: var(--muted); font-size: 13px; }
+    h1 { margin: 28px 0 5px; font-size: clamp(25px, 3vw, 34px); font-weight: 600; letter-spacing: -.035em; }
+    .intro { margin: 0 0 28px; color: var(--muted); }
+    form { padding: 20px; border: 1px solid var(--rule); border-radius: 7px; background: #fff; }
+    .search-row { display: flex; align-items: end; gap: 12px; }
+    .search-row label { flex: 1; }
+    label { display: block; min-width: 0; color: #434a40; font-size: 13px; font-weight: 550; }
+    input, select { width: 100%; border: 1px solid #c3c9bd; border-radius: 4px; padding: 10px; background: #fff; color: var(--ink); }
+    input { margin-top: 5px; }
+    input::placeholder { color: #7b8077; }
+    .primary { min-height: 44px; background: var(--accent); border-color: var(--accent); color: white; }
+    .primary:hover:not(:disabled) { background: #234832; color: white; }
+    .filters { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin-top: 16px; }
+    .toolbar, .pagination { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; padding: 18px 0; }
+    .page-size { display: flex; align-items: center; gap: 10px; font-weight: 400; }
+    .page-size select { width: auto; padding: 6px 26px 6px 9px; }
+    #summary { margin: 0; font-size: 14px; }
+    .table-wrap { overflow-x: auto; border: 1px solid var(--rule); border-radius: 6px; background: #fff; }
+    table { border-collapse: collapse; width: 100%; min-width: 980px; }
+    th, td { padding: 13px 16px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--rule); }
+    th { background: #eff1eb; font-size: 12px; font-weight: 600; color: #4f584b; white-space: nowrap; }
+    td { font-size: 14px; overflow-wrap: anywhere; max-width: 280px; }
     tbody tr:last-child td { border-bottom: 0; }
-    .record-row { cursor: pointer; }
-    .record-row:hover { background: rgba(23, 24, 21, .05); }
-    .record-row:focus-visible {
-      outline: 2px solid var(--ink);
-      outline-offset: -2px;
-      background: rgba(23, 24, 21, .05);
-    }
-    td.target { font-family: Georgia, "Times New Roman", serif; font-size: 17px; }
-
-    .state {
-      font-size: 11px;
-      letter-spacing: .06em;
-      text-transform: uppercase;
-    }
-
-    .state.present { color: var(--positive); }
-    .state.absent { color: var(--negative); }
-    .state.uncertain { color: var(--uncertain); }
-
-    footer {
-      display: flex;
-      justify-content: space-between;
-      gap: 24px;
-      padding-top: 16px;
-      color: var(--muted);
-      font-size: 11px;
-      letter-spacing: .04em;
-    }
-
-    code {
-      color: var(--ink);
-      font: inherit;
-    }
-
-    .record-dialog {
-      width: min(1280px, calc(100% - 40px));
-      height: min(880px, calc(100% - 40px));
-      max-width: none;
-      max-height: none;
-      margin: auto;
-      padding: 0;
-      border: 1px solid var(--ink);
-      background: var(--paper);
-      color: var(--ink);
-    }
-
-    .record-dialog::backdrop { background: rgba(23, 24, 21, .52); }
-
-    .dialog-shell {
-      display: grid;
-      grid-template-rows: auto minmax(0, 1fr);
-      height: 100%;
-    }
-
-    .dialog-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 24px;
-      padding: 18px 22px;
-      border-bottom: 1px solid var(--ink);
-    }
-
-    .dialog-kicker {
-      margin: 0 0 4px;
-      color: var(--muted);
-      font-size: 10px;
-      letter-spacing: .1em;
-      text-transform: uppercase;
-    }
-
-    .dialog-header h2 {
-      margin: 0;
-      font: 400 clamp(21px, 2.2vw, 32px)/1.1 Georgia, "Times New Roman", serif;
-      letter-spacing: -.025em;
-    }
-
-    .dialog-close {
-      align-self: auto;
-      min-width: 0;
-      min-height: 0;
-      border: 1px solid var(--ink);
-      background: transparent;
-      color: var(--ink);
-      padding: 9px 12px;
-      font-size: 10px;
-    }
-
-    .dialog-close:hover { background: var(--ink); color: var(--paper); }
-    .dialog-close:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
-
-    .detail-content { overflow: auto; }
-
-    .detail-loading {
-      padding: 64px 24px;
-      color: var(--muted);
-      font: 400 24px/1.2 Georgia, "Times New Roman", serif;
-    }
-
-    .detail-grid {
-      display: grid;
-      grid-template-columns: minmax(0, 1.55fr) minmax(320px, .75fr);
-      min-height: 100%;
-    }
-
-    .detail-media {
-      display: grid;
-      place-items: center;
-      min-width: 0;
-      padding: 24px;
-      border-right: 1px solid var(--rule);
-      background: #fff;
-    }
-
-    .detail-media img {
-      display: block;
-      max-width: 100%;
-      max-height: calc(100vh - 150px);
-      object-fit: contain;
-    }
-
-    .detail-copy { min-width: 0; padding: 24px; }
-
-    .detail-meta {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 18px 20px;
-      margin: 0;
-      padding: 0 0 26px;
-      border-bottom: 1px solid var(--rule);
-    }
-
-    .detail-meta div { min-width: 0; }
-    .detail-meta dt,
-    .detail-section h3 {
-      margin: 0 0 5px;
-      color: var(--muted);
-      font-size: 9px;
-      font-weight: 400;
-      letter-spacing: .1em;
-      text-transform: uppercase;
-    }
-
-    .detail-meta dd {
-      margin: 0;
-      overflow-wrap: anywhere;
-      font-size: 13px;
-    }
-
-    .detail-section { padding: 24px 0; border-bottom: 1px solid var(--rule); }
-    .detail-section:last-child { border-bottom: 0; }
-    .detail-section p {
-      margin: 0;
-      color: #454741;
-      font: 400 15px/1.55 Georgia, "Times New Roman", serif;
-      white-space: pre-line;
-    }
-
-    .sr-only {
-      position: absolute;
-      width: 1px;
-      height: 1px;
-      padding: 0;
-      margin: -1px;
-      overflow: hidden;
-      clip: rect(0, 0, 0, 0);
-      white-space: nowrap;
-      border: 0;
-    }
-
+    tbody tr { cursor: pointer; }
+    tbody tr:hover { background: #f4f7f0; }
+    .record-link { font-weight: 600; }
+    .secondary { display: block; margin-top: 4px; color: var(--muted); font-size: 12px; }
+    .state { display: inline-block; border-radius: 4px; padding: 2px 7px; background: #f0f0ea; font-size: 12px; }
+    .state.present { color: #205436; background: #e8f2e8; }
+    .state.absent { color: #75413b; background: #f5eae6; }
+    .state.uncertain { color: #6e5924; background: #f4efdc; }
+    .message { padding: 40px 20px; border: 1px solid var(--rule); border-radius: 6px; background: #fff; color: var(--muted); }
+    .message p { margin: 0 0 12px; }
+    .message p:last-child { margin-bottom: 0; }
+    .error { color: #893b32; }
+    .pagination nav { display: flex; gap: 9px; }
+    footer { margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--rule); color: var(--muted); font-size: 12px; }
+    dialog { width: min(1200px, calc(100% - 32px)); max-height: calc(100% - 32px); padding: 0; border: 1px solid var(--rule); border-radius: 8px; color: var(--ink); background: var(--paper); }
+    dialog::backdrop { background: #20251faa; }
+    .dialog-header { display: flex; justify-content: space-between; align-items: center; gap: 20px; padding: 18px 22px; border-bottom: 1px solid var(--rule); background: #fff; position: sticky; top: 0; z-index: 1; }
+    .dialog-header h2 { margin: 0; font-size: 21px; font-weight: 600; }
+    .dialog-header a { font-size: 12px; }
+    .detail-grid { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(300px, 1fr); }
+    .detail-media { min-width: 0; padding: 22px; border-right: 1px solid var(--rule); background: #fff; }
+    .detail-media img { display: block; width: 100%; max-height: 72vh; object-fit: contain; }
+    .detail-media a { display: inline-block; margin-top: 12px; font-size: 13px; }
+    .detail-copy { min-width: 0; padding: 22px; }
+    .detail-meta { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin: 0 0 22px; }
+    .detail-meta dt { font-size: 12px; color: var(--muted); }
+    .detail-meta dd { margin: 3px 0 0; overflow-wrap: anywhere; }
+    .detail-section { margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--rule); }
+    .detail-section h3 { font-size: 14px; margin: 0 0 8px; }
+    .detail-section p { margin: 0; white-space: pre-line; overflow-wrap: anywhere; }
+    .warnings { padding: 14px 16px; border: 1px solid #dccd97; border-radius: 5px; background: #f8f2df; }
+    .warnings ul { margin: 8px 0 0; padding-left: 20px; }
+    .fingerprint { font: 11px/1.6 ui-monospace, monospace; word-break: break-all; }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
     @media (max-width: 760px) {
-      main { width: min(100% - 32px, 1480px); padding-top: 18px; }
-      .site-header { grid-template-columns: 1fr auto; }
-      .header-label { display: none; }
-      .hero { grid-template-columns: 1fr; gap: 30px; padding: 68px 0 74px; }
-      h1 { font-size: clamp(51px, 16vw, 86px); }
-      .lede { max-width: 30ch; }
-      form { grid-template-columns: 1fr; }
-      input { padding: 18px 0; }
-      button { min-height: 52px; }
-      .section-heading span:last-child { display: none; }
-      footer { flex-direction: column; gap: 6px; }
-      .record-dialog { width: calc(100% - 16px); height: calc(100% - 16px); }
+      main { width: calc(100% - 28px); padding-top: 18px; }
+      .site-header .subtle { display: none; }
+      form { padding: 15px; }
+      .filters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .search-row { flex-wrap: wrap; }
+      .search-row label { flex-basis: 100%; }
+      .search-row button { flex: 1; }
       .detail-grid { grid-template-columns: 1fr; }
       .detail-media { border-right: 0; border-bottom: 1px solid var(--rule); }
-      .detail-media img { max-height: 62vh; }
+      .detail-media img { max-height: 50vh; }
+      .dialog-header { padding: 14px; }
     }
+    @media (max-width: 400px) { .filters, .detail-meta { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
   <main>
     <header class="site-header">
       <a class="brand" href="/">HiveBlot</a>
-      <p class="header-label">Local western blot index</p>
+      <span class="subtle">Public western blot database</span>
     </header>
-
-    <section class="hero" aria-labelledby="page-title">
-      <div>
-        <p class="eyebrow">Evidence index / local</p>
-        <h1 id="page-title">Western blot evidence, made searchable.</h1>
+    <h1>Western blot records</h1>
+    <p class="intro">Browse extracted observations and inspect the source images and paper context.</p>
+    <form id="filters" aria-label="Filter records">
+      <div class="search-row">
+        <label for="q">Search records
+          <input id="q" name="q" maxlength="1000" type="search" placeholder="Protein, sample, treatment, or paper">
+        </label>
+        <button class="primary" type="submit">Search</button>
+        <button id="reset" type="button">Reset filters</button>
       </div>
-      <p class="lede">Explore targets, samples, conditions, and band states extracted from papers on this machine.</p>
-    </section>
-
-    <section class="explorer" aria-labelledby="explorer-title">
-      <div class="section-heading">
-        <span id="explorer-title">Evidence explorer</span>
-        <span>Natural-language search</span>
+      <div class="filters">
+        <label for="target">Target<input id="target" name="target" maxlength="200" placeholder="Protein or target"></label>
+        <label for="sample">Sample or organism<input id="sample" name="sample" maxlength="200" placeholder="Cell line, tissue, or species"></label>
+        <label for="condition">Condition or treatment<input id="condition" name="condition" maxlength="200" placeholder="Treatment, dose, or condition"></label>
+        <label for="paper_id">Paper<input id="paper_id" name="paper_id" maxlength="500" placeholder="DOI or paper identifier"></label>
       </div>
-      <form id="search-form">
-        <label class="sr-only" for="query">Search extracted evidence</label>
-        <input id="query" name="query" maxlength="1000" autocomplete="off"
-          placeholder="Try “p53 in A549 cells treated with bortezomib”">
-        <button id="search-button" type="submit">Search</button>
-      </form>
-      <div id="meta" class="meta"></div>
-      <div id="content" aria-live="polite" aria-busy="true">
-        <div class="message">Loading local records…</div>
-      </div>
-    </section>
-
-    <footer>
-      <span>Data and inference stay on this machine.</span>
-      <span>Ingest a paper with <code>make ingest PDF=paper.pdf</code></span>
-    </footer>
-  </main>
-
-  <dialog id="record-dialog" class="record-dialog" aria-labelledby="detail-title">
-    <div class="dialog-shell">
-      <header class="dialog-header">
-        <div>
-          <p class="dialog-kicker">Source record</p>
-          <h2 id="detail-title">Record detail</h2>
-        </div>
-        <button id="dialog-close" class="dialog-close" type="button">Close</button>
-      </header>
-      <div id="detail-content" class="detail-content"></div>
+    </form>
+    <div class="toolbar">
+      <p id="summary" role="status" aria-live="polite">Loading records…</p>
+      <label class="page-size" for="limit">Rows per page
+        <select id="limit"><option>25</option><option selected>50</option><option>100</option><option>200</option></select>
+      </label>
     </div>
+    <div id="content" aria-busy="true"><div class="message">Loading records…</div></div>
+    <div class="pagination">
+      <span id="page" class="subtle"></span>
+      <nav aria-label="Record pages">
+        <button id="previous" type="button" disabled>Previous</button>
+        <button id="next" type="button" disabled>Next</button>
+      </nav>
+    </div>
+    <footer>Each record describes an extracted observation. Open a record to inspect its source and extraction details.</footer>
+  </main>
+  <dialog id="record-dialog" aria-labelledby="detail-title">
+    <header class="dialog-header">
+      <div><h2 id="detail-title">Record detail</h2><a id="record-permalink" href="/">Link to this record</a></div>
+      <button id="close-dialog" type="button" autofocus>Close</button>
+    </header>
+    <div id="detail-content" aria-busy="false"></div>
   </dialog>
-
   <script>
-    const form = document.querySelector('#search-form');
-    const input = document.querySelector('#query');
-    const button = document.querySelector('#search-button');
-    const meta = document.querySelector('#meta');
+    const filterNames = ['q', 'target', 'sample', 'condition', 'paper_id'];
+    const form = document.querySelector('#filters');
     const content = document.querySelector('#content');
+    const summary = document.querySelector('#summary');
+    const page = document.querySelector('#page');
+    const previous = document.querySelector('#previous');
+    const next = document.querySelector('#next');
+    const limitInput = document.querySelector('#limit');
     const dialog = document.querySelector('#record-dialog');
-    const dialogClose = document.querySelector('#dialog-close');
-    const detailTitle = document.querySelector('#detail-title');
-    const detailContent = document.querySelector('#detail-content');
-    const columns = [
-      ['paper_id', 'Paper'], ['page', 'Page'], ['target', 'Target'],
-      ['sample', 'Sample'], ['organism', 'Organism'], ['condition', 'Condition'],
-      ['band_state', 'Band'], ['confidence', 'Confidence'],
-    ];
+    const detail = document.querySelector('#detail-content');
+    let state = readLocation();
+    let listController;
+    let detailController;
+    let total = 0;
 
-    function cell(value, key) {
-      const td = document.createElement('td');
-      if (key === 'target') td.className = 'target';
-      if (key === 'band_state') td.className = `state ${value || 'uncertain'}`;
-      if (key === 'confidence' && typeof value === 'number') value = `${Math.round(value * 100)}%`;
-      td.textContent = value === null || value === undefined || value === '' ? '—' : String(value);
-      return td;
+    function readLocation() {
+      const params = new URLSearchParams(location.search);
+      const number = (key, fallback) => /^\d+$/.test(params.get(key) || '') && Number.isSafeInteger(Number(params.get(key))) ? Number(params.get(key)) : fallback;
+      const limit = number('limit', 50);
+      return {
+        filters: Object.fromEntries(filterNames.map(name => [name, (params.get(name) || '').trim()])),
+        limit: [25, 50, 100, 200].includes(limit) ? limit : 50,
+        offset: number('offset', 0),
+        record: number('record', 0) || null,
+      };
     }
 
-    function render(data) {
-      content.setAttribute('aria-busy', 'false');
-      meta.replaceChildren();
-      const count = document.createElement('span');
-      count.textContent = `${data.count} record${data.count === 1 ? '' : 's'}`;
-      meta.append(count);
-      const hint = document.createElement('span');
-      hint.className = 'tag';
-      hint.textContent = 'Select a record to inspect its source';
-      meta.append(hint);
-      Object.entries(data.filters || {}).forEach(([key, value]) => {
-        if (key === 'schema_version' || !value) return;
-        const tag = document.createElement('span');
-        tag.className = 'tag';
-        tag.textContent = `${key}: ${value}`;
-        meta.append(tag);
-      });
-      if (!data.results || data.results.length === 0) {
-        const empty = document.createElement('div');
-        empty.className = 'message';
-        empty.textContent = 'No records yet. Ingest a PDF, or try a broader search.';
-        content.replaceChildren(empty);
-        return;
-      }
-      const wrap = document.createElement('div');
-      wrap.className = 'table-wrap';
-      const table = document.createElement('table');
-      const head = document.createElement('thead');
-      const headerRow = document.createElement('tr');
-      columns.forEach(([, label]) => {
-        const th = document.createElement('th');
-        th.textContent = label;
-        headerRow.append(th);
-      });
-      head.append(headerRow);
-      table.append(head);
-      const body = document.createElement('tbody');
-      data.results.forEach(record => {
-        const row = document.createElement('tr');
-        row.className = 'record-row';
-        row.tabIndex = 0;
-        row.setAttribute('role', 'button');
-        row.setAttribute(
-          'aria-label',
-          `View source for ${record.target || 'record'} on page ${record.page || 'unknown'}`,
-        );
-        columns.forEach(([key]) => row.append(cell(record[key], key)));
-        row.addEventListener('click', () => openRecord(record));
-        row.addEventListener('keydown', event => {
-          if (event.key !== 'Enter' && event.key !== ' ') return;
-          event.preventDefault();
-          openRecord(record);
-        });
-        body.append(row);
-      });
-      table.append(body);
-      wrap.append(table);
-      content.replaceChildren(wrap);
+    function pageURL(record = state.record) {
+      const params = new URLSearchParams();
+      filterNames.forEach(name => { if (state.filters[name]) params.set(name, state.filters[name]); });
+      if (state.limit !== 50) params.set('limit', state.limit);
+      if (state.offset) params.set('offset', state.offset);
+      if (record) params.set('record', record);
+      return `${location.pathname}${params.size ? '?' + params : ''}`;
     }
 
-    function showError(message) {
-      content.setAttribute('aria-busy', 'false');
-      const error = document.createElement('div');
-      error.className = 'message error';
-      error.textContent = message;
-      content.replaceChildren(error);
+    function updateLocation(replace = false) {
+      const url = pageURL();
+      if (url !== location.pathname + location.search) history[replace ? 'replaceState' : 'pushState']({}, '', url);
     }
 
-    async function request(url, options) {
-      const response = await fetch(url, options);
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.detail || `Request failed (${response.status})`);
+    function populateFilters() {
+      filterNames.forEach(name => { form.elements[name].value = state.filters[name]; });
+      limitInput.value = state.limit;
+    }
+
+    function node(tag, text, className) {
+      const element = document.createElement(tag);
+      if (text !== undefined && text !== null) element.textContent = String(text);
+      if (className) element.className = className;
+      return element;
+    }
+
+    function display(value) { return value === null || value === undefined || value === '' ? '—' : String(value); }
+
+    function safeURL(value) {
+      if (typeof value !== 'string' || !value) return null;
+      try { const url = new URL(value, location.origin); return ['http:', 'https:'].includes(url.protocol) ? url.href : null; }
+      catch { return null; }
+    }
+
+    function externalLink(label, url) {
+      const link = node('a', label);
+      link.href = url;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      return link;
+    }
+
+    function sourceURL(record) {
+      const doi = record.doi?.split('/').map(encodeURIComponent).join('/');
+      return safeURL(record.source_url) || (doi ? safeURL(`https://doi.org/${doi}`) : null);
+    }
+
+    async function request(url, signal) {
+      const response = await fetch(url, {signal, headers: {'Accept': 'application/json'}});
+      const data = await response.json().catch(() => null);
+      if (!response.ok) throw new Error(typeof data?.detail === 'string' ? data.detail : `Could not load records (${response.status}).`);
+      if (!data) throw new Error('The server returned an unreadable response.');
       return data;
     }
 
-    function addDetailField(list, label, value) {
-      const wrapper = document.createElement('div');
-      const term = document.createElement('dt');
-      const description = document.createElement('dd');
-      term.textContent = label;
-      description.textContent = value === null || value === undefined || value === '' ? '—' : String(value);
-      wrapper.append(term, description);
-      list.append(wrapper);
+    function message(text, error = false, retry) {
+      const box = node('div', null, `message${error ? ' error' : ''}`);
+      if (error) box.setAttribute('role', 'alert');
+      box.append(node('p', text));
+      if (retry) { const button = node('button', 'Try again'); button.type = 'button'; button.addEventListener('click', retry); box.append(button); }
+      return box;
+    }
+
+    async function loadRecords() {
+      listController?.abort();
+      const controller = new AbortController();
+      listController = controller;
+      content.setAttribute('aria-busy', 'true');
+      summary.textContent = 'Loading records…';
+      page.textContent = '';
+      previous.disabled = next.disabled = true;
+      content.replaceChildren(message('Loading records…'));
+      const params = new URLSearchParams({limit: state.limit, offset: state.offset});
+      filterNames.forEach(name => { if (state.filters[name]) params.set(name, state.filters[name]); });
+      try {
+        const data = await request(`/api/records?${params}`, controller.signal);
+        if (controller.signal.aborted) return;
+        if (!Array.isArray(data.results) || !Number.isInteger(data.total)) throw new Error('The server returned an invalid record list.');
+        total = data.total;
+        if (total > 0 && state.offset >= total) {
+          state.offset = Math.floor((total - 1) / state.limit) * state.limit;
+          updateLocation(true);
+          return loadRecords();
+        }
+        renderRecords(data.results);
+        const start = data.results.length ? state.offset + 1 : 0;
+        const end = state.offset + data.results.length;
+        summary.textContent = total ? `${start.toLocaleString()}–${end.toLocaleString()} of ${total.toLocaleString()} records` : '0 records';
+        page.textContent = total ? `Page ${Math.floor(state.offset / state.limit) + 1} of ${Math.ceil(total / state.limit)}` : '';
+        previous.disabled = state.offset === 0;
+        next.disabled = state.offset + state.limit >= total;
+      } catch (error) {
+        if (error.name === 'AbortError') return;
+        summary.textContent = 'Records could not be loaded';
+        content.replaceChildren(message(error.message, true, loadRecords));
+      } finally {
+        if (listController === controller) content.setAttribute('aria-busy', 'false');
+      }
+    }
+
+    function renderRecords(records) {
+      if (!records.length) {
+        const filtered = Object.values(state.filters).some(Boolean);
+        content.replaceChildren(message(filtered ? 'No records match these filters. Try a broader search or reset the filters.' : 'No records have been published yet.'));
+        return;
+      }
+      const table = node('table');
+      table.append(node('caption', 'Western blot observations. Open a target to inspect the source record.', 'sr-only'));
+      const head = node('thead');
+      const headings = node('tr');
+      ['Target', 'Sample / organism', 'Condition', 'Band state', 'Lane / row', 'Paper / source'].forEach(label => {
+        const heading = node('th', label); heading.scope = 'col'; headings.append(heading);
+      });
+      head.append(headings);
+      table.append(head);
+      const body = node('tbody');
+      records.forEach(record => {
+        const row = node('tr');
+        const target = node('td');
+        const link = node('a', display(record.target), 'record-link');
+        link.href = pageURL(record.id);
+        link.setAttribute('aria-haspopup', 'dialog');
+        link.setAttribute('aria-label', `View ${display(record.target)}, record ${record.id}`);
+        link.addEventListener('click', event => {
+          if (event.button || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+          event.preventDefault(); openRecord(record.id, true);
+        });
+        target.append(link);
+        if (record.western_blot_type) target.append(node('span', record.western_blot_type.replaceAll('_', ' '), 'secondary'));
+        const sample = node('td', display(record.sample));
+        if (record.organism) sample.append(node('span', record.organism, 'secondary'));
+        const condition = node('td', display(record.condition));
+        if (record.treatment_context && record.treatment_context !== record.condition) condition.append(node('span', record.treatment_context, 'secondary'));
+        const band = node('td');
+        const bandState = ['present', 'absent', 'uncertain'].includes(record.band_state) ? record.band_state : 'uncertain';
+        band.append(node('span', bandState, `state ${bandState}`));
+        const position = node('td', `Lane ${display(record.lane_index)} · row ${display(record.row_index)}`);
+        if (record.is_loading_control) position.append(node('span', 'Loading control', 'secondary'));
+        const paper = node('td');
+        const source = sourceURL(record);
+        paper.append(source ? externalLink(display(record.paper_id), source) : node('span', display(record.paper_id)));
+        paper.append(node('span', [`p. ${record.page}`, record.figure_label, record.panel_label].filter(Boolean).join(' · '), 'secondary'));
+        row.append(target, sample, condition, band, position, paper);
+        row.addEventListener('click', event => { if (!event.target.closest('a, button')) openRecord(record.id, true); });
+        body.append(row);
+      });
+      table.append(body);
+      const wrapper = node('div', null, 'table-wrap');
+      wrapper.tabIndex = 0;
+      wrapper.setAttribute('role', 'region');
+      wrapper.setAttribute('aria-label', 'Western blot records; scroll horizontally for all columns');
+      wrapper.append(table);
+      content.replaceChildren(wrapper);
+    }
+
+    function detailField(list, label, value) {
+      const group = node('div');
+      group.append(node('dt', label), node('dd', display(value)));
+      list.append(group);
     }
 
     function detailSection(label, text) {
-      if (!text) return null;
-      const section = document.createElement('section');
-      section.className = 'detail-section';
-      const heading = document.createElement('h3');
-      const copy = document.createElement('p');
-      heading.textContent = label;
-      copy.textContent = text;
-      section.append(heading, copy);
+      const section = node('section', null, 'detail-section');
+      section.append(node('h3', label), node('p', text || 'Not available for this record.'));
       return section;
     }
 
     function renderDetail(data) {
       const record = data.record;
-      detailTitle.textContent = [record.target, record.figure_label, record.panel_label]
-        .filter(Boolean)
-        .join(' · ');
-
-      const grid = document.createElement('div');
-      grid.className = 'detail-grid';
-      const media = document.createElement('div');
-      media.className = 'detail-media';
-      if (data.image_url) {
-        const image = document.createElement('img');
-        image.src = data.image_url;
-        image.alt = `${record.figure_label || 'Figure'} source image from page ${record.page}`;
-        media.append(image);
-      } else {
-        const unavailable = document.createElement('div');
-        unavailable.className = 'detail-loading';
-        unavailable.textContent = 'Source image unavailable.';
-        media.append(unavailable);
+      document.querySelector('#detail-title').textContent = `${display(record.target)} · record ${record.id}`;
+      const grid = node('div', null, 'detail-grid');
+      const media = node('div', null, 'detail-media');
+      const imageURL = safeURL(data.image_url);
+      if (imageURL && new URL(imageURL).origin === location.origin) {
+        const image = node('img');
+        image.src = imageURL;
+        image.alt = `${record.figure_label || 'Western blot source'}${record.panel_label ? ', panel ' + record.panel_label : ''}, page ${record.page}`;
+        image.addEventListener('error', () => media.replaceChildren(message('Source image is unavailable.')));
+        media.append(image, externalLink('Open full image', imageURL));
+      } else media.append(message('Source image is unavailable.'));
+      const copy = node('div', null, 'detail-copy');
+      const metadata = node('dl', null, 'detail-meta');
+      [['Paper', record.paper_id], ['Page', record.page], ['Figure / panel', [record.figure_label, record.panel_label].filter(Boolean).join(' / ')],
+       ['Target', record.target], ['Sample', record.sample], ['Organism', record.organism], ['Condition', record.condition],
+       ['Band state', record.band_state], ['Lane / row', `${display(record.lane_index)} / ${display(record.row_index)}`],
+       ['Loading control', record.is_loading_control ? 'Yes' : 'No'], ['Blot type', record.western_blot_type?.replaceAll('_', ' ')],
+       ['Model confidence', typeof record.confidence === 'number' ? `${Math.round(record.confidence * 100)}%` : null],
+       ['Extraction model', record.model_version], ['Source image', record.source_id]].forEach(([label, value]) => detailField(metadata, label, value));
+      copy.append(metadata);
+      const source = sourceURL(record);
+      if (source) copy.append(externalLink('Open source paper', source));
+      if (Array.isArray(data.warnings) && data.warnings.length) {
+        const warnings = node('section', null, 'detail-section warnings');
+        warnings.append(node('h3', 'Extraction warnings'));
+        const list = node('ul');
+        data.warnings.forEach(warning => list.append(node('li', warning)));
+        warnings.append(list); copy.append(warnings);
       }
-
-      const copy = document.createElement('div');
-      copy.className = 'detail-copy';
-      const details = document.createElement('dl');
-      details.className = 'detail-meta';
-      addDetailField(details, 'Paper', record.paper_id);
-      addDetailField(details, 'Page', record.page);
-      addDetailField(details, 'Figure / panel', [record.figure_label, record.panel_label].filter(Boolean).join(' / '));
-      addDetailField(details, 'Target', record.target);
-      addDetailField(details, 'Sample', record.sample);
-      addDetailField(details, 'Organism', record.organism);
-      addDetailField(details, 'Condition', record.condition);
-      addDetailField(details, 'Band', record.band_state);
-      addDetailField(
-        details,
-        'Confidence',
-        typeof record.confidence === 'number' ? `${Math.round(record.confidence * 100)}%` : record.confidence,
-      );
-      copy.append(details);
-      [
-        detailSection('Treatment context', record.treatment_context),
-        detailSection('Figure caption', data.figure_caption),
-        detailSection('Relevant paper context', data.paper_context),
-      ].filter(Boolean).forEach(section => copy.append(section));
-
+      if (record.treatment_context) copy.append(detailSection('Treatment context', record.treatment_context));
+      copy.append(detailSection('Figure caption', data.figure_caption), detailSection('Paper context', data.paper_context));
+      if (record.image_sha256) { const hash = detailSection('Source image SHA-256', record.image_sha256); hash.lastChild.className = 'fingerprint'; copy.append(hash); }
       grid.append(media, copy);
-      detailContent.replaceChildren(grid);
+      detail.replaceChildren(grid);
     }
 
-    async function openRecord(record) {
-      detailTitle.textContent = `${record.target || 'Record'} · page ${record.page}`;
-      const loading = document.createElement('div');
-      loading.className = 'detail-loading';
-      loading.textContent = 'Loading source image and paper context…';
-      detailContent.replaceChildren(loading);
+    async function openRecord(recordId, push = false) {
+      state.record = recordId;
+      if (push) updateLocation();
+      document.querySelector('#record-permalink').href = pageURL(recordId);
+      document.querySelector('#detail-title').textContent = `Record ${recordId}`;
+      detailController?.abort();
+      const controller = new AbortController();
+      detailController = controller;
+      detail.setAttribute('aria-busy', 'true');
+      detail.replaceChildren(message('Loading source record…'));
       if (!dialog.open) dialog.showModal();
       try {
-        renderDetail(await request(`/api/records/${record.id}`));
+        const data = await request(`/api/records/${recordId}`, controller.signal);
+        if (!controller.signal.aborted) renderDetail(data);
       } catch (error) {
-        const message = document.createElement('div');
-        message.className = 'detail-loading';
-        message.textContent = error.message;
-        detailContent.replaceChildren(message);
+        if (error.name !== 'AbortError') detail.replaceChildren(message(error.message, true, () => openRecord(recordId)));
+      } finally {
+        if (detailController === controller) detail.setAttribute('aria-busy', 'false');
       }
     }
 
-    form.addEventListener('submit', async event => {
-      event.preventDefault();
-      const query = input.value.trim();
-      if (!query) return;
-      content.setAttribute('aria-busy', 'true');
-      button.disabled = true;
-      button.textContent = 'Searching…';
-      try {
-        render(await request('/api/search', {
-          method: 'POST',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({query, limit: 100}),
-        }));
-      } catch (error) {
-        showError(error.message);
-      } finally {
-        button.disabled = false;
-        button.textContent = 'Search';
-      }
-    });
+    function applyFilters(reset = false) {
+      state.filters = Object.fromEntries(filterNames.map(name => [name, reset ? '' : form.elements[name].value.trim()]));
+      state.offset = 0;
+      state.record = null;
+      if (dialog.open) dialog.close();
+      populateFilters();
+      updateLocation();
+      loadRecords();
+    }
 
-    dialogClose.addEventListener('click', () => dialog.close());
-    dialog.addEventListener('click', event => {
-      if (event.target === dialog) dialog.close();
+    form.addEventListener('submit', event => { event.preventDefault(); applyFilters(); });
+    document.querySelector('#reset').addEventListener('click', () => applyFilters(true));
+    limitInput.addEventListener('change', () => { state.limit = Number(limitInput.value); state.offset = 0; updateLocation(); loadRecords(); });
+    previous.addEventListener('click', () => { state.offset = Math.max(0, state.offset - state.limit); updateLocation(); loadRecords(); });
+    next.addEventListener('click', () => { if (state.offset + state.limit < total) { state.offset += state.limit; updateLocation(); loadRecords(); } });
+    document.querySelector('#close-dialog').addEventListener('click', () => dialog.close());
+    dialog.addEventListener('close', () => {
+      detailController?.abort();
+      if (state.record !== null) { state.record = null; updateLocation(); }
     });
-    request('/api/records?limit=100').then(render).catch(error => showError(error.message));
+    dialog.addEventListener('click', event => {
+      const bounds = dialog.getBoundingClientRect();
+      if (event.target === dialog && (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom)) dialog.close();
+    });
+    window.addEventListener('popstate', () => {
+      const prior = JSON.stringify([state.filters, state.limit, state.offset]);
+      state = readLocation();
+      populateFilters();
+      if (JSON.stringify([state.filters, state.limit, state.offset]) !== prior) loadRecords();
+      if (state.record) openRecord(state.record); else if (dialog.open) dialog.close();
+    });
+    populateFilters();
+    loadRecords();
+    if (state.record) openRecord(state.record);
   </script>
 </body>
 </html>

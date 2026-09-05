@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Any
 
 from . import pdf_preprocess
+from .records import flatten_records
 
 DEFAULT_VLM_MODEL = "Qwen/Qwen3-VL-8B-Instruct"
 DEFAULT_MAX_TOKENS = 4096
@@ -350,7 +351,6 @@ def run_vlm_extraction(
     image_max_side: int = DEFAULT_IMAGE_MAX_SIDE,
     limit: int | None = None,
     resume: bool = True,
-    on_positive: Callable[[dict[str, Any]], int] | None = None,
 ) -> dict[str, Any]:
     """Run the configured VLM over LLM-threshold PDF candidates."""
     run_dir = Path(run_dir)
@@ -372,13 +372,7 @@ def run_vlm_extraction(
     results = []
     cached_results = 0
     if resume and output_jsonl.exists():
-        existing_by_path = {}
-        with output_jsonl.open(encoding="utf-8") as read_handle:
-            for line in read_handle:
-                if not line.strip():
-                    continue
-                record = json.loads(line)
-                existing_by_path[record["candidate_path"]] = record
+        existing_by_path = _read_cached_results(output_jsonl)
 
         for candidate in candidates:
             record = existing_by_path.get(candidate["candidate_path"])
@@ -447,7 +441,6 @@ def run_vlm_extraction(
         )
 
     output_mode = "a" if resume else "w"
-    streamed_positive_rows = 0
     queried_candidates = 0
     with output_jsonl.open(output_mode, encoding="utf-8") as stream_handle:
         for idx, candidate in enumerate(candidates, 1):
@@ -481,12 +474,6 @@ def run_vlm_extraction(
             results.append(record)
             stream_handle.write(json.dumps(record) + "\n")
             stream_handle.flush()
-            if (
-                on_positive is not None
-                and isinstance(extraction, dict)
-                and extraction.get("is_western_blot") is True
-            ):
-                streamed_positive_rows += on_positive(record)
 
     output_json.write_text(json.dumps(results, indent=2), encoding="utf-8")
     positives = [
@@ -504,9 +491,11 @@ def run_vlm_extraction(
         "candidates": len(candidates),
         "results": len(results),
         "positive_results": len(positives),
+        "failed_candidates": sum(
+            _should_retry_extraction(result.get("extraction")) for result in results
+        ),
         "cached_results": cached_results,
         "queried_candidates": queried_candidates,
-        "streamed_positive_rows": streamed_positive_rows,
         "output_jsonl": str(output_jsonl),
         "output_json": str(output_json),
         "positives_json": str(positives_json),
@@ -540,28 +529,31 @@ def _extract_with_split_fallback(
         split_errors = [str(exc)]
         for split_path in split_paths:
             try:
-                split_extractions.append(
-                    extractor.extract_candidate(
-                        candidate_path=split_path,
-                        text_context=text_context,
-                        max_tokens=max_tokens,
-                    )
+                extraction = extractor.extract_candidate(
+                    candidate_path=split_path,
+                    text_context=text_context,
+                    max_tokens=max_tokens,
                 )
+                if _should_retry_extraction(extraction):
+                    raise ValueError("Split image returned an invalid extraction")
+                split_extractions.append(extraction)
             except Exception as split_exc:
                 if log_failure is not None:
                     log_failure(candidate_path, split_path, "split", split_exc)
                 split_errors.append(str(split_exc))
 
-        merged = _merge_split_extractions(split_extractions)
-        if merged:
-            warnings = merged.setdefault("warnings", [])
-            warnings.append(
-                "Candidate image was split into smaller crops after the full crop request failed."
-            )
-            merged["split_candidate_paths"] = [str(path) for path in split_paths]
-            return merged
-
-        raise RuntimeError("; ".join(split_errors)) from exc
+        if len(split_extractions) != len(split_paths):
+            raise RuntimeError("; ".join(split_errors)) from exc
+        merged = _merge_split_extractions(split_extractions) or {
+            "is_western_blot": False,
+            "reason": "No western blot found in any split image.",
+        }
+        warnings = merged.setdefault("warnings", [])
+        warnings.append(
+            "Candidate image was split into smaller crops after the full crop request failed."
+        )
+        merged["split_candidate_paths"] = [str(path) for path in split_paths]
+        return merged
 
 
 def _split_large_candidate(candidate_path: Path) -> list[Path]:
@@ -672,7 +664,43 @@ def _exception_payload(exc: Exception) -> dict[str, Any]:
 def _should_retry_extraction(extraction: Any) -> bool:
     if not isinstance(extraction, dict):
         return True
-    return bool(extraction.get("error"))
+    if extraction.get("error") or not isinstance(extraction.get("is_western_blot"), bool):
+        return True
+    if extraction["is_western_blot"]:
+        try:
+            return not flatten_records([{"extraction": extraction}])
+        except (TypeError, ValueError, AttributeError):
+            return True
+    return False
+
+
+def _read_cached_results(path: Path) -> dict[str, dict[str, Any]]:
+    """Recover a torn final append without accepting corruption in completed records."""
+    records: dict[str, dict[str, Any]] = {}
+    with path.open("r+b") as handle:
+        line_number = 0
+        while True:
+            start = handle.tell()
+            line = handle.readline()
+            if not line:
+                break
+            line_number += 1
+            if not line.strip():
+                continue
+            try:
+                record = json.loads(line)
+            except (json.JSONDecodeError, UnicodeDecodeError) as error:
+                if not line.endswith(b"\n"):
+                    handle.seek(start)
+                    handle.truncate()
+                    break
+                raise ValueError(f"Extraction cache is corrupt at line {line_number}") from error
+            if not isinstance(record, dict) or not isinstance(record.get("candidate_path"), str):
+                raise ValueError(f"Extraction cache is invalid at line {line_number}")
+            records[record["candidate_path"]] = record
+            if not line.endswith(b"\n"):
+                handle.write(b"\n")
+    return records
 
 
 def _read_contexts(path: Path) -> dict[str, str]:

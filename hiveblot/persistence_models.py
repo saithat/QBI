@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TypedDict
+from typing import NotRequired, TypedDict
 
 
 class WesternBlotRecordWrite(TypedDict):
@@ -25,6 +25,10 @@ class WesternBlotRecordWrite(TypedDict):
     condition: str | None
     band_state: str
     confidence: float | None
+    source_id: NotRequired[str | None]
+    image_sha256: NotRequired[str | None]
+    model_version: NotRequired[str | None]
+    source_url: NotRequired[str | None]
 
 
 class WesternBlotRecordListRow(TypedDict):
@@ -42,11 +46,15 @@ class WesternBlotRecordListRow(TypedDict):
     condition: str | None
     band_state: str
     confidence: float | None
+    row_index: int | None
+    lane_index: int | None
+    image_sha256: str | None
+    model_version: str | None
+    source_url: str | None
+    source_id: str | None
     updated_at: datetime
 
 
 class WesternBlotRecordDetailRow(WesternBlotRecordListRow):
     source_pdf: str | None
     candidate_path: str | None
-    row_index: int | None
-    lane_index: int | None

@@ -6,173 +6,79 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-hiveblot}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Run `make local-env` first}
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+    - postgres_data:/var/lib/postgresql/data
     ports:
-      - "127.0.0.1:5432:5432"
+    - 127.0.0.1:5432:5432
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      test:
+      - CMD-SHELL
+      - pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}
       interval: 5s
       timeout: 5s
       retries: 12
     restart: unless-stopped
-
-  minio:
-    build:
-      context: infra/docker/minio
-      args:
-        MINIO_VERSION: RELEASE.2025-10-15T17-29-55Z
-    command: ["server", "/data", "--console-address", ":9001"]
+  app:
+    build: .
     environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?Run `make local-env` first}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?Run `make local-env` first}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-hiveblot}:${POSTGRES_PASSWORD:?Run
+        `make local-env` first}@postgres:5432/${POSTGRES_DB:-hiveblot}
+      HIVEBLOT_DATA_DIR: /data
     volumes:
-      - minio_data:/data
+    - ./data:/data:ro
     ports:
-      - "127.0.0.1:9000:9000"
-      - "127.0.0.1:9001:9001"
+    - 127.0.0.1:8080:8080
+    depends_on:
+      postgres:
+        condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9000/minio/health/live"]
-      interval: 5s
-      timeout: 5s
-      retries: 20
+      test:
+      - CMD
+      - python
+      - -c
+      - import urllib.request; urllib.request.urlopen('http://localhost:8080/health',
+        timeout=5)
+      interval: 10s
+      timeout: 8s
+      retries: 12
     restart: unless-stopped
-
   vllm:
     image: vllm/vllm-openai@sha256:4801151759655c57606c844662e5213403c032a62d149c7ce61d615759a821ef
     command:
-      - Qwen/Qwen3-VL-8B-Instruct
-      - --served-model-name
-      - Qwen/Qwen3-VL-8B-Instruct
-      - --max-model-len
-      - "12288"
-      - --gpu-memory-utilization
-      - "0.90"
-      - --max-num-seqs
-      - "1"
-      # The compiled path corrupts Qwen3-VL output on Ampere GPUs with vLLM 0.16.
-      - --enforce-eager
-      - --limit-mm-per-prompt
-      - '{"image":1}'
+    - Qwen/Qwen3-VL-8B-Instruct
+    - --served-model-name
+    - Qwen/Qwen3-VL-8B-Instruct
+    - --max-model-len
+    - '12288'
+    - --gpu-memory-utilization
+    - '0.90'
+    - --max-num-seqs
+    - '1'
+    - --enforce-eager
+    - --limit-mm-per-prompt
+    - '{"image":1}'
     devices:
-      - nvidia.com/gpu=all
+    - nvidia.com/gpu=all
     ipc: host
     environment:
-      HF_HUB_OFFLINE: "1"
-      TRANSFORMERS_OFFLINE: "1"
+      HF_HUB_OFFLINE: '1'
+      TRANSFORMERS_OFFLINE: '1'
     volumes:
-      - ${HF_CACHE_DIR:-./data/huggingface-cache}:/root/.cache/huggingface:ro
+    - ${HF_CACHE_DIR:-./data/huggingface-cache}:/root/.cache/huggingface:ro
     ports:
-      - "127.0.0.1:8000:8000"
+    - 127.0.0.1:8000:8000
     healthcheck:
       test:
-        - CMD
-        - /usr/bin/python3
-        - -c
-        - import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=5)
+      - CMD
+      - /usr/bin/python3
+      - -c
+      - import urllib.request; urllib.request.urlopen('http://localhost:8000/health',
+        timeout=5)
       interval: 10s
       timeout: 8s
       retries: 24
       start_period: 90s
     restart: unless-stopped
-
-  app:
-    build: .
-    environment:
-      HIVEBLOT_ENV: local
-      AUTHENTICATION_MODE: ${AUTHENTICATION_MODE:-disabled}
-      AUTH_TOKEN_PEPPER: ${AUTH_TOKEN_PEPPER:-}
-      EVIDENCE_SEARCH_INDEX_NAME: ${EVIDENCE_SEARCH_INDEX_NAME:-western-blot-evidence}
-      EVIDENCE_SEARCH_EMBEDDING_DIMENSIONS: ${EVIDENCE_SEARCH_EMBEDDING_DIMENSIONS:-256}
-      DATABASE_URL: postgresql://${POSTGRES_USER:-hiveblot}:${POSTGRES_PASSWORD:?Run `make local-env` first}@postgres:5432/${POSTGRES_DB:-hiveblot}
-      VLLM_BASE_URL: http://vllm:8000/v1
-      VLLM_MODEL: Qwen/Qwen3-VL-8B-Instruct
-      VLLM_MODEL_REVISION: ${VLLM_MODEL_REVISION:-local-cache-unpinned}
-      VLLM_API_KEY: ${VLLM_API_KEY:?Run `make local-env` first}
-      VLLM_TIMEOUT_SECONDS: ${VLLM_TIMEOUT_SECONDS:-300}
-      VLLM_MAX_TOKENS: ${VLLM_MAX_TOKENS:-4096}
-      VLLM_IMAGE_MAX_SIDE: ${VLLM_IMAGE_MAX_SIDE:-1800}
-      HIVEBLOT_DATA_DIR: /data
-      S3_ENDPOINT_URL: http://minio:9000
-      S3_REGION: us-east-1
-      S3_BUCKET: ${S3_BUCKET:-hiveblot-artifacts}
-      S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID:?Run `make local-env` first}
-      S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY:?Run `make local-env` first}
-      ARTIFACT_SIGNED_URL_SECONDS: ${ARTIFACT_SIGNED_URL_SECONDS:-900}
-      ARTIFACT_UPLOAD_URL_SECONDS: ${ARTIFACT_UPLOAD_URL_SECONDS:-3600}
-      ARTIFACT_MAX_BYTES: ${ARTIFACT_MAX_BYTES:-1073741824}
-      SOURCE_INGEST_ALLOWED_HOSTS: ${SOURCE_INGEST_ALLOWED_HOSTS:-}
-      PMC_OAI_BASE_URL: ${PMC_OAI_BASE_URL:-https://pmc.ncbi.nlm.nih.gov/api/oai/v1/mh/}
-      DISCOVERY_USER_AGENT: ${DISCOVERY_USER_AGENT:-HiveBlot local development (contact not configured)}
-      DISCOVERY_HTTP_TIMEOUT_SECONDS: ${DISCOVERY_HTTP_TIMEOUT_SECONDS:-30}
-      DISCOVERY_MAX_RESPONSE_BYTES: ${DISCOVERY_MAX_RESPONSE_BYTES:-5000000}
-      DISCOVERY_LOOKBACK_DAYS: ${DISCOVERY_LOOKBACK_DAYS:-2}
-      DISCOVERY_MAXIMUM_PAGES: ${DISCOVERY_MAXIMUM_PAGES:-20}
-      PDF_DPI: ${PDF_DPI:-350}
-      MIN_CANDIDATE_SCORE: ${MIN_CANDIDATE_SCORE:-0.35}
-      MIN_VLM_SCORE: ${MIN_VLM_SCORE:-0.65}
-    volumes:
-      - ./data:/data
-    ports:
-      - "127.0.0.1:8080:8080"
-    depends_on:
-      postgres:
-        condition: service_healthy
-      minio:
-        condition: service_healthy
-      vllm:
-        condition: service_healthy
-    healthcheck:
-      test:
-        - CMD
-        - python
-        - -c
-        - import urllib.request; urllib.request.urlopen('http://localhost:8080/health', timeout=5)
-      interval: 10s
-      timeout: 8s
-      retries: 12
-    restart: unless-stopped
-
-  fetch-worker:
-    profiles: ["workers"]
-    build: .
-    command: ["hiveblot-fetch-worker"]
-    environment:
-      HIVEBLOT_ENV: local
-      DATABASE_URL: postgresql://${POSTGRES_USER:-hiveblot}:${POSTGRES_PASSWORD:?Run `make local-env` first}@postgres:5432/${POSTGRES_DB:-hiveblot}
-      S3_ENDPOINT_URL: http://minio:9000
-      S3_REGION: us-east-1
-      S3_BUCKET: ${S3_BUCKET:-hiveblot-artifacts}
-      S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID:?Run `make local-env` first}
-      S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY:?Run `make local-env` first}
-      ARTIFACT_MAX_BYTES: ${ARTIFACT_MAX_BYTES:-1073741824}
-      DISCOVERY_USER_AGENT: ${DISCOVERY_USER_AGENT:-HiveBlot local development (contact not configured)}
-      FETCH_ALLOWED_HOSTS: ${FETCH_ALLOWED_HOSTS:-pmc.ncbi.nlm.nih.gov}
-      FETCH_WORKER_ID: ${FETCH_WORKER_ID:-fetch-worker-local}
-      FETCH_WORKER_POLL_SECONDS: ${FETCH_WORKER_POLL_SECONDS:-1}
-      FETCH_LEASE_SECONDS: ${FETCH_LEASE_SECONDS:-120}
-      FETCH_MAX_ATTEMPTS: ${FETCH_MAX_ATTEMPTS:-5}
-      FETCH_HTTP_TIMEOUT_SECONDS: ${FETCH_HTTP_TIMEOUT_SECONDS:-30}
-      FETCH_MAX_RESPONSE_BYTES: ${FETCH_MAX_RESPONSE_BYTES:-250000000}
-      FETCH_MAX_REDIRECTS: ${FETCH_MAX_REDIRECTS:-5}
-      FETCH_DOMAIN_MINIMUM_INTERVAL_MILLISECONDS: ${FETCH_DOMAIN_MINIMUM_INTERVAL_MILLISECONDS:-1000}
-      FETCH_DOMAIN_MAXIMUM_CONCURRENCY: ${FETCH_DOMAIN_MAXIMUM_CONCURRENCY:-2}
-      FETCH_DOMAIN_PERMIT_SECONDS: ${FETCH_DOMAIN_PERMIT_SECONDS:-60}
-      FETCH_DOMAIN_MAXIMUM_WAIT_SECONDS: ${FETCH_DOMAIN_MAXIMUM_WAIT_SECONDS:-30}
-      FETCH_ROBOTS_CACHE_SECONDS: ${FETCH_ROBOTS_CACHE_SECONDS:-86400}
-      FETCH_ROBOTS_MAX_BYTES: ${FETCH_ROBOTS_MAX_BYTES:-524288}
-    depends_on:
-      postgres:
-        condition: service_healthy
-      minio:
-        condition: service_healthy
-    read_only: true
-    tmpfs:
-      - /tmp:size=536870912
-    security_opt:
-      - no-new-privileges:true
-    cap_drop: ["ALL"]
-    restart: unless-stopped
-
+    profiles:
+    - gpu
 volumes:
-  minio_data:
-  postgres_data:
+  postgres_data: null

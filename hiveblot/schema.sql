@@ -36,3 +36,9 @@ CREATE INDEX IF NOT EXISTS idx_western_blot_records_paper
     ON western_blot_records (paper_id);
 CREATE INDEX IF NOT EXISTS idx_western_blot_records_recent
     ON western_blot_records (updated_at DESC);
+
+-- Preserve existing extracted records while adding source provenance.
+ALTER TABLE western_blot_records ADD COLUMN IF NOT EXISTS image_sha256 TEXT;
+ALTER TABLE western_blot_records ADD COLUMN IF NOT EXISTS model_version TEXT;
+ALTER TABLE western_blot_records ADD COLUMN IF NOT EXISTS source_url TEXT;
+ALTER TABLE western_blot_records ADD COLUMN IF NOT EXISTS source_id TEXT;

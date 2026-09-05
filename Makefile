@@ -1,34 +1,28 @@
-HIVEBLOT_KUBECTL_BIN ?= kubectl
 HIVEBLOT_DOCKER_TEST_IMAGE ?= hiveblot:test
 
-.PHONY: up down logs setup local-env kind-up kind-smoke kind-down format lint typecheck schemas schema-check test check docker-test ingest fetch-worker
-
-up:
-	docker compose up --build -d
-
-down:
-	docker compose down
-
-logs:
-	docker compose logs -f app minio vllm
+.PHONY: setup local-env up down logs model ingest format lint typecheck test check docker-test
 
 setup:
 	uv sync --locked --all-extras
 
 local-env:
-	uv run python scripts/bootstrap_local_env.py
+	uv run hiveblot-env
 
-kind-up:
-	bash infra/kubernetes/kind/up.sh
+up:
+	docker compose up --build -d --wait
 
-kind-smoke:
-	$(HIVEBLOT_KUBECTL_BIN) delete job hiveblot-runtime-smoke --namespace hiveblot --ignore-not-found
-	$(HIVEBLOT_KUBECTL_BIN) apply -f infra/kubernetes/kind/smoke-job.yaml
-	$(HIVEBLOT_KUBECTL_BIN) wait --for=condition=complete job/hiveblot-runtime-smoke --namespace hiveblot --timeout=240s
-	$(HIVEBLOT_KUBECTL_BIN) logs job/hiveblot-runtime-smoke --namespace hiveblot
+down:
+	docker compose --profile gpu down
 
-kind-down:
-	bash infra/kubernetes/kind/down.sh
+logs:
+	docker compose logs -f app postgres
+
+model:
+	docker compose --profile gpu up -d vllm
+
+ingest:
+	@test -n "$(SOURCE)" || (echo "Usage: make ingest SOURCE=data/input/paper.pdf" && exit 2)
+	uv run hiveblot-ingest "$(SOURCE)"
 
 format:
 	uv run ruff format .
@@ -39,34 +33,13 @@ lint:
 	uv run ruff check --no-cache .
 
 typecheck:
-	uv run mypy apps hiveblot packages/contracts/src/hiveblot_contracts \
-		packages/auth/src/hiveblot_auth \
-		packages/densitometry/src/hiveblot_densitometry \
-		packages/evaluation/src/hiveblot_evaluation \
-		packages/extraction/src/hiveblot_extraction packages/storage/src/hiveblot_storage \
-		services/crawler/src/hiveblot_crawler \
-		services/job-service/src/hiveblot_job_service \
-		services/search/src/hiveblot_search workers
-
-schemas:
-	uv run hiveblot-schemas
-
-schema-check:
-	uv run hiveblot-schemas --check
+	uv run mypy hiveblot
 
 test:
 	uv run pytest -p no:cacheprovider
 
-check: lint typecheck schema-check test
+check: lint typecheck test
 
 docker-test:
 	docker build --tag $(HIVEBLOT_DOCKER_TEST_IMAGE) .
 	docker run --rm $(HIVEBLOT_DOCKER_TEST_IMAGE) pytest -p no:cacheprovider
-
-ingest:
-	@test -n "$(PDF)" || (echo "Usage: make ingest PDF=paper.pdf" && exit 2)
-	@test -f "data/input/$(PDF)" || (echo "Missing data/input/$(PDF)" && exit 2)
-	docker compose run --rm app python -m workers.extraction.entrypoint "/data/input/$(PDF)"
-
-fetch-worker:
-	docker compose --profile workers run --rm fetch-worker hiveblot-fetch-worker --once

@@ -1,71 +1,56 @@
 # HiveBlot
 
-Extract, review, and search western blot evidence from scientific papers.
+A public, searchable database of western blot records extracted from papers and images.
+Maintainers import sources; visitors browse proteins, samples, conditions, band states, and
+source images with paper citations and extraction confidence.
 
-## Development
+## Run the catalog
 
-Use Python 3.12 and uv:
+Use Python 3.12, uv, and Docker Compose:
 
 ```sh
 make setup
-make check
-```
-
-`make check` runs formatting, lint, types, schema snapshots, and default tests without external
-services. `make schemas` regenerates contracts; `make docker-test` runs tests in a Docker image.
-
-## Local API and review UI
-
-```sh
 make local-env
-mkdir -p data/input data/runs
-docker compose up --build -d --wait postgres minio
-uv run uvicorn apps.api.main:app --host 127.0.0.1 --port 8080
-```
-
-The environment generator creates private credentials and refuses to overwrite `.env`.
-API startup applies pending database migrations. Open [the review UI](http://localhost:8080/review)
-or [the API reference](http://localhost:8080/docs). This setup needs no GPU; model-backed
-extraction and legacy `/api/search` additionally need vLLM.
-
-## PDF extraction
-
-The full Compose stack requires Linux, an NVIDIA GPU with Docker GPU support, and a locally cached
-`Qwen/Qwen3-VL-8B-Instruct` model. Set `HF_CACHE_DIR` in `.env`; Compose loads the model offline.
-After the setup above:
-
-```sh
 make up
-# Place paper.pdf under data/input/.
-make ingest PDF=paper.pdf
 ```
 
-The full stack serves the API on port 8080; stop any host API process before starting it.
-Inputs and resumable outputs under `data/` are ignored by Git. `make down` stops Compose services.
+Open [the catalog](http://localhost:8080) or [the API reference](http://localhost:8080/docs).
+Browsing runs on CPU with PostgreSQL and the stored images. `make down` stops the services.
+`make local-env` generates private database credentials and creates `data/input` and `data/runs`.
+It refuses to overwrite an existing `.env`.
 
-## Live checks
+## Import sources
 
-Live test files under `tests/integration/` specify their opt-in environment flags. For example,
-with PostgreSQL and MinIO running:
+Configure the vision endpoint and model in `.env`; [.env.example](.env.example) lists the settings.
+For the optional local GPU service, install NVIDIA Docker support, set `HF_CACHE_DIR`
+to a pre-downloaded `Qwen/Qwen3-VL-8B-Instruct` cache, and run `make model`.
 
 ```sh
-HIVEBLOT_RUN_LIVE_STORAGE=1 uv run --env-file .env pytest tests/integration/test_artifact_storage_live.py
+uv run hiveblot-ingest data/input/paper.pdf
+uv run hiveblot-ingest data/input/blot.png --paper-id my-paper --context "Figure caption"
+uv run hiveblot-ingest --help
 ```
 
-Pass credentials explicitly; live fixtures disable automatic dotenv loading. Authorization and
-search acceptance tests require separate disposable databases.
+Use `--paper-id` and `--source-url` to supply the paper citation. A stable `--source-id` identifies
+one input within a paper; it defaults to the input filename. Re-importing replaces that source's
+records only after extraction succeeds. Other images from the same paper remain intact.
+Changed source bytes or extraction settings invalidate the cache.
+Completed extractions are reused when rerunning an interrupted import. Published images and
+metadata are preserved separately from the working cache, so a failed retry cannot alter them.
 
-## Configuration and entry points
+Keep `data/runs` with the database when moving the catalog: it contains source images, model output,
+and paper context. These files and `.env` are ignored by Git. The web service mounts source data
+read-only; imports run through the maintainer CLI.
 
-Configuration lives in [.env.example](.env.example), [.env.deployed.example](.env.deployed.example),
-and [hiveblot/settings.py](hiveblot/settings.py). Local authentication defaults to disabled;
-deployed configuration requires bearer authentication. Use `uv run hiveblot-auth-bootstrap --help`
-for user credentials and `uv run hiveblot-auth-platform-token --help` for search administration.
+## Development
 
-The API starts at [apps/api/main.py](apps/api/main.py); CLI entry points are listed in
-[pyproject.toml](pyproject.toml). SQL migrations live under `hiveblot/migrations/`.
+```sh
+make check
+make docker-test
+```
 
-Kubernetes manifests and startup scripts live under [infra/kubernetes](infra/kubernetes).
-With Docker Compose, kind, kubectl, and ripgrep installed, run `make kind-up`, then `make kind-smoke`.
-The local cluster serves port 18080; `make kind-down` removes it. Temporal requires an external
-service and enabling its worker replicas.
+CI also exercises source replacement and queries against PostgreSQL. To run that check locally,
+set `HIVEBLOT_TEST_DATABASE_URL` to a disposable PostgreSQL database.
+
+The API starts in [hiveblot/api.py](hiveblot/api.py), ingestion in
+[hiveblot/pipeline.py](hiveblot/pipeline.py), and storage in [hiveblot/db.py](hiveblot/db.py).
