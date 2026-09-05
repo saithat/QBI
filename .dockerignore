@@ -11,5 +11,4 @@ __pycache__
 .mypy_cache
 dist
 build
-data/*
-!data/README.md
+data/
