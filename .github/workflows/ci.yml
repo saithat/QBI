@@ -30,6 +30,13 @@ jobs:
       HIVEBLOT_TEST_DATABASE_URL: postgresql://postgres@localhost:5432/hiveblot_test
     steps:
       - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install frontend dependencies
+        run: npm --prefix frontend ci
       - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
@@ -42,12 +49,22 @@ jobs:
         run: make check
       - name: Build distribution
         run: uv build
-      - name: Verify installed importer
+      - name: Verify installed importer and frontend assets
         working-directory: ${{ runner.temp }}
-        run: >-
-          uv run --no-project --isolated
-          --with "$GITHUB_WORKSPACE"/dist/*.whl
-          hiveblot-ingest --help
+        run: |
+          uv run --no-project --isolated --with "$GITHUB_WORKSPACE"/dist/*.whl python - <<'PY'
+          import re
+          import sys
+          from hiveblot.api import INDEX
+          from hiveblot.pipeline import main
+
+          assert INDEX.is_file()
+          assets = re.findall(r'/assets/[^"\s]+', INDEX.read_text())
+          assert assets
+          assert all((INDEX.parent / asset.lstrip('/')).is_file() for asset in assets)
+          sys.argv = ['hiveblot-ingest', '--help']
+          main()
+          PY
 
   docker-tests:
     runs-on: ubuntu-latest

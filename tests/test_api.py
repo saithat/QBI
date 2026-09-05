@@ -1,4 +1,5 @@
 import json
+import re
 from datetime import UTC, datetime
 from types import SimpleNamespace
 
@@ -133,6 +134,23 @@ def test_health_is_database_only_and_public_routes_cannot_write(client, monkeypa
     )
     assert client.post("/api/records", json={}).status_code == 405
     assert client.post("/api/search", json={"query": "TP53"}).status_code == 404
+
+
+def test_frontend_bundle_and_assets_are_served_without_source_files(client):
+    response = client.get("/")
+    assert response.status_code == 200
+    assert response.headers["cache-control"] == "no-cache"
+    assets = re.findall(r'/assets/[^"\s]+', response.text)
+    assert assets
+    for asset in assets:
+        response = client.get(asset)
+        assert response.status_code == 200 and response.content
+        assert (
+            "javascript" in response.headers["content-type"]
+            or "text/css" in response.headers["content-type"]
+        )
+    assert client.get("/src/main.tsx").status_code == 404
+    assert client.get("/api/missing").status_code == 404
 
 
 def test_page_context_follows_references_across_page_breaks(tmp_path) -> None:

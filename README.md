@@ -6,7 +6,7 @@ source images with paper citations and extraction confidence.
 
 ## Run the catalog
 
-Use Python 3.12, uv, and Docker Compose:
+Use Python 3.12, Node.js 24, uv, and Docker Compose:
 
 ```sh
 make setup
@@ -43,6 +43,11 @@ and paper context. These files and `.env` are ignored by Git. The web service mo
 read-only; imports run through the maintainer CLI.
 
 ## Development
+
+The React and TypeScript frontend lives in `frontend/src`. `make frontend-dev` starts its
+development server at http://localhost:5173 and forwards API requests to the running catalog.
+`make frontend-build` checks TypeScript and builds assets for the Python web service. Build the
+frontend before `uv build` to include it in the Python distribution; Docker builds it automatically.
 
 ```sh
 make check

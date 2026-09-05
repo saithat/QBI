@@ -1,9 +1,17 @@
 HIVEBLOT_DOCKER_TEST_IMAGE ?= hiveblot:test
 
-.PHONY: setup local-env up down logs model ingest format lint typecheck test check docker-test
+.PHONY: setup local-env up down logs model ingest frontend-dev frontend-build format lint typecheck test check docker-test
 
 setup:
+	npm --prefix frontend ci
 	uv sync --locked --all-extras
+	$(MAKE) frontend-build
+
+frontend-dev:
+	npm --prefix frontend run dev
+
+frontend-build:
+	npm --prefix frontend run build
 
 local-env:
 	uv run hiveblot-env
@@ -35,7 +43,7 @@ lint:
 typecheck:
 	uv run mypy hiveblot
 
-test:
+test: frontend-build
 	uv run pytest -p no:cacheprovider
 
 check: lint typecheck test

@@ -35,6 +35,10 @@ hiveblot-env = "hiveblot.bootstrap:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["hiveblot"]
+artifacts = ["/hiveblot/static/**"]
+
+[tool.hatch.build.targets.sdist]
+artifacts = ["/hiveblot/static/**"]
 
 [tool.hatch.build.targets.wheel.force-include]
 ".env.example" = "hiveblot/env.example"

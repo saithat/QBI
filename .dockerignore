@@ -11,4 +11,7 @@ __pycache__
 .mypy_cache
 dist
 build
+node_modules
+frontend/node_modules
+hiveblot/static
 data/

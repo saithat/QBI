@@ -12,6 +12,7 @@ from urllib.parse import unquote, urlparse
 
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.responses import FileResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 from . import db
 from .domain import RecordSearchCriteria
@@ -24,7 +25,8 @@ from .schemas import (
 )
 from .settings import get_settings
 
-INDEX = Path(__file__).with_name("static") / "index.html"
+STATIC = Path(__file__).with_name("static")
+INDEX = STATIC / "index.html"
 API_RECORD_FIELDS = frozenset(WesternBlotRecordResponse.model_fields)
 
 
@@ -35,11 +37,14 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
 
 
 app = FastAPI(title="HiveBlot", version="0.1.0", lifespan=lifespan)
+app.mount("/assets", StaticFiles(directory=STATIC / "assets", check_dir=False), name="assets")
 
 
 @app.get("/", include_in_schema=False)
 def index() -> FileResponse:
-    return FileResponse(INDEX)
+    if not INDEX.is_file():
+        raise HTTPException(status_code=503, detail="Catalog is temporarily unavailable")
+    return FileResponse(INDEX, headers={"Cache-Control": "no-cache"})
 
 
 @app.get("/health", response_model=HealthResponse)
