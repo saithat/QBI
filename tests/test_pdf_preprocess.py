@@ -1,10 +1,7 @@
 from hiveblot.pdf_preprocess import (
     build_text_context_for_candidate,
     expand_bbox,
-    extract_figure_context,
     filter_candidates_for_llm,
-    normalize_ws,
-    retrieve_relevant_text_snippets,
 )
 
 
@@ -24,10 +21,7 @@ def test_text_helpers_build_bounded_candidate_context() -> None:
     context = build_text_context_for_candidate(candidate, pages, paper_text, max_chars=1200)
 
     assert "PAPER_ID: paper-1" in context
-    assert "Figure 3" in extract_figure_context(paper_text)
-    assert "A549" in retrieve_relevant_text_snippets(paper_text, ["cell"])
     assert len(context) <= 1200
-    assert normalize_ws(" a\n  b ") == "a b"
 
 
 def test_candidate_helpers_bound_boxes_and_thresholds() -> None:

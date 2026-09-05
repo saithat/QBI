@@ -60,9 +60,7 @@ published immutable artifact metadata.
 ## Tests
 
 ```bash
-uv run pytest -p no:cacheprovider tests/unit/crawler \
-  tests/unit/contracts/test_discovery_contracts.py \
-  tests/integration/test_discovery_api.py
+uv run pytest -p no:cacheprovider tests/unit/crawler
 ```
 
 The PostgreSQL repository test is opt-in:

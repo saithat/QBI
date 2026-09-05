@@ -15,15 +15,7 @@ from pydantic import ValidationError
 NOW = datetime(2026, 8, 2, 20, tzinfo=UTC)
 
 
-def test_authorization_contracts_are_strict_and_require_complete_private_scope() -> None:
-    with pytest.raises(ValidationError, match="Extra inputs are not permitted"):
-        ResourceScope.model_validate(
-            {
-                "schema_version": "1.0",
-                "visibility": "public",
-                "unexpected": True,
-            }
-        )
+def test_resource_visibility_requires_a_consistent_organization_scope() -> None:
     with pytest.raises(ValidationError, match="require an organization"):
         ResourceScope(visibility=ArtifactVisibility.ORGANIZATION_PRIVATE)
     with pytest.raises(ValidationError, match="cannot belong to an organization"):

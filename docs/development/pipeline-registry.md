@@ -28,11 +28,10 @@ Verification commands:
 
 ```bash
 uv run pytest tests/unit/contracts/test_pipeline_run_contracts.py \
-  tests/unit/evaluation/test_pipeline_registry_service.py \
-  tests/integration/test_pipeline_api.py
+  tests/unit/evaluation/test_pipeline_registry_service.py
 node --check apps/web/assets/workbench.js
 HIVEBLOT_RUN_LIVE_PIPELINE=1 \
-  uv run pytest tests/integration/test_pipeline_registry_live.py
+  uv run --env-file .env pytest tests/integration/test_pipeline_registry_live.py
 ```
 
 The opt-in acceptance test publishes source and output artifacts to MinIO, applies migration

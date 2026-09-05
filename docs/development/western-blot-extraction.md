@@ -58,9 +58,7 @@ non-cascading and records only that component result.
 ```bash
 uv run pytest -p no:cacheprovider \
   tests/baseline/test_hackathon_extraction_baseline.py \
-  tests/unit/contracts/test_western_blot_extraction_contracts.py \
-  tests/unit/extraction \
-  tests/integration/test_extraction_api.py
+  tests/unit/extraction
 
 HIVEBLOT_RUN_LIVE_EXTRACTION=1 \
   uv run pytest -p no:cacheprovider tests/integration/test_extraction_live.py

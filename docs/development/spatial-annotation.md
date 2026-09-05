@@ -26,10 +26,9 @@ Verification commands:
 ```bash
 node --check apps/web/assets/spatial.js
 uv run pytest tests/unit/contracts/test_spatial_editing_contracts.py \
-  tests/unit/evaluation/test_spatial_annotation_service.py \
-  tests/integration/test_spatial_editor_api.py
+  tests/unit/evaluation/test_spatial_annotation_service.py
 HIVEBLOT_RUN_LIVE_SPATIAL_EDITOR=1 \
-  uv run pytest tests/integration/test_spatial_editor_live.py
+  uv run --env-file .env pytest tests/integration/test_spatial_editor_live.py
 ```
 
 The live test publishes a real 400×200 PNG to MinIO, persists a complete nine-region graph in

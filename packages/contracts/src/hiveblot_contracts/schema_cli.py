@@ -7,7 +7,15 @@ from pathlib import Path
 
 from .registry import rendered_schema_snapshots
 
-DEFAULT_OUTPUT = Path(__file__).resolve().parents[2] / "schemas" / "v1"
+
+def default_output_directory() -> Path:
+    """Use bundled wheel snapshots or the source checkout's committed snapshots."""
+
+    package_directory = Path(__file__).resolve().parent
+    bundled = package_directory / "schemas" / "v1"
+    if bundled.is_dir():
+        return bundled
+    return package_directory.parents[1] / "schemas" / "v1"
 
 
 def check_snapshots(output_dir: Path) -> list[str]:
@@ -38,7 +46,7 @@ def write_snapshots(output_dir: Path) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--check", action="store_true", help="fail when snapshots differ")
-    parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT)
+    parser.add_argument("--output-dir", type=Path, default=default_output_directory())
     args = parser.parse_args()
     if args.check:
         problems = check_snapshots(args.output_dir)

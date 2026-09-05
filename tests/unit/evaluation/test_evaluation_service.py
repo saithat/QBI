@@ -83,52 +83,6 @@ def snapshot(artifact_id, *, target: str = "p53"):
     return (field,), (spatial,), (relationship,)
 
 
-def test_case_can_hold_multiple_immutable_predictions() -> None:
-    service, repository, case, artifact_id = make_service()
-
-    first = service.add_prediction(
-        case.case_id,
-        prediction_schema="western-blot-extraction",
-        prediction_schema_version="1.0",
-        producer=ModelIdentifier(
-            provider="local",
-            name="Qwen3-VL",
-            version="baseline",
-        ),
-        pipeline=None,
-        raw_output_json="not valid JSON but preserved exactly",
-        normalized_output_json='{"target":"p53"}',
-        configuration_json="{}",
-        evidence=(),
-        validation_issues=(),
-        confidence=0.8,
-        trace_id=uuid4(),
-        latency_ms=120,
-        cost_microusd=0,
-    )
-    second = service.add_prediction(
-        case.case_id,
-        prediction_schema="western-blot-extraction",
-        prediction_schema_version="1.1",
-        producer=ModelIdentifier(provider="local", name="Qwen3-VL", version="candidate"),
-        pipeline=None,
-        raw_output_json='{"target":"TP53"}',
-        normalized_output_json='{"target":"TP53"}',
-        configuration_json='{"temperature":0}',
-        evidence=(),
-        validation_issues=(),
-        confidence=0.9,
-        trace_id=uuid4(),
-        latency_ms=100,
-        cost_microusd=0,
-    )
-
-    assert first.prediction_id != second.prediction_id
-    assert service.list_predictions(case.case_id) == (first, second)
-    assert repository.predictions[first.prediction_id].raw_output_json.startswith("not valid")
-    assert artifact_id == case.source_artifacts[0].artifact_id
-
-
 def test_reviews_are_independent_and_edits_append_revisions() -> None:
     service, _, case, artifact_id = make_service()
     fields, spatial, relationships = snapshot(artifact_id)

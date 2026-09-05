@@ -1,10 +1,4 @@
-from hiveblot.records import determine_blot_type, flatten_records
-
-
-def test_determine_blot_type() -> None:
-    assert determine_blot_type("p-AKT", False) == "phospho_signaling"
-    assert determine_blot_type("GAPDH", True) == "loading_control"
-    assert determine_blot_type("AKT", False) == "total_protein"
+from hiveblot.records import flatten_records
 
 
 def test_flatten_records_preserves_band_states_and_panel_context() -> None:

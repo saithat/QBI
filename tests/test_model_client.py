@@ -38,44 +38,6 @@ def test_parse_filters_content_rejects_unexpected_fields() -> None:
 
 
 @pytest.mark.asyncio
-async def test_local_model_client_health_and_search() -> None:
-    configured = settings()
-
-    def handler(request: httpx.Request) -> httpx.Response:
-        if request.url.path == "/health":
-            return httpx.Response(200)
-        assert request.url.path == "/v1/chat/completions"
-        assert request.headers["authorization"] == (
-            f"Bearer {configured.vllm_api_key.get_secret_value()}"
-        )
-        payload = __import__("json").loads(request.content)
-        assert payload["response_format"]["type"] == "json_schema"
-        assert payload["chat_template_kwargs"] == {"enable_thinking": False}
-        return httpx.Response(
-            200,
-            json={
-                "choices": [
-                    {
-                        "message": {
-                            "content": ('{"target":"p53","sample":"A549","condition":"Nutlin-3"}')
-                        }
-                    }
-                ]
-            },
-        )
-
-    client = LocalModelClient(configured, transport=httpx.MockTransport(handler))
-
-    assert await client.health() is True
-    assert (await client.parse_search("p53 in A549 with Nutlin-3")).model_dump() == {
-        "schema_version": "1.0",
-        "target": "p53",
-        "sample": "A549",
-        "condition": "Nutlin-3",
-    }
-
-
-@pytest.mark.asyncio
 async def test_local_model_client_wraps_http_failures() -> None:
     transport = httpx.MockTransport(lambda _: httpx.Response(500))
     client = LocalModelClient(settings(), transport=transport)

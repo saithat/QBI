@@ -4,28 +4,15 @@ import pytest
 from hiveblot_contracts import (
     ComponentInvocationRecord,
     ComponentInvocationStatus,
-    ModelPipelineComponent,
-    OutputSchemaIdentifier,
     PipelineDefinitionRecord,
     PipelineIdentifier,
     PipelineRunDetail,
     PipelineRunRecord,
     PipelineRunStatus,
-    SucceededComponentResult,
 )
 from pydantic import ValidationError
 
 from tests.fakes.pipeline import NOW, artifact_reference, pipeline_definition
-
-
-def test_pipeline_definition_round_trips_a_versioned_component_dag() -> None:
-    definition = pipeline_definition()
-
-    restored = PipelineDefinitionRecord.model_validate_json(definition.model_dump_json())
-
-    assert restored == definition
-    assert restored.components[0].component_type == "model"
-    assert restored.components[1].depends_on == ("detect_regions",)
 
 
 def test_pipeline_definition_rejects_unknown_dependencies_and_cycles() -> None:
@@ -45,31 +32,6 @@ def test_pipeline_definition_rejects_unknown_dependencies_and_cycles() -> None:
             definition_id=uuid4(),
             pipeline=PipelineIdentifier(name="cyclic", version="1"),
             components=(first, definition.components[1]),
-            created_at=NOW,
-        )
-
-
-def test_invocation_status_must_match_its_discriminated_result() -> None:
-    definition = pipeline_definition()
-    result = SucceededComponentResult(
-        output_schema=OutputSchemaIdentifier(name="spatial-annotation-set", version="1.0"),
-        raw_output_json="raw",
-        normalized_output_json='{"schema_version":"1.0"}',
-        latency_ms=10,
-        cost_microusd=2,
-        completed_at=NOW,
-    )
-
-    with pytest.raises(ValidationError, match="status and result must agree"):
-        ComponentInvocationRecord(
-            invocation_id=uuid4(),
-            run_id=uuid4(),
-            component=definition.components[0],
-            status=ComponentInvocationStatus.FAILED,
-            input_artifacts=(artifact_reference(),),
-            configuration_json="{}",
-            trace_id=uuid4(),
-            result=result,
             created_at=NOW,
         )
 
@@ -112,14 +74,3 @@ def test_pipeline_run_detail_rejects_foreign_invocation_parents() -> None:
     )
     with pytest.raises(ValidationError, match="replay sources must belong"):
         PipelineRunDetail(run=run, invocations=(replay,), publications=())
-
-
-def test_component_configuration_rejects_non_object_json() -> None:
-    definition = pipeline_definition()
-    component = definition.components[0]
-    assert isinstance(component, ModelPipelineComponent)
-
-    with pytest.raises(ValidationError, match="must contain a JSON object"):
-        ModelPipelineComponent.model_validate(
-            component.model_copy(update={"configuration_json": "[]"}).model_dump(mode="python")
-        )

@@ -1,12 +1,11 @@
 # Densitometry development
 
-Run the deterministic unit, contract, API, and synthetic-reference suite without services:
+Run the deterministic unit, contract, and synthetic-reference suite without services:
 
 ```bash
 uv run pytest -p no:cacheprovider \
   tests/unit/contracts/test_densitometry_contracts.py \
-  tests/unit/densitometry \
-  tests/integration/test_densitometry_api.py
+  tests/unit/densitometry
 ```
 
 The 40×24 synthetic blot fixture has two lanes and two targets. Its committed reference values test
@@ -18,7 +17,7 @@ For real persistence, start PostgreSQL and MinIO and run the opt-in acceptance t
 ```bash
 docker compose up -d postgres minio
 HIVEBLOT_RUN_LIVE_DENSITOMETRY=1 \
-  uv run pytest -p no:cacheprovider tests/integration/test_densitometry_live.py
+  uv run --env-file .env pytest -p no:cacheprovider tests/integration/test_densitometry_live.py
 ```
 
 The live test applies migration `0010_tool_output_artifacts`, uploads a raster through signed MinIO

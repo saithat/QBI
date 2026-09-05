@@ -22,6 +22,9 @@ RUN pip install --no-cache-dir "uv==${UV_VERSION}" \
     && uv sync --locked --all-extras --no-editable \
     && useradd --create-home --uid 1000 hiveblot
 COPY tests ./tests
+COPY scripts ./scripts
+COPY infra ./infra
+COPY .env.example .env.test.example .env.deployed.example ./
 RUN chmod -R a+rX /app
 
 USER hiveblot

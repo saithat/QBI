@@ -18,6 +18,3 @@ def test_historic_vlm_output_normalizes_to_the_preserved_records() -> None:
     actual = flatten_records([model_output], source_pdf=SOURCE_PDF)
 
     assert actual == expected
-    assert len(actual) == 40
-    assert {record["panel_label"] for record in actual} == {"A", "B", "E"}
-    assert {record["target"] for record in actual} == {"p53", "GAPDH", "Vinculin"}

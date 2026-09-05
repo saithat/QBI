@@ -8,14 +8,11 @@ import pytest
 from hiveblot_auth import AuthorizationService, InMemoryAuthorizationRepository, token_digest
 from hiveblot_contracts import (
     PLATFORM_OPERATOR_USER_ID,
-    ArtifactAcquisitionMethod,
-    ArtifactRecord,
     ArtifactVisibility,
     AuthenticatedPrincipal,
     EvidenceRelation,
     OrganizationMembership,
     OrganizationRole,
-    ResourceScope,
 )
 from hiveblot_search import (
     DEFAULT_EMBEDDING_MODEL,
@@ -25,169 +22,26 @@ from hiveblot_search import (
     InMemoryEvidenceSearchRepository,
     TokenOverlapReranker,
 )
-from hiveblot_storage import ArtifactService, SourceAdapterRegistry
 
-from apps.api.artifact_dependencies import get_artifact_service
 from apps.api.auth_dependencies import get_authorization_service
 from apps.api.main import app
 from apps.api.search_dependencies import get_evidence_search_service
 from hiveblot.settings import get_settings
-from tests.fakes.artifacts import InMemoryArtifactRepository, InMemoryObjectStore
 from tests.fakes.search import NOW, evidence_document
 
 PEPPER = "p" * 32
 
 
 @pytest.mark.asyncio
-async def test_index_build_evaluation_activation_and_cited_search_api(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    document = evidence_document(
-        statement="Western blot evidence contradicts p53 loss after Nutlin-3.",
-        relation=EvidenceRelation.CONTRADICTS,
-    )
-    authorization_repository = InMemoryAuthorizationRepository()
-    authorization_repository.scopes[("evaluation_case", document.case_id)] = ResourceScope(
-        visibility=ArtifactVisibility.PUBLIC
-    )
-    assert document.source_annotation_revision_id is not None
-    authorization_repository.scopes[
-        ("annotation_revision", document.source_annotation_revision_id)
-    ] = ResourceScope(visibility=ArtifactVisibility.PUBLIC)
-    citation = document.citations[0]
-    authorization_repository.scopes[("artifact", citation.artifact.artifact_id)] = ResourceScope(
-        visibility=ArtifactVisibility.PUBLIC
-    )
-    authorization = AuthorizationService(authorization_repository, token_pepper=PEPPER)
-    search_repository = InMemoryEvidenceSearchRepository()
-    search_service = _search_service(search_repository)
-    artifact_repository = InMemoryArtifactRepository()
-    artifact_repository.artifacts[citation.artifact.artifact_id] = ArtifactRecord(
-        **citation.artifact.model_dump(mode="python"),
-        original_filename="figure-2a.png",
-        source_uri=citation.source_uri,
-        acquisition_method=ArtifactAcquisitionMethod.SOURCE_ADAPTER,
-        visibility=ArtifactVisibility.PUBLIC,
-        created_at=NOW,
-    )
-    artifact_service = ArtifactService(
-        repository=artifact_repository,
-        object_store=InMemoryObjectStore(),
-        source_adapters=SourceAdapterRegistry({}),
-        max_bytes=1_000_000,
-        upload_url_seconds=60,
-        download_url_seconds=60,
-        clock=lambda: NOW,
-    )
-
-    monkeypatch.setenv("AUTHENTICATION_MODE", "disabled")
-    get_settings.cache_clear()
-    app.dependency_overrides[get_authorization_service] = lambda: authorization
-    app.dependency_overrides[get_evidence_search_service] = lambda: search_service
-    app.dependency_overrides[get_artifact_service] = lambda: artifact_service
-    transport = httpx.ASGITransport(app=app)
-    try:
-        async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
-            configuration = await client.post(
-                "/api/v1/evidence-index-configurations",
-                json=_configuration_payload(),
-            )
-            assert configuration.status_code == 201, configuration.text
-            built = await client.post(
-                "/api/v1/evidence-index-versions",
-                json={
-                    "schema_version": "1.0",
-                    "configuration_id": configuration.json()["configuration_id"],
-                    "index_version": "2026-08-02",
-                    "documents": [document.model_dump(mode="json")],
-                },
-            )
-            assert built.status_code == 201, built.text
-            assert built.json()["status"] == "ready"
-            dataset = await client.post(
-                "/api/v1/retrieval-evaluation-datasets",
-                json={
-                    "schema_version": "1.0",
-                    "dataset_name": "retrieval-gold",
-                    "dataset_version": "1.0.0",
-                    "visibility": "public",
-                    "queries": [
-                        {
-                            "schema_version": "1.0",
-                            "query_id": "p53-nutlin",
-                            "query": "p53 western blot after Nutlin-3",
-                            "relevant": [
-                                {
-                                    "schema_version": "1.0",
-                                    "document_id": str(document.document_id),
-                                    "relevance": 3,
-                                    "required_citation_artifact_ids": [
-                                        str(citation.artifact.artifact_id)
-                                    ],
-                                }
-                            ],
-                        }
-                    ],
-                },
-            )
-            assert dataset.status_code == 201, dataset.text
-            evaluation = await client.post(
-                "/api/v1/retrieval-evaluation-runs",
-                json={
-                    "schema_version": "1.0",
-                    "dataset_id": dataset.json()["dataset_id"],
-                    "index_version_id": built.json()["index_version_id"],
-                    "configuration": {
-                        "schema_version": "1.0",
-                        "k_values": [1],
-                    },
-                },
-            )
-            assert evaluation.status_code == 201, evaluation.text
-            assert evaluation.json()["passed"] is True
-            activated = await client.post(
-                f"/api/v1/evidence-index-versions/{built.json()['index_version_id']}/activation"
-            )
-            assert activated.status_code == 200, activated.text
-            assert (
-                activated.json()["activation_evaluation_run_id"]
-                == evaluation.json()["evaluation_run_id"]
-            )
-            response = await client.post(
-                "/api/v1/evidence-search",
-                json={
-                    "schema_version": "1.0",
-                    "query": "p53 western blot after Nutlin-3",
-                    "filters": {
-                        "schema_version": "1.0",
-                        "proteins": ["p53"],
-                        "biological_systems": ["A549"],
-                    },
-                },
-            )
-    finally:
-        app.dependency_overrides.pop(get_authorization_service, None)
-        app.dependency_overrides.pop(get_evidence_search_service, None)
-        app.dependency_overrides.pop(get_artifact_service, None)
-        get_settings.cache_clear()
-
-    assert response.status_code == 200, response.text
-    payload = response.json()
-    assert payload["hits"][0]["document"]["citations"][0]["artifact_url"] == (
-        f"/api/v1/artifacts/{citation.artifact.artifact_id}"
-    )
-    assert payload["hits"][0]["document"]["citations"][0]["source_uri"] == citation.source_uri
-    assert len(payload["hits"][0]["contradictory_observations"]) == 1
-    assert payload["trace_id"]
-
-
-@pytest.mark.asyncio
-async def test_search_api_applies_same_cross_tenant_policy_as_direct_access(
+async def test_search_api_filters_tenants_and_preserves_exact_citations(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     organization_a = uuid4()
     organization_b = uuid4()
-    public = evidence_document(statement="Public p53 western blot evidence.")
+    public = evidence_document(
+        statement="Public p53 western blot evidence.",
+        relation=EvidenceRelation.CONTRADICTS,
+    )
     private_a = evidence_document(
         statement="Organization A private p53 evidence.",
         visibility=ArtifactVisibility.ORGANIZATION_PRIVATE,
@@ -257,10 +111,23 @@ async def test_search_api_applies_same_cross_tenant_policy_as_direct_access(
         get_settings.cache_clear()
 
     assert unauthenticated.status_code == 401
+    assert result_a.status_code == 200, result_a.text
+    assert result_b.status_code == 200, result_b.text
     ids_a = {UUID(item["document"]["document_id"]) for item in result_a.json()["hits"]}
     ids_b = {UUID(item["document"]["document_id"]) for item in result_b.json()["hits"]}
     assert ids_a == {public.document_id, private_a.document_id}
     assert ids_b == {public.document_id, private_b.document_id}
+    public_hit = next(
+        hit
+        for hit in result_a.json()["hits"]
+        if hit["document"]["document_id"] == str(public.document_id)
+    )
+    citation = public.citations[0]
+    returned_citation = public_hit["document"]["citations"][0]
+    assert returned_citation["artifact_url"] == f"/api/v1/artifacts/{citation.artifact.artifact_id}"
+    assert returned_citation["source_uri"] == citation.source_uri
+    assert len(public_hit["contradictory_observations"]) == 1
+    assert result_a.json()["trace_id"]
 
 
 @pytest.mark.asyncio

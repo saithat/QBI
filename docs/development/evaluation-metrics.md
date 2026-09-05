@@ -36,12 +36,10 @@ Verification commands:
 
 ```bash
 uv run pytest tests/unit/contracts/test_metric_contracts.py \
-  tests/unit/evaluation/test_metrics.py \
-  tests/unit/evaluation/test_metrics_cli.py \
-  tests/integration/test_metrics_api.py
+  tests/unit/evaluation/test_metrics.py
 node --check apps/web/assets/metrics.js
 HIVEBLOT_RUN_LIVE_METRICS=1 \
-  uv run pytest tests/integration/test_metrics_live.py
+  uv run --env-file .env pytest tests/integration/test_metrics_live.py
 ```
 
 The live test applies migration `0008`, persists baseline and candidate runs, reconstructs a run

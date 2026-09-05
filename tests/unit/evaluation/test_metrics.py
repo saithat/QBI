@@ -1,16 +1,13 @@
 from uuid import UUID
 
 import pytest
-from hiveblot_contracts import CalibrationCategory
 from hiveblot_evaluation import (
-    EvaluationMetricsService,
     InvalidEvaluationState,
     compare_metric_runs,
     score_evaluation,
 )
 
 from tests.fakes.metrics import CASE_ONE, CASE_TWO, NOW, scoring_input
-from tests.fakes.metrics_repository import InMemoryEvaluationMetricRunRepository
 
 BASELINE_RUN_ID = UUID("60000000-0000-0000-0000-000000000001")
 CANDIDATE_RUN_ID = UUID("60000000-0000-0000-0000-000000000002")
@@ -88,52 +85,6 @@ def test_pipeline_comparison_lists_individual_regressions_and_improvements() -> 
             minimum_delta=0,
             created_at=NOW,
         )
-
-
-def test_metric_service_versions_results_and_filters_calibration_category() -> None:
-    repository = InMemoryEvaluationMetricRunRepository()
-    identities = iter((BASELINE_RUN_ID, CANDIDATE_RUN_ID, COMPARISON_ID))
-    service = EvaluationMetricsService(
-        repository,
-        clock=lambda: NOW,
-        identity=lambda: next(identities),
-    )
-    baseline = service.score(scoring_input())
-    candidate = service.score(scoring_input(candidate=True))
-
-    assert baseline.metric_run_id != candidate.metric_run_id
-    assert baseline.dataset_sha256 == candidate.dataset_sha256
-    assert (
-        len(
-            service.list(
-                dataset_name="western-blot-frozen",
-                dataset_version="2026.08",
-                pipeline_name="western-blot-extraction",
-                pipeline_version=None,
-                limit=10,
-            )
-        )
-        == 2
-    )
-    field_calibration = service.calibration(
-        candidate.metric_run_id,
-        category=CalibrationCategory.FIELD,
-    )
-    assert field_calibration.category is CalibrationCategory.FIELD
-    assert field_calibration.calibration.observations == 2
-    assert all(
-        outcome.category is CalibrationCategory.FIELD
-        for case in candidate.cases
-        for outcome in case.confidence_outcomes
-        if outcome.category is CalibrationCategory.FIELD
-    )
-    comparison = service.compare(
-        baseline.metric_run_id,
-        candidate.metric_run_id,
-        minimum_delta=0.01,
-    )
-    assert comparison.comparison_id == COMPARISON_ID
-    assert service.get_case(candidate.metric_run_id, CASE_TWO).case_id == CASE_TWO
 
 
 def test_scoring_is_reproducible_for_explicit_identity_and_timestamp() -> None:

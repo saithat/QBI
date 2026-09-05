@@ -50,8 +50,7 @@ curl http://127.0.0.1:8080/api/v1/crawl/metrics
 ```bash
 uv run pytest -p no:cacheprovider tests/unit/crawler/test_http_fetcher.py \
   tests/unit/crawler/test_fetch_worker.py \
-  tests/integration/test_fetch_rate_limit.py \
-  tests/integration/test_fetching_api.py
+  tests/integration/test_fetch_rate_limit.py
 ```
 
 The simulated HTTP source test starts two workers sharing one in-memory coordination backend and
@@ -61,8 +60,7 @@ conditional recrawl, artifact linkage, outbox publication, metrics, and strict r
 
 ```bash
 HIVEBLOT_RUN_LIVE_FETCH=1 \
-DATABASE_URL=postgresql://USER:PASSWORD@127.0.0.1:5432/hiveblot \
-uv run pytest -p no:cacheprovider tests/integration/test_fetching_live.py
+  uv run --env-file .env pytest -p no:cacheprovider tests/integration/test_fetching_live.py
 ```
 
 ## KEDA

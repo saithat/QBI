@@ -1,64 +1,31 @@
-from datetime import UTC, datetime
 from uuid import uuid4
 
 import httpx
 import pytest
-from hiveblot_auth import AuthorizationService, InMemoryAuthorizationRepository
-from pydantic import ValidationError
 
 from apps.api.main import app
-from apps.api.schemas import SearchRequest
 from hiveblot import api
 
 
-def test_api_entrypoint_serves_versioned_strict_responses(monkeypatch) -> None:
-    monkeypatch.setattr(
-        api.db,
-        "list_records",
-        lambda *_args, **_kwargs: [
-            {
-                "id": 1,
-                "paper_id": "10.1234/example",
-                "source_pdf": None,
-                "candidate_path": None,
-                "page": 2,
-                "figure_label": "Figure 1",
-                "panel_label": "A",
-                "row_index": 1,
-                "lane_index": 1,
-                "target": "p53",
-                "is_loading_control": False,
-                "western_blot_type": "total_protein",
-                "sample": "A549",
-                "organism": "human",
-                "treatment_context": "Nutlin-3",
-                "condition": "10 uM",
-                "band_state": "present",
-                "confidence": 0.9,
-                "updated_at": datetime(2026, 8, 2, tzinfo=UTC),
-            }
-        ],
+@pytest.mark.asyncio
+async def test_api_and_review_surfaces_are_wired() -> None:
+    assert {"/api/records", "/api/v1/evidence-search", "/api/v1/evaluation-cases"} <= set(
+        app.openapi()["paths"]
     )
-    api.get_settings.cache_clear()
-
-    authorization = AuthorizationService(
-        InMemoryAuthorizationRepository(),
-        token_pepper="p" * 32,
-    )
-    response = api.records(
-        limit=1,
-        principal=authorization.system_principal(),
-        authorization=authorization,
-        request_id=uuid4(),
-    )
-    openapi = app.openapi()
-
-    assert response.schema_version == "1.0"
-    assert response.results[0].target == "p53"
-    assert "/api/records" in openapi["paths"]
-    assert "/api/v1/evidence-search" in openapi["paths"]
-    with pytest.raises(ValidationError, match="Extra inputs are not permitted"):
-        SearchRequest.model_validate({"query": "p53", "unknown": "rejected"})
+    case_id = uuid4()
+    transport = httpx.ASGITransport(app=app)
+    async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+        for path in (
+            "/review",
+            f"/workbench/{case_id}",
+            f"/annotate/{case_id}",
+            f"/spatial/{case_id}",
+            f"/densitometry/{case_id}",
+            "/metrics",
+            "/review/assets/review.js",
+        ):
+            response = await client.get(path)
+            assert response.status_code == 200, path
 
 
 @pytest.mark.asyncio

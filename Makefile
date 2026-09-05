@@ -1,4 +1,5 @@
 HIVEBLOT_KUBECTL_BIN ?= kubectl
+HIVEBLOT_DOCKER_TEST_IMAGE ?= hiveblot:test
 
 .PHONY: up down logs setup local-env kind-up kind-smoke kind-down format lint typecheck schemas schema-check test check docker-test ingest fetch-worker
 
@@ -59,7 +60,8 @@ test:
 check: lint typecheck schema-check test
 
 docker-test:
-	docker compose run --rm --no-deps app pytest -p no:cacheprovider
+	docker build --tag $(HIVEBLOT_DOCKER_TEST_IMAGE) .
+	docker run --rm $(HIVEBLOT_DOCKER_TEST_IMAGE) pytest -p no:cacheprovider
 
 ingest:
 	@test -n "$(PDF)" || (echo "Usage: make ingest PDF=paper.pdf" && exit 2)

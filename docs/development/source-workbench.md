@@ -10,13 +10,13 @@ uv run uvicorn apps.api.main:app --host 127.0.0.1 --port 8080
 Open `/review`, select a case, and choose **Open evidence**. The workbench route is
 `/workbench/<case-id>`.
 
-Verify its static/API boundary and live object-store path:
+Verify workbench composition without services and the object-store path with the opt-in live test:
 
 ```bash
 node --check apps/web/assets/workbench.js
-uv run pytest tests/integration/test_workbench_api.py
+uv run pytest tests/unit/evaluation/test_workbench_service.py
 HIVEBLOT_RUN_LIVE_WORKBENCH=1 \
-  uv run pytest tests/integration/test_workbench_live.py
+  uv run --env-file .env pytest tests/integration/test_workbench_live.py
 ```
 
 The live test publishes a valid deterministic PNG, creates a source-pixel prediction region,

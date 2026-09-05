@@ -28,10 +28,7 @@ active member is gold.
 Run focused verification with:
 
 ```bash
-uv run pytest \
-  tests/unit/contracts/test_golden_dataset_contracts.py \
-  tests/unit/evaluation/test_golden_dataset_service.py \
-  tests/integration/test_golden_api.py
+uv run pytest tests/unit/evaluation/test_golden_dataset_service.py
 HIVEBLOT_RUN_LIVE_GOLDEN=1 \
   uv run pytest tests/integration/test_golden_live.py
 ```

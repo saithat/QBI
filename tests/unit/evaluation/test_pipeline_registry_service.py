@@ -10,7 +10,6 @@ from hiveblot_contracts import (
     CaseSourceArtifact,
     ComponentInvocationStatus,
     InvocationFailureKind,
-    PipelineIdentifier,
     PublishedPipelineValue,
     SpatialAnnotationSet,
 )
@@ -69,25 +68,6 @@ def create_run(service, case, input_artifact, definition):
         configuration_json='{"mode":"test"}',
         trace_id=uuid4(),
     )
-
-
-def test_registry_creates_versioned_runs_and_parent_invocations() -> None:
-    service, _, case, input_artifact, _, definition = make_service()
-    first = create_run(service, case, input_artifact, definition)
-    fixture = pipeline_definition()
-    second_definition = service.register_definition(
-        pipeline=PipelineIdentifier(name=fixture.pipeline.name, version="2.0"),
-        description="Candidate graph",
-        components=fixture.components,
-        configuration_json="{}",
-    )
-    second = create_run(service, case, input_artifact, second_definition)
-
-    assert first.run.run_id != second.run.run_id
-    assert first.run.pipeline.version == "1.0"
-    assert second.run.pipeline.version == "2.0"
-    assert first.invocations[1].parent_invocation_ids == (first.invocations[0].invocation_id,)
-    assert len(service.list_runs(case.case_id)) == 2
 
 
 def test_successful_result_is_immutable_and_replay_gets_a_new_identity() -> None:

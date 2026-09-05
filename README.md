@@ -90,7 +90,6 @@ workers/discovery/         bounded official-source discovery CronJob/CLI entry p
 workers/fetching/          long-lived queue-backed public-source fetch worker
 workers/workflow/          external Temporal workflow-worker entry point
 hiveblot/                  retained domain, persistence, model, and extraction modules
-services/                  future long-lived service boundary
 infra/kubernetes/          Kustomize base, kind overlay, and runtime acceptance smoke
 tests/baseline/            historic extraction behavior without GPU/network/database
 tests/unit/                contract and configuration tests
@@ -111,8 +110,9 @@ make setup
 make check
 ```
 
-`make check` verifies formatting, lint, static types, JSON Schema snapshots, the API smoke
-boundary, and all tests. Regenerate schemas intentionally with `make schemas`.
+`make check` verifies formatting, lint, static types, JSON Schema snapshots, and the default
+test suite, including the API smoke boundary. Live PostgreSQL, MinIO, and Docker checks are
+opt-in; see [test setup](tests/README.md). Regenerate schemas intentionally with `make schemas`.
 
 Local/test configuration explicitly defaults to disabled authentication. Deployed configuration
 requires bearer authentication. See [authorization development](docs/development/authorization.md)

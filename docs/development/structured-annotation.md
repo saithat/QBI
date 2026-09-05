@@ -15,9 +15,9 @@ Verification commands:
 
 ```bash
 node --check apps/web/assets/annotate.js
-uv run pytest tests/integration/test_structured_editor_api.py
+uv run pytest tests/unit/evaluation/test_structured_annotation_service.py
 HIVEBLOT_RUN_LIVE_STRUCTURED_EDITOR=1 \
-  uv run pytest tests/integration/test_structured_editor_live.py
+  uv run --env-file .env pytest tests/integration/test_structured_editor_live.py
 ```
 
 The live test applies migration `0006`, writes complete typed snapshots through PostgreSQL JSONB,

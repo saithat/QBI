@@ -27,8 +27,8 @@ HTTP source ingestion is disabled by default. Set `SOURCE_INGEST_ALLOWED_HOSTS` 
 exact host list, then use `POST /api/v1/artifacts/source-ingestions`. This adapter is intentionally
 not a crawler and does not perform discovery.
 
-Run focused tests with:
+Run deterministic storage tests without services:
 
 ```bash
-uv run pytest tests/unit/storage tests/integration/test_artifact_api.py
+uv run pytest tests/unit/storage
 ```
