@@ -8,13 +8,12 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 ARG UV_VERSION=0.9.17
 
 WORKDIR /app
-COPY pyproject.toml uv.lock README.md ./
+COPY pyproject.toml uv.lock README.md .env.example ./
 COPY hiveblot ./hiveblot
 RUN pip install --no-cache-dir "uv==${UV_VERSION}" \
     && uv sync --locked --all-extras --no-editable \
     && useradd --create-home --uid 1000 hiveblot
 COPY tests ./tests
-COPY .env.example ./
 RUN chmod -R a+rX /app
 
 USER hiveblot
