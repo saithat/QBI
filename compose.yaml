@@ -77,7 +77,8 @@ services:
       timeout: 8s
       retries: 24
       start_period: 90s
-    restart: unless-stopped
+    # GPU model server: start explicitly; never restart on boot.
+    restart: "no"
     profiles:
     - gpu
 volumes:
